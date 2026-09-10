@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/download/:arch(arm64|x64)", "destination": "https://mvplean.com/zeroagent/download/:arch", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://mvplean.com/api/:path*" }
+  ]
+}

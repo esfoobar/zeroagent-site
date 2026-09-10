@@ -1,0 +1,12 @@
+.promo-content-nobottom {
+  top: 15px;
+}
+
+.slider-title {
+  font-size: 35px;
+  color: white;
+	font-weight: 600;
+	line-height: 0.5;
+	margin: 0 0 30px 0;
+	font-family: 'Raleway', sans-serif;
+}
