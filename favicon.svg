@@ -1,0 +1,30 @@
+<!--
+  zeroagenthq.com favicon (ZA-295), from the ZeroAgent critter, the
+  one-worker creature drawn for the macOS app icon (assets/icon.svg,
+  ZA-128, in the zeroagent repo). Same shape and colours, not redesigned:
+  rounded body, two knocked-out eyes, antenna with a lit tip, clay on the
+  warm-neutral tile ground. Kept at the app icon's own crop so it stays
+  legible at 16px and 32px in a browser tab.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FAF8F5"/>
+      <stop offset="1" stop-color="#EBE5DD"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="100" y="100" width="824" height="824" rx="185" ry="185" fill="url(#tile)"/>
+  <rect x="101.5" y="101.5" width="821" height="821" rx="183.5" ry="183.5"
+        fill="none" stroke="#DFD8D0" stroke-width="3"/>
+
+  <rect x="505" y="267" width="14" height="106" fill="#C25E3E"/>
+  <circle cx="512" cy="264" r="31" fill="#C25E3E"/>
+
+  <path d="M465,370 H559 A188,188 0 0 1 747,558 V624 A160,160 0 0 1 587,784
+           H437 A160,160 0 0 1 277,624 V558 A188,188 0 0 1 465,370 Z"
+        fill="#C25E3E"/>
+
+  <circle cx="437" cy="577" r="33" fill="#F6F3EF"/>
+  <circle cx="587" cy="577" r="33" fill="#F6F3EF"/>
+</svg>
