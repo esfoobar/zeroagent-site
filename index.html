@@ -155,6 +155,8 @@
 				<span>ZeroAgent</span>
 			</a>
 			<ul class="za-nav-links">
+				<li><a href="#models">Models</a></li>
+				<li><a href="#phone">Phone</a></li>
 				<li><a href="/download">Download</a></li>
 				<li><a href="https://mvplean.com/">mvplean.com</a></li>
 			</ul>
@@ -175,10 +177,10 @@
 
 				<h1>You talk to one agent. It runs the rest.</h1>
 
-				<p class="za-lead">ZeroAgent takes your request, picks the cheapest model that can do the job,
-					writes the brief, and dispatches workers running Claude Code into their own git
-					worktrees, checking on them until the work is actually finished. Free, local, on your
-					own Mac.</p>
+				<p class="za-lead">ZeroAgent takes your request, picks the right Claude model for the job on
+					your own subscription, writes the brief, and dispatches workers running Claude Code
+					into their own git worktrees, checking on them until the work is actually finished.
+					Free, local, on your own Mac.</p>
 
 				<div class="za-btn-row">
 					<a href="/download" class="za-btn za-btn--primary za-btn--large">Download for Mac</a>
@@ -328,6 +330,46 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 			</div>
 		</section>
 
+		<section class="za-section" id="models">
+			<div class="za-container">
+				<div class="za-split">
+					<div class="za-split-copy">
+						<h2>Your subscriptions, your keys</h2>
+						<p>ZeroAgent never meters or marks up a model call. Today every worker runs on
+							Claude models through your own Claude Code login, and the lead picks the right
+							tier for the work automatically: Sonnet for routine work, Opus for the hard
+							problems, Fable when a job needs to coordinate several workers, with no dropdown
+							to remember. OpenAI models through Codex, and everything else through your own
+							OpenRouter key, are on the way, so the same automatic pick reaches across
+							providers, not just within Claude's own lineup.</p>
+					</div>
+					<div class="za-window za-providers">
+						<div class="za-provider za-provider--live">
+							<span class="za-status-dot"></span>
+							<div>
+								<h3>Claude, via Claude Code</h3>
+								<p class="za-small">Your own subscription. Shipped today.</p>
+							</div>
+						</div>
+						<div class="za-provider">
+							<span class="za-status-dot"></span>
+							<div>
+								<h3>OpenAI, via Codex</h3>
+								<p class="za-small">Your own account. Coming.</p>
+							</div>
+						</div>
+						<div class="za-provider">
+							<span class="za-status-dot"></span>
+							<div>
+								<h3>Everything else, via OpenRouter</h3>
+								<p class="za-small">Your own key. Coming.</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
 		<section class="za-section">
 			<div class="za-container">
 
@@ -414,6 +456,44 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 			</div>
 		</section>
 
+		<section class="za-section" id="phone">
+			<div class="za-container">
+				<div class="za-split">
+					<div class="za-split-copy">
+						<h2>Watch your workers from your phone</h2>
+						<p>ZeroAgent Premium pairs a native iOS companion with your Mac by scanning a QR
+							code. It's a viewer and a nudger, not a second orchestrator: glance at the canvas,
+							open a worker's transcript, answer a question it's waiting on, or send it a
+							message from wherever you are. The work still runs on your own Mac; the phone
+							only watches and steers it, with a push notification the moment a worker needs
+							you.</p>
+						<p class="za-small">Part of Premium, $5 a month, coming to the App Store.</p>
+					</div>
+					<div class="za-phone-mock">
+						<div class="za-phone-frame">
+							<div class="za-phone-screen">
+								<div class="za-phone-notch"></div>
+								<p class="za-phone-title">Workers</p>
+								<div class="za-phone-row">
+									<span class="za-status-dot"></span>
+									Reading the ticket
+								</div>
+								<div class="za-phone-row">
+									<span class="za-status-dot"></span>
+									Tests passing, opening a pull request
+								</div>
+								<div class="za-phone-row">
+									<span class="za-status-dot"></span>
+									Waiting for you
+								</div>
+								<div class="za-phone-input">Message this worker&hellip;</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
 		<section class="za-section">
 			<div class="za-container">
 
@@ -484,8 +564,9 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 					<a href="/download" class="za-btn za-btn--primary za-btn--large">Download for Mac</a>
 				</div>
 				<p>Free, local, and yours to keep. Requires Claude Code.</p>
-				<p>Free for local work on your own Mac, with no account. Remote, mobile
-					and cloud workspaces are coming later as paid options.</p>
+				<p>Free for local work on your own Mac, with no account. Remote monitoring and
+					the phone companion are Premium, $5 a month; cloud workspaces are coming later
+					as Platinum.</p>
 			</div>
 		</section>
 
@@ -515,8 +596,9 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 					<details>
 						<summary>Do I need an account or a subscription?</summary>
 						<div><p>No. ZeroAgent runs entirely on your Mac with your own model keys,
-							with nothing to sign in to and nothing that costs money today. Remote monitoring,
-							mobile and cloud workspaces are coming later as paid options.</p></div>
+							with nothing to sign in to and nothing that costs money today. Remote monitoring
+							and the phone companion are Premium, $5 a month; cloud workspaces are coming
+							later as Platinum.</p></div>
 					</details>
 
 					<details>

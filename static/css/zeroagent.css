@@ -1155,3 +1155,114 @@ video {
 	border: 0;
 	margin: 0;
 }
+
+/* Providers: a row list inside a window frame, for the bring-your-own
+   section. The dot is the app's one sanctioned use of the accent as a
+   status colour: lit for shipped, dim for coming (ZA-294).
+   ============================================================ */
+
+.za-providers {
+	padding: 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
+.za-provider {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+}
+
+.za-provider h3 {
+	margin-bottom: 4px;
+	font-size: 16px;
+}
+
+.za-provider p {
+	margin: 0;
+}
+
+.za-status-dot {
+	flex: none;
+	width: 8px;
+	height: 8px;
+	margin-top: 7px;
+	border-radius: 50%;
+	background: var(--line-2);
+}
+
+.za-provider--live .za-status-dot {
+	background: var(--accent);
+}
+
+/* Phone mock: a stylised frame, not a screenshot, for the Premium
+   companion section.
+   ============================================================ */
+
+.za-phone-mock {
+	display: flex;
+	justify-content: center;
+}
+
+.za-phone-frame {
+	width: 100%;
+	max-width: 300px;
+	padding: 14px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 36px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.za-phone-screen {
+	position: relative;
+	padding: 32px 18px 18px;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 24px;
+	overflow: hidden;
+}
+
+.za-phone-notch {
+	position: absolute;
+	top: 10px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 70px;
+	height: 20px;
+	background: var(--surface);
+	border-radius: var(--pill);
+}
+
+.za-phone-title {
+	margin: 0 0 16px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink-3);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.za-phone-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 0;
+	border-top: 1px solid var(--line);
+	font-size: 13px;
+	color: var(--ink-2);
+}
+
+.za-phone-row:first-of-type {
+	border-top: none;
+}
+
+.za-phone-input {
+	margin-top: 16px;
+	padding: 10px 12px;
+	border: 1px solid var(--line);
+	border-radius: var(--pill);
+	font-size: 12px;
+	color: var(--ink-3);
+}
