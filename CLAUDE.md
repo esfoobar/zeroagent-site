@@ -38,7 +38,7 @@ The MVPLean Canvas theme files that the first import copied over (Bootstrap, the
 
 ## GA4
 
-The Google Analytics measurement id wired into these pages, `G-BTHHJB4E4T`, is still mvplean.com's own stream. This site does not have one of its own yet.
+The Google Analytics measurement id wired into these pages is `G-9J7FZ4N6Z0`, the web stream for the GA4 property "ZeroAgent" (property id 553596634), zeroagenthq.com's own stream. It replaced mvplean.com's `G-BTHHJB4E4T` in ZA-286.
 
 ## Durable documentation
 
