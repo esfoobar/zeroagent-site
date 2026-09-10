@@ -953,6 +953,20 @@ video {
 	margin: 0 0 16px;
 }
 
+.za-prose ol,
+.za-prose ul {
+	margin: 0 0 16px;
+	padding-left: 22px;
+}
+
+.za-prose li {
+	margin-bottom: 8px;
+}
+
+.za-prose li:last-child {
+	margin-bottom: 0;
+}
+
 .za-prose a {
 	color: var(--ink);
 }
