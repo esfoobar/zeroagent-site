@@ -5,6 +5,7 @@ import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import handler from '../api/auth/github.js';
+import { LEGACY_ISSUER, NEW_ISSUER } from '../api/_lib/issuer.js';
 
 const REAL_FETCH = globalThis.fetch;
 const REAL_SECRET = process.env.ZEROAGENT_JWT_SECRET;
@@ -129,6 +130,38 @@ test('200: valid GitHub token mints a JWT matching the contract claims', async (
 	assert.equal(signature, expectedSignature);
 
 	assert.equal(parsed.expires_at, new Date(payload.exp * 1000).toISOString());
+});
+
+test('200: mints the legacy issuer by default', async () => {
+	globalThis.fetch = async () => jsonFetchResponse(200, { id: 1234567, login: 'octocat' });
+	const req = reqWithBody({ github_token: 'good-token' });
+	const res = fakeRes();
+	await handler(req, res, { upsertOnSignIn: fakeUpsertOnSignIn('free') });
+
+	const parsed = JSON.parse(res.body);
+	const { payload } = decodeJwt(parsed.token);
+	assert.equal(payload.iss, LEGACY_ISSUER);
+});
+
+test('200: mints the new issuer once ZEROAGENT_JWT_ISSUER is set to it', async () => {
+	const REAL_ISSUER_ENV = process.env.ZEROAGENT_JWT_ISSUER;
+	process.env.ZEROAGENT_JWT_ISSUER = NEW_ISSUER;
+	try {
+		globalThis.fetch = async () => jsonFetchResponse(200, { id: 1234567, login: 'octocat' });
+		const req = reqWithBody({ github_token: 'good-token' });
+		const res = fakeRes();
+		await handler(req, res, { upsertOnSignIn: fakeUpsertOnSignIn('free') });
+
+		const parsed = JSON.parse(res.body);
+		const { payload } = decodeJwt(parsed.token);
+		assert.equal(payload.iss, NEW_ISSUER);
+	} finally {
+		if (REAL_ISSUER_ENV === undefined) {
+			delete process.env.ZEROAGENT_JWT_ISSUER;
+		} else {
+			process.env.ZEROAGENT_JWT_ISSUER = REAL_ISSUER_ENV;
+		}
+	}
 });
 
 test('200: a returning user gets the plan the store has for them, not a hardcoded free', async () => {

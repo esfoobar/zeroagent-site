@@ -16,12 +16,12 @@
  */
 
 import { signHs256 } from '../../_lib/jwt.js';
+import { mintingIssuer } from '../../_lib/issuer.js';
 import { sha256Hex, randomToken } from '../../_lib/hash.js';
 import { claimPairingToken as defaultClaimPairingToken, getPairingToken as defaultGetPairingToken } from '../../_lib/pairing-store.js';
 import { getUser as defaultGetUser, addPairedDevice as defaultAddPairedDevice } from '../../_lib/users-store.js';
 
 const DEVICE_JWT_TTL_SECONDS = 365 * 24 * 60 * 60;
-const ISSUER = 'https://mvplean.com';
 const DEFAULT_DEVICE_NAME = 'Device';
 const MAX_DEVICE_NAME_LENGTH = 60;
 
@@ -117,7 +117,7 @@ export default async function handler(req, res, deps = {}) {
 
 	const deviceToken = signHs256(
 		{
-			iss: ISSUER,
+			iss: mintingIssuer(),
 			sub: account,
 			gh: user.githubId,
 			login: user.login,

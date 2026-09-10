@@ -27,7 +27,7 @@ const VALID_KINDS = new Set(['bug', 'feature']);
 const VALID_SOURCES = new Set(['app', 'site']);
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LIST_LIMIT = 100;
-const CORS_ORIGIN = 'https://mvplean.com';
+const CORS_ORIGIN = 'https://zeroagenthq.com';
 
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_MAX = 5;
@@ -232,6 +232,16 @@ async function handlePost(req, res) {
 }
 
 export default async function handler(req, res) {
+	if (req.method === 'OPTIONS') {
+		res.statusCode = 204;
+		res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+		res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+		res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+		res.setHeader('Access-Control-Max-Age', '86400');
+		res.setHeader('Vary', 'Origin');
+		res.end();
+		return;
+	}
 	if (req.method === 'POST') {
 		await handlePost(req, res);
 		return;

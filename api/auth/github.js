@@ -16,12 +16,12 @@
  */
 
 import { signHs256 } from '../_lib/jwt.js';
+import { mintingIssuer } from '../_lib/issuer.js';
 import { upsertOnSignIn as defaultUpsertOnSignIn } from '../_lib/users-store.js';
 
 const GITHUB_USER_URL = 'https://api.github.com/user';
 const GITHUB_TIMEOUT_MS = 10_000;
 const JWT_TTL_SECONDS = 30 * 24 * 60 * 60;
-const ISSUER = 'https://mvplean.com';
 
 function sendError(res, status, error) {
 	res.statusCode = status;
@@ -124,7 +124,7 @@ export default async function handler(req, res, deps = {}) {
 
 	const token = signHs256(
 		{
-			iss: ISSUER,
+			iss: mintingIssuer(),
 			sub: account,
 			gh: user.id,
 			login: user.login,

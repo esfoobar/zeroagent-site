@@ -6,6 +6,7 @@
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { ACCEPTED_ISSUERS } from './issuer.js';
 
 function base64url(input) {
 	return Buffer.from(input).toString('base64url');
@@ -48,6 +49,11 @@ export function verifyHs256(token, secret) {
 		return null;
 	}
 	if (!payload || typeof payload !== 'object') return null;
+
+	// Every minter here always sets iss (see api/_lib/issuer.js), so a token
+	// with no iss, or one outside the issuers this deployment accepts, is not
+	// vouched for either.
+	if (!ACCEPTED_ISSUERS.includes(payload.iss)) return null;
 
 	if (typeof payload.exp === 'number' && Math.floor(Date.now() / 1000) >= payload.exp) {
 		return null;

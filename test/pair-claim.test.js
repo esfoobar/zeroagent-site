@@ -7,6 +7,7 @@ import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import handler from '../api/auth/pair/claim.js';
 import { verifyHs256 } from '../api/_lib/jwt.js';
+import { LEGACY_ISSUER, NEW_ISSUER } from '../api/_lib/issuer.js';
 import { sha256Hex } from '../api/_lib/hash.js';
 
 const SECRET = 'test-secret-do-not-use-in-prod';
@@ -96,6 +97,36 @@ test('200: a valid pairing token mints a device token and records the paired dev
 	assert.equal(recorded.deviceId, parsed.device_id);
 	assert.equal(recorded.name, "Jorge's iPhone");
 	assert.equal(recorded.tokenHash, sha256Hex(parsed.token));
+});
+
+test('200: mints the legacy issuer by default', async () => {
+	const req = reqWithBody({ token: 'the-pairing-token' });
+	const res = fakeRes();
+	await handler(req, res, depsWithClaim({ githubId: 1234567 }));
+
+	const parsed = JSON.parse(res.body);
+	const payload = verifyHs256(parsed.token, SECRET);
+	assert.equal(payload.iss, LEGACY_ISSUER);
+});
+
+test('200: mints the new issuer once ZEROAGENT_JWT_ISSUER is set to it', async () => {
+	const REAL_ISSUER_ENV = process.env.ZEROAGENT_JWT_ISSUER;
+	process.env.ZEROAGENT_JWT_ISSUER = NEW_ISSUER;
+	try {
+		const req = reqWithBody({ token: 'the-pairing-token' });
+		const res = fakeRes();
+		await handler(req, res, depsWithClaim({ githubId: 1234567 }));
+
+		const parsed = JSON.parse(res.body);
+		const payload = verifyHs256(parsed.token, SECRET);
+		assert.equal(payload.iss, NEW_ISSUER);
+	} finally {
+		if (REAL_ISSUER_ENV === undefined) {
+			delete process.env.ZEROAGENT_JWT_ISSUER;
+		} else {
+			process.env.ZEROAGENT_JWT_ISSUER = REAL_ISSUER_ENV;
+		}
+	}
 });
 
 test('200: a missing or blank device_name falls back to a default', async () => {
