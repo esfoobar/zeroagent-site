@@ -1,14 +1,13 @@
 /*
- * ZA-289. This API is moving from mvplean.com to api.zeroagenthq.com, but the
- * relay that verifies these same JWTs checks `iss` with an exact string
- * match and today only accepts the legacy issuer. Minting the new issuer
- * before the relay accepts both would lock every new token out at connect,
- * so this module keeps minting the legacy issuer by default and only
- * switches once ZEROAGENT_JWT_ISSUER=https://zeroagenthq.com is set on the
- * Vercel project, after the relay's own update lands under another ticket.
- * Verifiers here accept either issuer throughout the cutover, and the
- * legacy value stays accepted until the last token minted with it has
- * expired.
+ * ZA-289. This API moved from mvplean.com to api.zeroagenthq.com. The relay
+ * that verifies these same JWTs used to accept only the legacy issuer, so
+ * minting the new one first would have locked every new token out at
+ * connect. This module therefore mints the legacy issuer by default and
+ * switches only when ZEROAGENT_JWT_ISSUER=https://zeroagenthq.com is set on
+ * the Vercel project, which it has been since 2026-09-10, after the relay was
+ * deployed accepting both (ZA-291). Verifiers here accept either issuer, and
+ * the legacy value stays accepted until the last token minted with it has
+ * expired: as late as 2027-09-10, for a paired phone's 365-day device token.
  */
 
 export const LEGACY_ISSUER = 'https://mvplean.com';
