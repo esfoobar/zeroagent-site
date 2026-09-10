@@ -661,29 +661,11 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 	<!-- Footer Scripts
 	============================================= -->
 	<script src="/static/js/zeroagent-copy.js"></script>
-
-	<!-- The hero video is the page's only unprompted motion. Someone who has
-	     asked their system for reduced motion gets the poster instead. -->
-	<script>
-	(function () {
-		if (!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		var video = document.querySelector('.za-hero-window video');
-		if (!video) return;
-		video.removeAttribute('autoplay');
-		video.pause();
-		video.setAttribute('controls', '');
-	})();
-	</script>
+	<script src="/static/js/zeroagent-reduced-motion.js"></script>
 
 	<!-- Google analytics -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-BTHHJB4E4T"></script>
-	<script>
-	window.dataLayer = window.dataLayer || [];
-	function gtag(){dataLayer.push(arguments);}
-	gtag('js', new Date());
-
-	gtag('config', 'G-BTHHJB4E4T');
-	</script>
+	<script src="/static/js/zeroagent-ga.js"></script>
 
 	<!-- Vercel Web Analytics (page views, free on Hobby) -->
 	<script defer src="/_vercel/insights/script.js"></script>
