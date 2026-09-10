@@ -49,7 +49,7 @@
 
 		<div class="za-container za-page-head">
 			<h1>Privacy Policy</h1>
-			<p>Effective September 5, 2026</p>
+			<p>Effective September 10, 2026</p>
 		</div>
 
 		<div class="za-container">
@@ -57,15 +57,62 @@
 
 				<h2>Introduction</h2>
 				<p>MVPLean, Inc. ("MVPLean", "we", "our", or "us") publishes ZeroAgent, a free macOS
-					desktop application, and this website at zeroagenthq.com. This Privacy Policy
-					explains what information the app and this website collect, how it is used, and what
-					stays on your own computer.</p>
+					desktop application; the ZeroAgent companion app for iPhone; the relay that connects
+					them, a Premium feature; and this website at zeroagenthq.com. This Privacy Policy
+					explains what information each of these collects, how it is used, and what stays on
+					your own computer.</p>
 
 				<h2>The App Is Local, and Does Not Require an Account</h2>
 				<p>ZeroAgent does not require an account to download or use. Your memory store, settings,
 					transcripts, worktrees, and everything else the app creates are written to your own
-					disk and stay there. MVPLean does not receive, store, or have access to any of it.</p>
+					disk and stay there, unless you turn on the relay described below. MVPLean does not
+					receive, store, or have access to any of it while the relay is off.</p>
 				<p>ZeroAgent does not send usage data to MVPLean today.</p>
+
+				<h2>The Relay (a Premium Feature, Off by Default)</h2>
+				<p>ZeroAgent also offers a relay: a hosted service that lets you watch and message your
+					workers from somewhere else, including from the ZeroAgent companion app for iPhone.
+					The relay is a Premium feature and stays off until you sign in and connect your
+					account to it. While it is off, the section above is the whole truth: nothing leaves
+					your Mac. While it is on, the information described below leaves your Mac and reaches
+					the relay for as long as it stays connected.</p>
+
+				<h2>What the Relay Carries</h2>
+				<p>While the relay is on, it carries:</p>
+				<ul>
+					<li>Worker events and transcripts published from your Mac: tool calls, tool output,
+						assistant text, reports, repository names, branch names, and file paths.</li>
+					<li>Messages you type to a worker from the phone.</li>
+					<li>Your account id and GitHub login, carried on the token your Mac and phone use to
+						connect.</li>
+					<li>The phone's device name, sent once when you pair it.</li>
+					<li>The phone's push token, so it can be notified.</li>
+				</ul>
+				<p>Transcripts can contain anything your repositories contain. ZeroAgent redacts obvious
+					secret-shaped values, tool input that looks like a token, password, API key, or
+					similar credential, before publishing it, but this is a floor, not a guarantee:
+					anything an agent prints into its own transcript can still contain something
+					sensitive. The relay keeps events for a bounded window so a client that reconnects
+					does not lose state: today, 24 hours or 3,000 events, whichever comes first, after
+					which they are gone. It never receives your model provider key, and it never receives
+					a copy of your repository, only the names, paths, and text described above.</p>
+
+				<h2>Where the Relay Runs</h2>
+				<p>The relay runs on Cloudflare Workers, with one Durable Object holding the connected
+					events for your account, separate from every other account's. Push notifications to
+					the phone go through Apple's APNs; the payload carries the title of the worker or
+					task the notification is about, so it can say what happened.</p>
+
+				<h2>No Analytics, Advertising, or Tracking on the Phone or the Relay</h2>
+				<p>The ZeroAgent app for iPhone and the relay it connects to carry no analytics,
+					advertising, or tracking of any kind. Unlike this website (see "This Website" below),
+					neither collects nor shares any data about how you use them.</p>
+
+				<h2>Turning the Relay Off</h2>
+				<p>Sign out of your account in ZeroAgent on the Mac to turn the relay off; a signed-out
+					or lapsed account disconnects right away. To remove a single phone without
+					disconnecting the relay entirely, open the account panel in ZeroAgent on the Mac and
+					revoke that device.</p>
 
 				<h2>Model Provider Traffic</h2>
 				<p>ZeroAgent drives coding agent command-line tools already installed on your computer,
@@ -98,16 +145,20 @@
 					exactly what is collected, before they are enabled for anyone.</p>
 
 				<h2>Data Sharing and Disclosure</h2>
-				<p>We do not sell, trade, or rent your personal information. Because ZeroAgent does not
-					collect personal information from you today, there is nothing for us to share. The
-					only information that leaves your machine as a byproduct of using the Service is
-					described above: the release feed check (to Amazon CloudFront) and, if you visit this
-					website, standard analytics (to Google).</p>
+				<p>We do not sell, trade, or rent your personal information. Outside the relay described
+					above, ZeroAgent does not collect personal information from you: the only things that
+					leave your machine on their own are the release feed check (to Amazon CloudFront) and,
+					if you visit this website, standard analytics (to Google). If you turn the relay on,
+					the information in "What the Relay Carries" above leaves your machine too, only while
+					the relay is connected, and only to the relay itself: MVPLean does not sell, trade,
+					rent, or share it with anyone else.</p>
 
 				<h2>Data Retention</h2>
-				<p>Because ZeroAgent's data lives on your own disk, you control how long it is retained.
-					Uninstalling the app or deleting its data folder removes it. MVPLean does not hold a
-					copy.</p>
+				<p>Because ZeroAgent's data lives on your own disk, you control how long it is retained
+					there; uninstalling the app or deleting its data folder removes it, and MVPLean does
+					not hold a copy. The relay is the exception: while it is on, it holds recent events for
+					the bounded replay window described above (today, 24 hours or 3,000 events, whichever
+					comes first) so a client that reconnects does not lose state, and then they age out.</p>
 
 				<h2>Children's Privacy</h2>
 				<p>The Service is not intended for children under 13 years of age. We do not knowingly
@@ -124,7 +175,8 @@
 					Website: mvplean.com</p>
 
 				<div class="za-prose-links">
-					<p><a href="/terms">Terms of Service</a> &middot; <a href="/">&larr; Back to ZeroAgent</a></p>
+					<p><a href="/terms">Terms of Service</a> &middot; <a href="/support">Support</a> &middot;
+						<a href="/">&larr; Back to ZeroAgent</a></p>
 				</div>
 
 			</div>
