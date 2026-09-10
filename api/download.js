@@ -31,7 +31,7 @@ import {
 } from './_lib/ga4.js';
 
 const VALID_ARCHES = new Set(['arm64', 'x64']);
-const RELEASES_BASE = 'https://releases.zeroagent.mvplean.com';
+const RELEASES_BASE = 'https://releases.zeroagenthq.com';
 const VERSION_CACHE_MS = 5 * 60 * 1000;
 const PUT_TIMEOUT_MS = 1500;
 
