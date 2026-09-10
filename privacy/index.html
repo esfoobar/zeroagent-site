@@ -3,20 +3,13 @@
 <head>
 
 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-	<meta name="author" content="MVPLean" />
-
-	<!-- Stylesheets
-	============================================= -->
-	<link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Raleway:300,400,500,600,700|Crete+Round:400i" rel="stylesheet" type="text/css" />
-	<link rel="stylesheet" href="/static/css/bootstrap.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/style.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/dark.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/font-icons.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/animate.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/custom.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/responsive.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/zeroagent.css" type="text/css" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="author" content="MVPLean" />
+	<meta name="theme-color" content="#000000" />
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap" rel="stylesheet" />
+	<link rel="stylesheet" href="/static/css/zeroagent.css" />
 
 	<!-- Document Title
 	============================================= -->
@@ -24,130 +17,118 @@
 
 </head>
 
-<body class="stretched">
+<body>
 
-	<div id="wrapper" class="clearfix">
+	<header class="za-nav">
+		<div class="za-container za-nav-inner">
+			<a href="/" class="za-brand" aria-label="ZeroAgent home">
+				<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+					<rect x="3" y="6" width="18" height="15" rx="5" fill="#E8785C"/>
+					<circle cx="9" cy="13.5" r="1.7" fill="#000"/>
+					<circle cx="15" cy="13.5" r="1.7" fill="#000"/>
+					<rect x="11.1" y="2" width="1.8" height="4" rx="0.9" fill="#E8785C"/>
+				</svg>
+				<span>ZeroAgent</span>
+			</a>
+			<ul class="za-nav-links">
+				<li><a href="/download">Download</a></li>
+				<li><a href="https://mvplean.com/">mvplean.com</a></li>
+			</ul>
+			<a href="/download" class="za-btn za-btn--primary za-btn--small za-nav-cta">Download for Mac</a>
+		</div>
+	</header>
 
-		<header id="header" class="full-header">
-			<div id="header-wrap">
-				<div class="container clearfix">
-					<div id="primary-menu-trigger"><i class="icon-reorder"></i></div>
-					<div id="logo">
-						<a href="https://mvplean.com/" class="standard-logo"><img src="/static/images/logo.png" alt="MVPLean Logo"></a>
-						<a href="https://mvplean.com/" class="retina-logo"><img src="/static/images/logo@2x.png" alt="MVPLean Logo"></a>
-					</div>
-					<nav id="primary-menu" class="style-3">
-						<ul>
-							<li><a href="https://mvplean.com/"><div>mvplean.com</div></a></li>
-							<li><a href="/"><div>ZeroAgent</div></a></li>
-						</ul>
-					</nav>
+	<main>
+
+		<div class="za-container za-page-head">
+			<h1>Privacy Policy</h1>
+			<p>Effective September 5, 2026</p>
+		</div>
+
+		<div class="za-container">
+			<div class="za-prose">
+
+				<h2>Introduction</h2>
+				<p>MVPLean, Inc. ("MVPLean", "we", "our", or "us") publishes ZeroAgent, a free macOS
+					desktop application, and this website at zeroagenthq.com. This Privacy Policy
+					explains what information the app and this website collect, how it is used, and what
+					stays on your own computer.</p>
+
+				<h2>The App Is Local, and Does Not Require an Account</h2>
+				<p>ZeroAgent does not require an account to download or use. Your memory store, settings,
+					transcripts, worktrees, and everything else the app creates are written to your own
+					disk and stay there. MVPLean does not receive, store, or have access to any of it.</p>
+				<p>ZeroAgent does not send usage data to MVPLean today.</p>
+
+				<h2>Model Provider Traffic</h2>
+				<p>ZeroAgent drives coding agent command-line tools already installed on your computer,
+					using your own model provider accounts and API keys. When an agent runs, your prompts,
+					code, and related data are sent directly from your machine to the model provider you
+					configured (for example, Anthropic), under that provider's own privacy policy and
+					terms. This traffic does not pass through MVPLean, and we do not see or store it.</p>
+
+				<h2>Checking for Updates</h2>
+				<p>ZeroAgent checks a release feed hosted by MVPLean on Amazon CloudFront
+					(releases.zeroagent.mvplean.com) to see whether a new version is available. Like any
+					request to a content delivery network, this exposes your IP address and the app
+					version you are running to that CDN. MVPLean does not use this to identify you
+					individually; it is standard web server access logging, the same as visiting any
+					website or downloading any file.</p>
+
+				<h2>This Website</h2>
+				<p>This website uses Google Analytics, currently sharing a measurement stream with
+					mvplean.com, to understand overall site traffic, such as which pages are visited and
+					in what volume. Google Analytics may collect your IP address and browser information
+					in the course of doing so, under Google's own privacy policy. We do not use this to
+					identify individual visitors.</p>
+
+				<h2>Future Telemetry and Crash Reporting</h2>
+				<p>MVPLean is considering opt-in, anonymous usage telemetry and crash reporting for a
+					future version of ZeroAgent, to understand adoption and catch bugs. These features do
+					not exist in the app today. If and when they ship, they will be off by default,
+					require you to turn them on, and will be described here in specific detail, including
+					exactly what is collected, before they are enabled for anyone.</p>
+
+				<h2>Data Sharing and Disclosure</h2>
+				<p>We do not sell, trade, or rent your personal information. Because ZeroAgent does not
+					collect personal information from you today, there is nothing for us to share. The
+					only information that leaves your machine as a byproduct of using the Service is
+					described above: the release feed check (to Amazon CloudFront) and, if you visit this
+					website, standard analytics (to Google).</p>
+
+				<h2>Data Retention</h2>
+				<p>Because ZeroAgent's data lives on your own disk, you control how long it is retained.
+					Uninstalling the app or deleting its data folder removes it. MVPLean does not hold a
+					copy.</p>
+
+				<h2>Children's Privacy</h2>
+				<p>The Service is not intended for children under 13 years of age. We do not knowingly
+					collect personal information from children under 13.</p>
+
+				<h2>Changes to This Policy</h2>
+				<p>We may update this Privacy Policy from time to time, including as we build the paid
+					features and any account, telemetry, or crash reporting described above. We will post
+					the new Privacy Policy on this page and update the effective date at the top.</p>
+
+				<h2>Contact Us</h2>
+				<p>If you have questions about this Privacy Policy, please contact us at:</p>
+				<p>Email: hello@mvplean.com<br />
+					Website: mvplean.com</p>
+
+				<div class="za-prose-links">
+					<p><a href="/terms">Terms of Service</a> &middot; <a href="/">&larr; Back to ZeroAgent</a></p>
 				</div>
+
 			</div>
-		</header>
+		</div>
 
-		<section id="content">
-			<div class="content-wrap">
-				<div class="container clearfix">
+	</main>
 
-					<div class="heading-block center">
-						<h1>Privacy Policy</h1>
-						<span>Effective September 5, 2026</span>
-					</div>
-
-					<h2>Introduction</h2>
-					<p>MVPLean, Inc. ("MVPLean", "we", "our", or "us") publishes ZeroAgent, a free macOS
-						desktop application, and this website at zeroagenthq.com. This Privacy Policy
-						explains what information the app and this website collect, how it is used, and what
-						stays on your own computer.</p>
-
-					<h2>The App Is Local, and Does Not Require an Account</h2>
-					<p>ZeroAgent does not require an account to download or use. Your memory store, settings,
-						transcripts, worktrees, and everything else the app creates are written to your own
-						disk and stay there. MVPLean does not receive, store, or have access to any of it.</p>
-					<p>ZeroAgent does not send usage data to MVPLean today.</p>
-
-					<h2>Model Provider Traffic</h2>
-					<p>ZeroAgent drives coding agent command-line tools already installed on your computer,
-						using your own model provider accounts and API keys. When an agent runs, your prompts,
-						code, and related data are sent directly from your machine to the model provider you
-						configured (for example, Anthropic), under that provider's own privacy policy and
-						terms. This traffic does not pass through MVPLean, and we do not see or store it.</p>
-
-					<h2>Checking for Updates</h2>
-					<p>ZeroAgent checks a release feed hosted by MVPLean on Amazon CloudFront
-						(releases.zeroagent.mvplean.com) to see whether a new version is available. Like any
-						request to a content delivery network, this exposes your IP address and the app
-						version you are running to that CDN. MVPLean does not use this to identify you
-						individually; it is standard web server access logging, the same as visiting any
-						website or downloading any file.</p>
-
-					<h2>This Website</h2>
-					<p>This website uses Google Analytics, currently sharing a measurement stream with
-						mvplean.com, to understand overall site traffic, such as which pages are visited and
-						in what volume. Google Analytics may collect your IP address and browser information
-						in the course of doing so, under Google's own privacy policy. We do not use this to
-						identify individual visitors.</p>
-
-					<h2>Future Telemetry and Crash Reporting</h2>
-					<p>MVPLean is considering opt-in, anonymous usage telemetry and crash reporting for a
-						future version of ZeroAgent, to understand adoption and catch bugs. These features do
-						not exist in the app today. If and when they ship, they will be off by default,
-						require you to turn them on, and will be described here in specific detail, including
-						exactly what is collected, before they are enabled for anyone.</p>
-
-					<h2>Data Sharing and Disclosure</h2>
-					<p>We do not sell, trade, or rent your personal information. Because ZeroAgent does not
-						collect personal information from you today, there is nothing for us to share. The
-						only information that leaves your machine as a byproduct of using the Service is
-						described above: the release feed check (to Amazon CloudFront) and, if you visit this
-						website, standard analytics (to Google).</p>
-
-					<h2>Data Retention</h2>
-					<p>Because ZeroAgent's data lives on your own disk, you control how long it is retained.
-						Uninstalling the app or deleting its data folder removes it. MVPLean does not hold a
-						copy.</p>
-
-					<h2>Children's Privacy</h2>
-					<p>The Service is not intended for children under 13 years of age. We do not knowingly
-						collect personal information from children under 13.</p>
-
-					<h2>Changes to This Policy</h2>
-					<p>We may update this Privacy Policy from time to time, including as we build the paid
-						features and any account, telemetry, or crash reporting described above. We will post
-						the new Privacy Policy on this page and update the effective date at the top.</p>
-
-					<h2>Contact Us</h2>
-					<p>If you have questions about this Privacy Policy, please contact us at:</p>
-					<p>Email: hello@mvplean.com<br />
-						Website: mvplean.com</p>
-
-					<div class="clearfix topmargin-lg">
-						<p><a href="/terms">Terms of Service</a> &middot;
-							<a href="/">&larr; Back to ZeroAgent</a></p>
-					</div>
-
-				</div>
-			</div>
-		</section>
-
-		<footer id="footer" class="dark">
-			<div id="copyrights">
-				<div class="container clearfix">
-					<div class="col_half">
-						Copyrights &copy; 2026 All Rights Reserved by MVPLean.<br>
-					</div>
-				</div>
-			</div>
-		</footer>
-
-	</div>
-
-	<div id="gotoTop" class="icon-angle-up"></div>
-
-	<script src="/static/js/jquery.js"></script>
-	<script src="/static/js/plugins.js"></script>
-	<script src="/static/js/functions.js"></script>
+	<footer class="za-footer za-footer--simple">
+		<div class="za-container">
+			<div class="za-footer-copy">Copyrights &copy; 2026 All Rights Reserved by MVPLean.</div>
+		</div>
+	</footer>
 
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-BTHHJB4E4T"></script>
 	<script>

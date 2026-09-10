@@ -246,6 +246,11 @@ video {
 	line-height: 1.55;
 }
 
+.za-section-head--minor h2 {
+	font-size: 26px;
+	letter-spacing: -0.02em;
+}
+
 .za-center .za-section-head,
 .za-section-head--center {
 	margin-left: auto;
@@ -516,7 +521,10 @@ video {
 }
 
 .za-hero-cask code {
-	display: inline-block;
+	display: block;
+	width: max-content;
+	max-width: 100%;
+	margin: 8px auto 0;
 	text-align: left;
 	white-space: pre-line;
 	background: none;
@@ -724,6 +732,10 @@ video {
 
 .za-note p {
 	margin: 0;
+}
+
+.za-section .za-note {
+	max-width: 760px;
 }
 
 /* Closing band
@@ -956,8 +968,10 @@ video {
 /* Download page
    ============================================================ */
 
+.za-page-head .za-version-line,
 .za-version-line {
 	font-size: 14px;
+	max-width: none;
 	color: var(--ink-3);
 	display: inline-flex;
 	align-items: center;
@@ -998,7 +1012,7 @@ video {
 	border-color: var(--line-2);
 }
 
-.za-platform-card h4 {
+.za-platform-card h2 {
 	font-size: 22px;
 	font-weight: 600;
 	letter-spacing: -0.02em;
@@ -1111,6 +1125,10 @@ video {
 		overflow-x: auto;
 		white-space: pre;
 	}
+}
+
+.za-snippet + .za-caption {
+	margin-top: 14px;
 }
 
 .za-agree {
