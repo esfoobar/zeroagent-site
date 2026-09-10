@@ -1,353 +1,1268 @@
-/* Styles for the /zeroagent/ pages only. Kept out of custom.css so the
-   existing homepage is untouched. */
+/*
+ * zeroagenthq.com design system (ZA-294).
+ *
+ * One stylesheet for every public page. Black page, off white text, one
+ * family (Geist) at three weights, hairlines for structure, product
+ * screenshots framed as dark windows. Tokens first, then base type, then
+ * the shared chrome (nav, footer), then the components each page uses.
+ *
+ * Class prefix "za-" throughout. The download page's release, arch and
+ * copy scripts rely on ids and on the classes .za-recommended and
+ * .za-badge-recommended; keep those names.
+ */
+
+/* Tokens
+   ============================================================ */
+
+:root {
+	--bg: #000000;
+	--surface: #0A0A0A;
+	--surface-2: #141414;
+	--line: #262626;
+	--line-2: #333333;
+	--ink: #EDEDED;
+	--ink-2: #A1A1A1;
+	--ink-3: #8A8A8A;
+	--accent: #E8785C;
+	--accent-ink: #F2A88F;   /* the accent lifted for text on black, 8:1 */
+	--white: #FFFFFF;
+
+	--sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+	--mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+	--radius-s: 6px;
+	--radius: 10px;
+	--radius-l: 14px;
+	--pill: 999px;
+
+	--measure: 68ch;
+	--container: 1120px;
+	--gutter: 24px;
+
+	--nav-h: 56px;
+}
+
+/* Base
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--sans);
+	font-size: 16px;
+	line-height: 1.65;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+	scroll-behavior: smooth;
+	scroll-padding-top: calc(var(--nav-h) + 24px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+	margin: 0;
+	color: var(--ink);
+	font-weight: 600;
+	text-wrap: balance;
+}
+
+h1 {
+	font-size: clamp(44px, 7vw, 84px);
+	line-height: 1.0;
+	letter-spacing: -0.04em;
+}
+
+h2 {
+	font-size: clamp(30px, 4vw, 44px);
+	line-height: 1.1;
+	letter-spacing: -0.03em;
+}
+
+h3 {
+	font-size: 20px;
+	line-height: 1.3;
+	letter-spacing: -0.01em;
+	font-weight: 500;
+}
+
+h4 {
+	font-size: 18px;
+	line-height: 1.3;
+	font-weight: 500;
+}
+
+p {
+	margin: 0 0 1em 0;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+
+a {
+	color: var(--ink);
+	text-decoration: underline;
+	text-decoration-color: var(--line-2);
+	text-underline-offset: 3px;
+	transition: text-decoration-color 120ms ease, color 120ms ease;
+}
+
+a:hover {
+	text-decoration-color: var(--ink);
+}
+
+strong {
+	font-weight: 600;
+	color: var(--ink);
+}
+
+code {
+	font-family: var(--mono);
+	font-size: 0.92em;
+	color: var(--ink);
+	background: var(--surface-2);
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	padding: 1px 6px;
+}
+
+img,
+video {
+	max-width: 100%;
+	height: auto;
+	display: block;
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 3px;
+	border-radius: 4px;
+}
+
+::selection {
+	background: var(--ink);
+	color: var(--bg);
+}
+
+/* Text utilities
+   ============================================================ */
+
+.za-lead {
+	font-size: 20px;
+	line-height: 1.5;
+	color: var(--ink-2);
+	letter-spacing: -0.01em;
+}
+
+.za-muted {
+	color: var(--ink-2);
+}
+
+.za-small {
+	font-size: 14px;
+	color: var(--ink-3);
+}
+
+.za-caption {
+	font-size: 13px;
+	line-height: 1.55;
+	color: var(--ink-3);
+}
+
+.za-center {
+	text-align: center;
+}
+
+.za-measure {
+	max-width: var(--measure);
+}
+
+.za-center .za-measure {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* Layout primitives
+   ============================================================ */
+
+.za-container {
+	width: 100%;
+	max-width: var(--container);
+	margin: 0 auto;
+	padding: 0 var(--gutter);
+}
+
+.za-narrow {
+	max-width: 760px;
+}
+
+/* A section is a band of vertical rhythm with a hairline above it.
+   The first section after the hero carries no hairline: the hero's own
+   window frame is the boundary. */
+
+.za-section {
+	padding: 96px 0;
+	border-top: 1px solid var(--line);
+}
+
+.za-section--flush {
+	border-top: 0;
+}
+
+.za-section--tight {
+	padding: 64px 0;
+}
+
+.za-section-head {
+	max-width: 640px;
+	margin-bottom: 48px;
+}
+
+.za-section-head h2 {
+	margin-bottom: 16px;
+}
+
+.za-section-head p {
+	color: var(--ink-2);
+	font-size: 18px;
+	line-height: 1.55;
+}
+
+.za-section-head--minor h2 {
+	font-size: 26px;
+	letter-spacing: -0.02em;
+}
+
+.za-center .za-section-head,
+.za-section-head--center {
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
+}
+
+/* Two column showcase: copy on one side, a window on the other. */
+
+.za-split {
+	display: grid;
+	grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+	gap: 64px;
+	align-items: center;
+}
+
+.za-split--flip .za-split-copy {
+	order: 2;
+}
+
+.za-split-copy h2 {
+	margin-bottom: 20px;
+}
+
+.za-split-copy p {
+	color: var(--ink-2);
+	font-size: 17px;
+	line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+	.za-split {
+		grid-template-columns: 1fr;
+		gap: 40px;
+	}
+
+	.za-split--flip .za-split-copy {
+		order: 0;
+	}
+}
+
+/* Grids for facts and screenshots */
+
+.za-grid-3 {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	column-gap: 40px;
+	row-gap: 48px;
+	align-items: start;
+}
+
+@media (max-width: 900px) {
+	.za-grid-3 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 600px) {
+	.za-grid-3 {
+		grid-template-columns: 1fr;
+		row-gap: 36px;
+	}
+}
+
+/* Buttons
+   ============================================================ */
+
+.za-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 0 22px;
+	border-radius: var(--pill);
+	border: 1px solid transparent;
+	font-family: var(--sans);
+	font-size: 15px;
+	font-weight: 500;
+	line-height: 1;
+	letter-spacing: -0.01em;
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.za-btn--primary {
+	background: var(--white);
+	color: #000000;
+	border-color: var(--white);
+}
+
+.za-btn--primary:hover {
+	background: #E6E6E6;
+	border-color: #E6E6E6;
+	color: #000000;
+}
+
+.za-btn--ghost {
+	background: transparent;
+	color: var(--ink);
+	border-color: var(--line-2);
+}
+
+.za-btn--ghost:hover {
+	border-color: var(--ink-2);
+	color: var(--white);
+}
+
+.za-btn--small {
+	min-height: 32px;
+	padding: 0 14px;
+	font-size: 13px;
+}
+
+.za-btn--large {
+	min-height: 48px;
+	padding: 0 26px;
+	font-size: 16px;
+}
+
+.za-btn--full {
+	display: flex;
+	width: 100%;
+}
+
+.za-btn-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: center;
+}
+
+.za-center .za-btn-row,
+.za-btn-row--center {
+	justify-content: center;
+}
+
+/* A small ghost pill used as a status line, not a heading label. */
+
+.za-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 28px;
+	padding: 0 12px;
+	border: 1px solid var(--line);
+	border-radius: var(--pill);
+	font-size: 13px;
+	color: var(--ink-2);
+	background: var(--surface);
+}
+
+/* The one accent: a status dot. */
+
+.za-dot {
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--accent);
+	flex: none;
+}
+
+/* Nav
+   ============================================================ */
+
+.za-nav {
+	position: sticky;
+	top: 0;
+	z-index: 50;
+	height: var(--nav-h);
+	background: rgba(0, 0, 0, 0.82);
+	-webkit-backdrop-filter: saturate(140%) blur(10px);
+	backdrop-filter: saturate(140%) blur(10px);
+	border-bottom: 1px solid var(--line);
+}
+
+.za-nav-inner {
+	height: 100%;
+	display: flex;
+	align-items: center;
+	gap: 28px;
+}
+
+.za-brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+	color: var(--ink);
+	text-decoration: none;
+	font-weight: 600;
+	font-size: 16px;
+	letter-spacing: -0.02em;
+}
+
+.za-brand svg {
+	width: 22px;
+	height: 22px;
+	display: block;
+}
+
+.za-nav-links {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.za-nav-links a {
+	font-size: 14px;
+	color: var(--ink-2);
+	text-decoration: none;
+	transition: color 120ms ease;
+}
+
+.za-nav-links a:hover,
+.za-nav-links a[aria-current="page"] {
+	color: var(--ink);
+}
+
+.za-nav-cta {
+	margin-left: auto;
+}
+
+@media (max-width: 600px) {
+	.za-nav-links {
+		display: none;
+	}
+}
+
+/* Hero
+   ============================================================ */
 
 .za-hero {
-	background-color: #1D1E1F;
-	color: #EEE;
-	padding: 80px 0 60px 0;
+	position: relative;
+	padding: 88px 0 0;
+	text-align: center;
+	overflow: hidden;
+}
+
+.za-hero-pill {
+	margin-bottom: 28px;
 }
 
 .za-hero h1 {
-	color: #FFF;
+	max-width: 15ch;
+	margin: 0 auto 24px;
 }
 
-.za-hero p.lead {
-	font-size: 19px;
-	color: #CCC;
+.za-hero .za-lead {
 	max-width: 640px;
-	margin: 0 auto 30px auto;
+	margin: 0 auto 36px;
+}
+
+.za-hero .za-btn-row {
+	justify-content: center;
+	margin-bottom: 28px;
 }
 
 .za-hero-cask {
-	font-size: 13px;
-	color: #AAA;
-	margin: 14px 0 4px 0;
+	font-size: 14px;
+	color: var(--ink-3);
+	margin: 0 0 12px;
 }
 
 .za-hero-cask code {
-	background: none;
-	color: #EEE;
-	padding: 0;
-	cursor: pointer;
-	border-bottom: 1px dotted #777;
+	display: block;
+	width: max-content;
+	max-width: 100%;
+	margin: 8px auto 0;
+	text-align: left;
 	white-space: pre-line;
+	background: none;
+	border: 0;
+	padding: 0;
+	color: var(--ink-2);
+	cursor: pointer;
+	border-bottom: 1px dashed var(--line-2);
+	border-radius: 0;
+	transition: color 120ms ease, border-color 120ms ease;
 }
 
 .za-hero-cask code:hover {
-	color: #1ABC9C;
-	border-bottom-color: #1ABC9C;
+	color: var(--ink);
+	border-bottom-color: var(--ink-2);
 }
 
 .za-hero-req {
 	font-size: 13px;
-	color: #999;
+	line-height: 1.6;
+	color: var(--ink-3);
 	margin: 0;
 }
 
-.za-eyebrow {
-	display: inline-block;
-	text-transform: uppercase;
-	letter-spacing: 2px;
-	font-size: 12px;
-	font-weight: 700;
-	color: #1ABC9C;
-	margin-bottom: 15px;
-}
+/* The hero window: the one element allowed to glow. */
 
-.za-screenshot-placeholder {
-	border: 2px dashed #CCC;
-	border-radius: 4px;
-	background-color: #FAFAFA;
-	padding: 80px 20px;
-	text-align: center;
-	color: #888;
-}
-
-.za-screenshot-placeholder strong {
-	display: block;
-	color: #555;
-	margin-bottom: 8px;
-}
-
-.za-compare-list {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
-
-.za-compare-list li {
-	padding: 6px 0 6px 28px;
+.za-hero-window {
 	position: relative;
+	max-width: 1040px;
+	margin: 64px auto 0;
 }
 
-.za-compare-list li i {
+.za-hero-window::before {
+	content: "";
 	position: absolute;
-	left: 0;
-	top: 9px;
+	inset: -10% -10% 0;
+	background: radial-gradient(60% 60% at 50% 40%, rgba(232, 120, 92, 0.16), rgba(0, 0, 0, 0) 70%);
+	pointer-events: none;
 }
 
-.za-compare-list.za-free li i {
-	color: #1ABC9C;
+.za-hero-window .za-window {
+	position: relative;
+	box-shadow: 0 30px 100px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
-.za-compare-list.za-relay li i {
-	color: #AAA;
+/* Windows: every product screenshot lives in one of these.
+   ============================================================ */
+
+.za-window {
+	position: relative;
+	overflow: hidden;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-l);
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
-.za-compare-box {
-	border: 1px solid #E4E4E4;
-	border-radius: 4px;
-	padding: 30px;
+.za-window img,
+.za-window video {
+	width: 100%;
+	height: auto;
+	display: block;
+}
+
+/* Fixed aspect frame for the screenshot grid so rows line up. */
+
+.za-window--3x2 {
+	aspect-ratio: 3 / 2;
+}
+
+.za-window--3x2 img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
 	height: 100%;
+	object-fit: cover;
+	object-position: top left;
 }
 
-.za-snippet {
-	background-color: #2B2B2B;
-	color: #EEE;
-	border-radius: 4px;
-	padding: 14px 18px;
-	font-family: Consolas, Monaco, "Courier New", monospace;
-	font-size: 14px;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
+.za-window--fit img {
+	object-fit: contain;
 }
 
-.za-snippet code {
-	background: none;
-	color: #EEE;
+/* Facts: a list with hairlines, not cards.
+   ============================================================ */
+
+.za-fact {
+	padding-top: 20px;
+	border-top: 1px solid var(--line);
+}
+
+.za-fact h3 {
+	margin-bottom: 10px;
+	font-size: 18px;
+}
+
+.za-fact p {
+	margin: 0;
+	color: var(--ink-2);
+	font-size: 15px;
+	line-height: 1.6;
+}
+
+/* Screenshot cards: a window with a title and a caption under it. */
+
+.za-shot h3 {
+	margin: 18px 0 6px;
+	font-size: 17px;
+}
+
+.za-shot p {
+	margin: 0;
+	color: var(--ink-2);
+	font-size: 15px;
+	line-height: 1.6;
+}
+
+/* Steps: numbered because the content is a sequence.
+   ============================================================ */
+
+.za-steps {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 40px;
+	counter-reset: za-step;
+	margin: 0;
 	padding: 0;
-	white-space: pre-line;
+	list-style: none;
 }
 
-.za-snippet-label {
-	color: #1ABC9C;
-	font-family: Raleway, sans-serif;
-	font-weight: 600;
-	font-size: 12px;
-	text-transform: uppercase;
-	letter-spacing: 1px;
-	margin-right: 12px;
+.za-step {
+	counter-increment: za-step;
+	padding-top: 20px;
+	border-top: 1px solid var(--line);
 }
 
-.za-copy-btn {
-	background-color: #444;
-	color: #FFF;
-	border: none;
-	border-radius: 3px;
-	padding: 6px 12px;
-	font-size: 12px;
-	cursor: pointer;
-	white-space: nowrap;
+.za-step::before {
+	content: counter(za-step);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	margin-bottom: 18px;
+	border: 1px solid var(--line-2);
+	border-radius: 50%;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--ink);
+	font-variant-numeric: tabular-nums;
 }
 
-.za-copy-btn:hover {
-	background-color: #1ABC9C;
+.za-step h3 {
+	margin-bottom: 10px;
+	font-size: 18px;
 }
 
-.za-hash {
-	font-family: Consolas, Monaco, "Courier New", monospace;
-	font-size: 12px;
-	color: #888;
-	word-break: break-all;
-	display: block;
-	margin-top: 8px;
+.za-step p {
+	margin: 0;
+	color: var(--ink-2);
+	font-size: 15px;
+	line-height: 1.6;
 }
 
-.za-badge-soon {
-	display: inline-block;
-	background-color: #EEE;
-	color: #666;
-	border-radius: 3px;
-	font-size: 11px;
-	text-transform: uppercase;
-	letter-spacing: 1px;
-	padding: 2px 8px;
-	margin-left: 8px;
-	vertical-align: middle;
+@media (max-width: 800px) {
+	.za-steps {
+		grid-template-columns: 1fr;
+		gap: 32px;
+	}
 }
 
-.za-platform-card {
-	border: 1px solid #E4E4E4;
-	border-radius: 4px;
-	padding: 30px;
-	text-align: center;
-	height: 100%;
+/* The "not" list: five statements set large, type as the visual.
+   ============================================================ */
+
+.za-not-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-top: 1px solid var(--line);
 }
 
-.za-platform-card i {
-	font-size: 40px;
-	color: #444;
-	margin-bottom: 15px;
-	display: block;
+.za-not-list li {
+	padding: 22px 0;
+	border-bottom: 1px solid var(--line);
+	font-size: clamp(20px, 2.6vw, 28px);
+	line-height: 1.25;
+	letter-spacing: -0.02em;
+	color: var(--ink-2);
+	font-weight: 500;
 }
 
-.za-meta {
-	color: #888;
-	font-size: 14px;
-}
-
-.za-content-notop {
-	padding-top: 0;
-}
+/* Note: one bordered container for a prerequisite or a caveat.
+   ============================================================ */
 
 .za-note {
-	background-color: #F6F6F6;
-	border-left: 3px solid #1ABC9C;
-	padding: 20px 25px;
-	border-radius: 0 4px 4px 0;
+	padding: 20px 24px;
+	border: 1px solid var(--line);
+	border-left: 2px solid var(--ink-2);
+	border-radius: 0 var(--radius) var(--radius) 0;
+	background: var(--surface);
+	color: var(--ink-2);
+	font-size: 15px;
+	line-height: 1.6;
 }
 
 .za-note p {
 	margin: 0;
 }
 
-.za-hero-shot {
-	max-width: 100%;
-	height: auto;
-	border-radius: 6px;
-	border: 1px solid #333;
+.za-section .za-note {
+	max-width: 760px;
 }
 
-.za-card-shot {
-	max-width: 100%;
-	height: auto;
-	border-radius: 6px;
-	border: 1px solid #E4E4E4;
-	display: block;
-	margin: 0 auto;
+/* Closing band
+   ============================================================ */
+
+.za-band {
+	padding: 96px 0;
+	border-top: 1px solid var(--line);
+	text-align: center;
 }
 
-/* Text-only facts grid: deliberately flat, no card chrome, so it reads
-   as a different kind of section from the screenshot grid below it.
-   A real grid, not the theme's float columns, so every row starts on
-   the same line regardless of how tall its neighbours are. */
+.za-band h2 {
+	margin-bottom: 28px;
+}
 
-.za-facts-grid,
-.za-shots-grid {
+.za-band .za-btn-row {
+	justify-content: center;
+	margin-bottom: 20px;
+}
+
+.za-band p {
+	color: var(--ink-3);
+	font-size: 14px;
+}
+
+/* FAQ: native details, hairlines between items.
+   ============================================================ */
+
+.za-faq {
+	border-top: 1px solid var(--line);
+}
+
+.za-faq details {
+	border-bottom: 1px solid var(--line);
+}
+
+.za-faq summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	padding: 20px 0;
+	font-size: 17px;
+	font-weight: 500;
+	color: var(--ink);
+	cursor: pointer;
+	list-style: none;
+	letter-spacing: -0.01em;
+}
+
+.za-faq summary::-webkit-details-marker {
+	display: none;
+}
+
+.za-faq summary::after {
+	content: "";
+	flex: none;
+	width: 10px;
+	height: 10px;
+	border-right: 1.5px solid var(--ink-3);
+	border-bottom: 1.5px solid var(--ink-3);
+	transform: rotate(45deg);
+	margin-right: 4px;
+	transition: transform 160ms ease;
+}
+
+.za-faq details[open] summary::after {
+	transform: rotate(-135deg);
+}
+
+.za-faq summary:hover {
+	color: var(--white);
+}
+
+.za-faq details > div {
+	padding: 0 0 24px;
+	max-width: var(--measure);
+	color: var(--ink-2);
+	font-size: 16px;
+	line-height: 1.65;
+}
+
+.za-faq details > div p {
+	margin: 0;
+}
+
+/* Footer
+   ============================================================ */
+
+.za-footer {
+	border-top: 1px solid var(--line);
+	padding: 56px 0 40px;
+	color: var(--ink-3);
+	font-size: 14px;
+}
+
+.za-footer-grid {
 	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	column-gap: 4%;
-	row-gap: 40px;
+	grid-template-columns: 1.4fr 1fr 1fr;
+	gap: 40px;
 	align-items: start;
 }
 
-@media (max-width: 991px) {
-	.za-facts-grid,
-	.za-shots-grid {
-		grid-template-columns: repeat(2, 1fr);
+.za-footer-logo {
+	width: 123px;
+	height: 38px;
+	margin-bottom: 16px;
+	opacity: 0.85;
+}
+
+.za-footer p {
+	margin: 0;
+	line-height: 1.6;
+}
+
+.za-footer strong {
+	color: var(--ink-2);
+}
+
+.za-footer ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.za-footer a {
+	color: var(--ink-2);
+	text-decoration: none;
+}
+
+.za-footer a:hover {
+	color: var(--ink);
+}
+
+.za-footer-copy {
+	margin-top: 48px;
+	padding-top: 24px;
+	border-top: 1px solid var(--line);
+	font-size: 13px;
+	color: var(--ink-3);
+}
+
+@media (max-width: 700px) {
+	.za-footer-grid {
+		grid-template-columns: 1fr;
+		gap: 28px;
 	}
 }
 
-@media (max-width: 767px) {
-	.za-facts-grid,
-	.za-shots-grid {
+/* Simple footer for the legal pages: a copyright line only. */
+
+.za-footer--simple {
+	padding: 32px 0;
+}
+
+.za-footer--simple .za-footer-copy {
+	margin-top: 0;
+	padding-top: 0;
+	border-top: 0;
+}
+
+/* Page header for the download and legal pages
+   ============================================================ */
+
+.za-page-head {
+	padding: 88px 0 40px;
+}
+
+.za-page-head h1 {
+	font-size: clamp(36px, 5vw, 56px);
+	margin-bottom: 14px;
+}
+
+.za-page-head p {
+	color: var(--ink-2);
+	font-size: 18px;
+}
+
+.za-page-head--center {
+	text-align: center;
+}
+
+.za-page-head--center p {
+	max-width: 560px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* Prose (terms, privacy)
+   ============================================================ */
+
+.za-prose {
+	max-width: var(--measure);
+	padding-bottom: 96px;
+	color: var(--ink-2);
+	font-size: 16px;
+	line-height: 1.7;
+}
+
+.za-prose h2 {
+	font-size: 22px;
+	letter-spacing: -0.02em;
+	margin: 48px 0 12px;
+	color: var(--ink);
+}
+
+.za-prose h2:first-child {
+	margin-top: 0;
+}
+
+.za-prose p {
+	margin: 0 0 16px;
+}
+
+.za-prose a {
+	color: var(--ink);
+}
+
+.za-prose-links {
+	margin-top: 48px;
+	padding-top: 24px;
+	border-top: 1px solid var(--line);
+	font-size: 14px;
+	color: var(--ink-3);
+}
+
+/* Download page
+   ============================================================ */
+
+.za-page-head .za-version-line,
+.za-version-line {
+	font-size: 14px;
+	max-width: none;
+	color: var(--ink-3);
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.za-version-line strong {
+	color: var(--ink);
+	font-weight: 500;
+}
+
+.za-platforms {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 20px;
+	margin: 40px 0 24px;
+}
+
+@media (max-width: 700px) {
+	.za-platforms {
 		grid-template-columns: 1fr;
 	}
 }
 
-.za-fact {
-	text-align: left;
-	padding-top: 20px;
-	border-top: 1px solid #E4E4E4;
-}
-
-.za-fact-icon {
-	display: inline-block;
-	font-size: 18px;
-	color: #1ABC9C;
-	margin-right: 8px;
-	vertical-align: middle;
-}
-
-.za-fact h3 {
-	font-size: 17px;
-	margin: 0 0 8px 0;
-	display: inline;
-}
-
-.za-fact p {
-	margin: 8px 0 0 0;
-	color: #666;
-	font-size: 15px;
-	line-height: 1.6;
-}
-
-/* Screenshot grid: the image is the visual, so the card carries no
-   icon, border or shadow of its own, just a uniform frame. */
-
-.za-shot-card {
-	text-align: left;
-}
-
-.za-shot-frame {
+.za-platform-card {
 	position: relative;
-	width: 100%;
-	aspect-ratio: 3 / 2;
-	overflow: hidden;
-	border-radius: 4px;
-	border: 1px solid #333;
-	background-color: #1D1E1F;
-	margin-bottom: 16px;
-}
-
-.za-shot-frame img {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	display: block;
-}
-
-.za-shot-card h3 {
-	font-size: 17px;
-	margin: 0 0 6px 0;
-}
-
-.za-shot-card p {
-	margin: 0;
-	color: #666;
-	font-size: 15px;
-	line-height: 1.6;
-}
-
-.za-not-list {
-	list-style: none;
-	margin: 0 auto;
-	padding: 0;
-	max-width: 480px;
+	padding: 32px 28px 28px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-l);
+	background: var(--surface);
 	text-align: center;
+	transition: border-color 120ms ease;
 }
 
-.za-not-list li {
-	padding: 8px 0;
-	font-size: 17px;
-	color: #555;
+.za-platform-card:hover {
+	border-color: var(--line-2);
 }
+
+.za-platform-card h2 {
+	font-size: 22px;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	margin-bottom: 6px;
+}
+
+.za-platform-card .za-meta {
+	color: var(--ink-3);
+	font-size: 14px;
+	margin: 0 0 22px;
+}
+
+.za-platform-card .za-btn {
+	margin-bottom: 14px;
+}
+
+/* Set by zeroagent-arch.js when it recognises the visitor's Mac. */
 
 .za-recommended {
-	border-color: #1ABC9C !important;
-	box-shadow: 0 0 0 2px rgba(26, 188, 156, 0.25);
+	border-color: var(--accent);
+	box-shadow: 0 0 0 1px var(--accent);
 }
 
 .za-badge-recommended {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--accent-ink);
+	margin-bottom: 10px;
+}
+
+.za-badge-recommended::before {
+	content: "";
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--accent);
+}
+
+.za-hash {
 	display: block;
-	font-size: 11px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 1px;
-	color: #1ABC9C;
-	margin-top: 6px;
+	font-family: var(--mono);
+	font-size: 11.5px;
+	line-height: 1.5;
+	color: var(--ink-3);
+	word-break: break-all;
+}
+
+/* Command snippet with a copy button */
+
+.za-snippet {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px 18px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	background: var(--surface);
+}
+
+.za-snippet-label {
+	display: block;
+	font-size: 12px;
+	color: var(--ink-3);
+	margin-bottom: 6px;
+}
+
+.za-snippet code {
+	display: block;
+	white-space: pre-line;
+	background: none;
+	border: 0;
+	padding: 0;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--ink);
+}
+
+.za-copy-btn {
+	flex: none;
+	min-height: 32px;
+	padding: 0 14px;
+	border-radius: var(--pill);
+	border: 1px solid var(--line-2);
+	background: transparent;
+	color: var(--ink);
+	font-family: var(--sans);
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.za-copy-btn:hover {
+	border-color: var(--ink-2);
+	background: var(--surface-2);
+}
+
+@media (max-width: 520px) {
+	.za-snippet {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.za-snippet code {
+		font-size: 13px;
+		overflow-x: auto;
+		white-space: pre;
+	}
+}
+
+.za-snippet + .za-caption {
+	margin-top: 14px;
 }
 
 .za-agree {
 	font-size: 13px;
-	color: #888;
+	color: var(--ink-3);
+	text-align: center;
+	margin: 24px 0 0;
 }
 
-.za-section-alt {
-	background-color: #F8F8F8;
+.za-agree a {
+	color: var(--ink-2);
+}
+
+.za-meta {
+	color: var(--ink-3);
+	font-size: 14px;
+}
+
+/* Hairline rule as an element */
+
+.za-rule {
+	height: 1px;
+	background: var(--line);
+	border: 0;
+	margin: 0;
+}
+
+/* Providers: a row list inside a window frame, for the bring-your-own
+   section. The dot is the app's one sanctioned use of the accent as a
+   status colour: lit for shipped, dim for coming (ZA-294).
+   ============================================================ */
+
+.za-providers {
+	padding: 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
+.za-provider {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+}
+
+.za-provider h3 {
+	margin-bottom: 4px;
+	font-size: 16px;
+}
+
+.za-provider p {
+	margin: 0;
+}
+
+.za-status-dot {
+	flex: none;
+	width: 8px;
+	height: 8px;
+	margin-top: 7px;
+	border-radius: 50%;
+	background: var(--line-2);
+}
+
+.za-provider--live .za-status-dot {
+	background: var(--accent);
+}
+
+/* Phone mock: a stylised frame, not a screenshot, for the Premium
+   companion section.
+   ============================================================ */
+
+.za-phone-mock {
+	display: flex;
+	justify-content: center;
+}
+
+.za-phone-frame {
+	width: 100%;
+	max-width: 300px;
+	padding: 14px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 36px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.za-phone-screen {
+	position: relative;
+	padding: 32px 18px 18px;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 24px;
+	overflow: hidden;
+}
+
+.za-phone-notch {
+	position: absolute;
+	top: 10px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 70px;
+	height: 20px;
+	background: var(--surface);
+	border-radius: var(--pill);
+}
+
+.za-phone-title {
+	margin: 0 0 16px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink-3);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.za-phone-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 0;
+	border-top: 1px solid var(--line);
+	font-size: 13px;
+	color: var(--ink-2);
+}
+
+.za-phone-row:first-of-type {
+	border-top: none;
+}
+
+.za-phone-input {
+	margin-top: 16px;
+	padding: 10px 12px;
+	border: 1px solid var(--line);
+	border-radius: var(--pill);
+	font-size: 12px;
+	color: var(--ink-3);
 }

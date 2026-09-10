@@ -40,7 +40,7 @@
 		badge.className = 'za-badge-recommended';
 		badge.textContent = 'Recommended for your Mac';
 
-		var heading = card.querySelector('h4');
+		var heading = card.querySelector('h2');
 		if (heading) heading.insertAdjacentElement('afterend', badge);
 	});
 })();

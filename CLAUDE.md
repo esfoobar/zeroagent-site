@@ -30,9 +30,11 @@ The reason for the third rule is the first two: a crawler that is told to stay a
 - `trailingSlash: false` in `vercel.json` keeps `/download` (no trailing slash) the canonical form, matching the old site.
 - The release feed is `https://releases.zeroagent.mvplean.com` (CloudFront in front of S3), documented in the `zeroagent` repo's `docs/RELEASE.md`. `static/js/zeroagent-release.js` fetches it directly, unproxied, because that feed already answers CORS with `Access-Control-Allow-Origin: *`. It moves to `releases.zeroagenthq.com` under **ZA-290**, not before.
 
-## Shared theme assets
+## Styling and static assets
 
-Everything under `static/` other than `static/css/zeroagent.css`, `static/js/zeroagent-*.js`, `static/images/zeroagent/`, and `static/videos/zeroagent/` is a copy of the MVPLean Canvas theme files these five pages actually reference: Bootstrap, the theme's own `style.css`/`dark.css`/`responsive.css`/`animate.css`/`custom.css`, its icon fonts, jQuery, its plugin bundle, its `functions.js`, and the MVPLean logo images. These were copied once, deliberately not the whole of MVPLean Canvas's `static/` tree, and are not kept in sync with that repo: a future theme change over there does not reach here on its own, and vice versa.
+The site has one stylesheet, `static/css/zeroagent.css`: tokens (black page, off white text, hairlines, the app's coral as a status colour only), the type scale (Geist from Google Fonts, Geist Mono only for commands and checksums), the nav and footer, and the components the pages use. Pages carry no inline styles. The stats page is the exception: it is self contained on purpose (inline CSS, no nav or footer) and only mirrors the tokens.
+
+The MVPLean Canvas theme files that the first import copied over (Bootstrap, the theme's `style.css` and friends, its icon fonts, jQuery, the plugin bundle, `functions.js`, the header logo images) were removed in ZA-294 once no page referenced them. `static/images/footer-widget-logo.png` is the one MVPLean asset left, for the footer. The screenshots, hero poster, video and Open Graph image under `static/images/zeroagent/` and `static/videos/zeroagent/` are the brand assets; the landing page frames each screenshot in a `.za-window`.
 
 ## GA4
 

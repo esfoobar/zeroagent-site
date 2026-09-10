@@ -3,20 +3,13 @@
 <head>
 
 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-	<meta name="author" content="MVPLean" />
-
-	<!-- Stylesheets
-	============================================= -->
-	<link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Raleway:300,400,500,600,700|Crete+Round:400i" rel="stylesheet" type="text/css" />
-	<link rel="stylesheet" href="/static/css/bootstrap.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/style.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/dark.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/font-icons.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/animate.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/custom.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/responsive.css" type="text/css" />
-	<link rel="stylesheet" href="/static/css/zeroagent.css" type="text/css" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="author" content="MVPLean" />
+	<meta name="theme-color" content="#000000" />
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap" rel="stylesheet" />
+	<link rel="stylesheet" href="/static/css/zeroagent.css" />
 
 	<!-- Document Title
 	============================================= -->
@@ -146,70 +139,62 @@
 
 </head>
 
-<body class="stretched">
+<body>
 
-	<!-- Document Wrapper
+	<!-- Header
 	============================================= -->
-	<div id="wrapper" class="clearfix">
+	<header class="za-nav">
+		<div class="za-container za-nav-inner">
+			<a href="/" class="za-brand" aria-label="ZeroAgent home">
+				<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+					<rect x="3" y="6" width="18" height="15" rx="5" fill="#E8785C"/>
+					<circle cx="9" cy="13.5" r="1.7" fill="#000"/>
+					<circle cx="15" cy="13.5" r="1.7" fill="#000"/>
+					<rect x="11.1" y="2" width="1.8" height="4" rx="0.9" fill="#E8785C"/>
+				</svg>
+				<span>ZeroAgent</span>
+			</a>
+			<ul class="za-nav-links">
+				<li><a href="#models">Models</a></li>
+				<li><a href="#phone">Phone</a></li>
+				<li><a href="/download">Download</a></li>
+				<li><a href="https://mvplean.com/">mvplean.com</a></li>
+			</ul>
+			<a href="/download" class="za-btn za-btn--primary za-btn--small za-nav-cta">Download for Mac</a>
+		</div>
+	</header>
 
-		<!-- Header
-		============================================= -->
-		<header id="header" class="full-header">
+	<!-- Content
+	============================================= -->
+	<main>
 
-			<div id="header-wrap">
+		<section class="za-hero">
+			<div class="za-container">
 
-				<div class="container clearfix">
-
-					<div id="primary-menu-trigger"><i class="icon-reorder"></i></div>
-
-					<!-- Logo
-					============================================= -->
-					<div id="logo">
-						<a href="https://mvplean.com/" class="standard-logo"><img src="/static/images/logo.png" alt="MVPLean Logo"></a>
-						<a href="https://mvplean.com/" class="retina-logo"><img src="/static/images/logo@2x.png" alt="MVPLean Logo"></a>
-					</div><!-- #logo end -->
-
-					<!-- Primary Navigation
-					============================================= -->
-					<nav id="primary-menu" class="style-3">
-
-						<ul>
-							<li><a href="https://mvplean.com/"><div>mvplean.com</div></a></li>
-							<li><a href="/download"><div>Download</div></a></li>
-						</ul>
-
-					</nav><!-- #primary-menu end -->
-
+				<div class="za-hero-pill">
+					<span class="za-pill"><span class="za-dot"></span>Free &middot; Local &middot; No account required</span>
 				</div>
 
-			</div>
+				<h1>You talk to one agent. It runs the rest.</h1>
 
-		</header><!-- #header end -->
+				<p class="za-lead">ZeroAgent takes your request, picks the right Claude model for the job on
+					your own subscription, writes the brief, and dispatches workers running Claude Code
+					into their own git worktrees, checking on them until the work is actually finished.
+					Free, local, on your own Mac.</p>
 
-		<!-- Content
-		============================================= -->
-		<section id="content">
+				<div class="za-btn-row">
+					<a href="/download" class="za-btn za-btn--primary za-btn--large">Download for Mac</a>
+					<a href="#coordinator" class="za-btn za-btn--ghost za-btn--large">See how it works</a>
+				</div>
 
-			<div class="content-wrap za-content-notop">
-
-				<div class="za-hero center">
-					<div class="container clearfix">
-						<span class="za-eyebrow">Free &middot; Local &middot; No account required</span>
-						<h1>You talk to one agent. It runs the rest.</h1>
-						<p class="lead">ZeroAgent takes your request, picks the cheapest model that can do the job,
-							writes the brief, and dispatches workers running Claude Code into their own git
-							worktrees, checking on them until the work is actually finished. Free, local, on your
-							own Mac.</p>
-						<div class="topmargin">
-							<a href="/download" class="button button-rounded button-large">Download for Mac</a>
-							<a href="#coordinator" class="button button-rounded button-large button-border button-light" data-scrollto="#coordinator" data-easing="easeInOutExpo" data-speed="900" data-offset="80">See how it works</a>
-						</div>
-						<p class="za-hero-cask">or <code id="za-hero-cask-cmd" data-copy-target="za-hero-cask-cmd" role="button" tabindex="0" title="Click to copy">brew trust zeroagentdev/tap
+				<p class="za-hero-cask">or <code id="za-hero-cask-cmd" data-copy-target="za-hero-cask-cmd" role="button" tabindex="0" title="Click to copy">brew trust zeroagentdev/tap
 brew install --cask zeroagentdev/tap/zeroagent</code></p>
-						<p class="za-hero-req">Homebrew 6 or newer needs that trust line before it will load the cask; older Homebrew can skip straight to installing.</p>
-						<p class="za-hero-req">macOS 14 or later, Apple Silicon or Intel. Requires Claude Code.</p>
-						<video class="za-hero-shot topmargin"
-							width="680" height="425"
+				<p class="za-hero-req">Homebrew 6 or newer needs that trust line before it will load the cask; older Homebrew can skip straight to installing.</p>
+				<p class="za-hero-req">macOS 14 or later, Apple Silicon or Intel. Requires Claude Code.</p>
+
+				<div class="za-hero-window">
+					<div class="za-window">
+						<video
 							poster="/static/images/zeroagent/web/hero-dark-poster.jpg"
 							autoplay muted loop playsinline
 							aria-label="The ZeroAgent canvas dispatching several worker creatures, each with a task tag and repo badge, spreading across a dark canvas while one runs a background script shown as a spinning gear with an elapsed-time readout.">
@@ -217,426 +202,471 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 							<img src="/static/images/zeroagent/web/hero-dark.gif"
 								width="680" height="425"
 								alt="The ZeroAgent canvas dispatching several worker creatures, each with a task tag and repo badge, spreading across a dark canvas while one runs a background script shown as a spinning gear with an elapsed-time readout."
-								class="za-hero-shot topmargin"
 								loading="eager" />
 						</video>
 					</div>
 				</div>
 
-				<div class="container clearfix topmargin-lg bottommargin-lg" id="coordinator">
+			</div>
+		</section>
 
-					<div class="heading-block center">
+		<section class="za-section za-section--flush" id="coordinator">
+			<div class="za-container">
+				<div class="za-split">
+					<div class="za-split-copy">
 						<h2>You talk to one agent, not to five.</h2>
-						<span>Zero Agent reads the request, decides what it costs to do properly, writes the
+						<p>Zero Agent reads the request, decides what it costs to do properly, writes the
 							brief, and dispatches workers. It messages them mid flight, checks in on a timer that
 							backs off when nothing changes, keeps watching anything that outlives the conversation
 							like a CI run or a reply from another machine, and remembers what it learned about you
 							between sessions. Workers land their own pull requests under your conventions. You get
-							interrupted only when you actually have to decide something.</span>
+							interrupted only when you actually have to decide something.</p>
 					</div>
-
-					<img src="/static/images/zeroagent/web/3-task-menu-1x.png"
-						srcset="/static/images/zeroagent/web/3-task-menu-1x.png 1x, /static/images/zeroagent/web/3-task-menu-2x.png 2x"
-						width="448" height="314"
-						alt="Zero Agent's task menu open over the session cost, showing three tasks in flight, including one marked finished but still waiting on a decision from Jorge."
-						class="za-card-shot center"
-						loading="lazy" />
-
+					<div class="za-window">
+						<img src="/static/images/zeroagent/web/3-task-menu-1x.png"
+							srcset="/static/images/zeroagent/web/3-task-menu-1x.png 1x, /static/images/zeroagent/web/3-task-menu-2x.png 2x"
+							width="448" height="314"
+							alt="Zero Agent's task menu open over the session cost, showing three tasks in flight, including one marked finished but still waiting on a decision from Jorge."
+							loading="lazy" />
+					</div>
 				</div>
+			</div>
+		</section>
 
-				<div class="container clearfix topmargin-lg bottommargin-lg">
-
-					<div class="heading-block center">
+		<section class="za-section">
+			<div class="za-container">
+				<div class="za-split za-split--flip">
+					<div class="za-split-copy">
 						<h2>The canvas is the product</h2>
-						<span>Workers are not rows in a table. They are creatures on a 2D canvas: colour and
+						<p>Workers are not rows in a table. They are creatures on a 2D canvas: colour and
 							motion tell you what's happening without reading anything, so you can watch several
-							agents at once without losing track of any of them, and a click opens the transcript.</span>
+							agents at once without losing track of any of them, and a click opens the transcript.</p>
 					</div>
-
-					<img src="/static/images/zeroagent/web/2-hover-1x.png"
-						srcset="/static/images/zeroagent/web/2-hover-1x.png 1x, /static/images/zeroagent/web/2-hover-2x.png 2x"
-						width="480" height="243"
-						alt="A hovered worker on the canvas showing its task title, the Sonnet 5 model it's running, the command in progress, elapsed time and its branch name, with no click required."
-						class="za-card-shot center"
-						loading="lazy" />
-
-				</div>
-
-				<div class="section nobottommargin notopmargin" id="what-you-get">
-					<div class="container clearfix">
-
-						<div class="heading-block center">
-							<h2>What you get, free and local</h2>
-							<span>Everything below costs nothing to run and needs no account. This is the whole
-								app, not a trial.</span>
-						</div>
-
-						<!-- Coordinator facts lead per Eric's 2026-09-05 note: the loop, model and cost
-						     selection, memory, the context handoff, and notification judgment are the gap
-						     Orca (onorca.dev) doesn't cover. Plain facts, no screenshots exist for these. -->
-
-						<div class="za-facts-grid">
-
-							<div class="za-fact">
-								<h3><i class="za-fact-icon icon-refresh"></i>It keeps checking so you do not have to</h3>
-								<p>The lead sets itself reminders that fire on their own, tracks background
-									work it can't watch like a CI run, and raises one task with one question
-									when work goes quiet, instead of paging you for every worker that finishes.</p>
-							</div>
-
-							<div class="za-fact">
-								<h3><i class="za-fact-icon icon-cog"></i>Automatic model selection per dispatch</h3>
-								<p>Routine work goes to a cheaper model, judgment calls go to a stronger one,
-									chosen for each dispatch rather than a dropdown you have to remember to
-									change.</p>
-							</div>
-
-							<div class="za-fact">
-								<h3><i class="za-fact-icon icon-dollar"></i>Per worker cost tracking</h3>
-								<p>Every worker carries its own bill: tokens in and out, running cost, right
-									there on the canvas, so you know what a piece of work cost before you
-									approve the next one.</p>
-							</div>
-
-							<div class="za-fact">
-								<h3><i class="za-fact-icon icon-lightbulb"></i>It remembers what you told it, between sessions</h3>
-								<p>A local, self-cleaning memory means a coding agent that remembers across
-									sessions, so you don't re-explain your preferences and context every time you
-									open the app.</p>
-							</div>
-
-							<div class="za-fact">
-								<h3><i class="za-fact-icon icon-battery-75"></i>Context tracking, with a handoff for long sessions</h3>
-								<p>The app shows how full the lead's and each worker's context window is, live.
-									When the lead fills up, it writes itself a handoff note and restarts clean,
-									roster intact, so a long session never loses the thread.</p>
-							</div>
-
-							<div class="za-fact">
-								<h3><i class="za-fact-icon icon-bell"></i>It interrupts you only when you have to decide</h3>
-								<p>A real macOS notification when work is blocked on you, a job finished long
-									after you walked away, or a cost cap is about to be crossed, never for a
-									routine completion. Click it to open that worker's transcript.</p>
-							</div>
-
-							<div class="za-fact">
-								<h3><i class="za-fact-icon icon-list2"></i>A task list grouped by what it serves</h3>
-								<p>Workers are grouped under the piece of work they serve, with a title a
-									person would actually use instead of an internal ticket id.</p>
-							</div>
-
-							<div class="za-fact">
-								<h3><i class="za-fact-icon icon-eye"></i>Read only agents for questions and surveys</h3>
-								<p>Dispatch a worker that can look and report but can't write, for a question
-									or a survey where you don't want anything in the repo to change.</p>
-							</div>
-
-							<div class="za-fact">
-								<h3><i class="za-fact-icon icon-code-fork"></i>Parallel workers, one git worktree each</h3>
-								<p>Every dispatched worker gets its own git worktree and branch, cut and
-									cleaned up automatically, so several things happening at once never collide.
-									Its work lands as a pull request under your conventions before the worktree
-									retires.</p>
-							</div>
-
-						</div>
+					<div class="za-window">
+						<img src="/static/images/zeroagent/web/2-hover-1x.png"
+							srcset="/static/images/zeroagent/web/2-hover-1x.png 1x, /static/images/zeroagent/web/2-hover-2x.png 2x"
+							width="480" height="243"
+							alt="A hovered worker on the canvas showing its task title, the Sonnet 5 model it's running, the command in progress, elapsed time and its branch name, with no click required."
+							loading="lazy" />
 					</div>
 				</div>
+			</div>
+		</section>
 
-				<div class="section nobottommargin notopmargin za-section-alt">
-					<div class="container clearfix">
+		<section class="za-section" id="what-you-get">
+			<div class="za-container">
 
-						<div class="heading-block center">
-							<h2>See it in the app</h2>
-							<span>Six of the pieces above, as they actually look on the canvas.</span>
+				<div class="za-section-head">
+					<h2>What you get, free and local</h2>
+					<p>Everything below costs nothing to run and needs no account. This is the whole
+						app, not a trial.</p>
+				</div>
+
+				<div class="za-grid-3">
+
+					<div class="za-fact">
+						<h3>It keeps checking so you do not have to</h3>
+						<p>The lead sets itself reminders that fire on their own, tracks background
+							work it can't watch like a CI run, and raises one task with one question
+							when work goes quiet, instead of paging you for every worker that finishes.</p>
+					</div>
+
+					<div class="za-fact">
+						<h3>Automatic model selection per dispatch</h3>
+						<p>Routine work goes to a cheaper model, judgment calls go to a stronger one,
+							chosen for each dispatch rather than a dropdown you have to remember to
+							change.</p>
+					</div>
+
+					<div class="za-fact">
+						<h3>Per worker cost tracking</h3>
+						<p>Every worker carries its own bill: tokens in and out, running cost, right
+							there on the canvas, so you know what a piece of work cost before you
+							approve the next one.</p>
+					</div>
+
+					<div class="za-fact">
+						<h3>It remembers what you told it, between sessions</h3>
+						<p>A local, self-cleaning memory means a coding agent that remembers across
+							sessions, so you don't re-explain your preferences and context every time you
+							open the app.</p>
+					</div>
+
+					<div class="za-fact">
+						<h3>Context tracking, with a handoff for long sessions</h3>
+						<p>The app shows how full the lead's and each worker's context window is, live.
+							When the lead fills up, it writes itself a handoff note and restarts clean,
+							roster intact, so a long session never loses the thread.</p>
+					</div>
+
+					<div class="za-fact">
+						<h3>It interrupts you only when you have to decide</h3>
+						<p>A real macOS notification when work is blocked on you, a job finished long
+							after you walked away, or a cost cap is about to be crossed, never for a
+							routine completion. Click it to open that worker's transcript.</p>
+					</div>
+
+					<div class="za-fact">
+						<h3>A task list grouped by what it serves</h3>
+						<p>Workers are grouped under the piece of work they serve, with a title a
+							person would actually use instead of an internal ticket id.</p>
+					</div>
+
+					<div class="za-fact">
+						<h3>Read only agents for questions and surveys</h3>
+						<p>Dispatch a worker that can look and report but can't write, for a question
+							or a survey where you don't want anything in the repo to change.</p>
+					</div>
+
+					<div class="za-fact">
+						<h3>Parallel workers, one git worktree each</h3>
+						<p>Every dispatched worker gets its own git worktree and branch, cut and
+							cleaned up automatically, so several things happening at once never collide.
+							Its work lands as a pull request under your conventions before the worktree
+							retires.</p>
+					</div>
+
+				</div>
+			</div>
+		</section>
+
+		<section class="za-section" id="models">
+			<div class="za-container">
+				<div class="za-split">
+					<div class="za-split-copy">
+						<h2>Your subscriptions, your keys</h2>
+						<p>ZeroAgent never meters or marks up a model call. Today every worker runs on
+							Claude models through your own Claude Code login, and the lead picks the right
+							tier for the work automatically: Sonnet for routine work, Opus for the hard
+							problems, Fable when a job needs to coordinate several workers, with no dropdown
+							to remember. OpenAI models through Codex, and everything else through your own
+							OpenRouter key, are on the way, so the same automatic pick reaches across
+							providers, not just within Claude's own lineup.</p>
+					</div>
+					<div class="za-window za-providers">
+						<div class="za-provider za-provider--live">
+							<span class="za-status-dot"></span>
+							<div>
+								<h3>Claude, via Claude Code</h3>
+								<p class="za-small">Your own subscription. Shipped today.</p>
+							</div>
 						</div>
+						<div class="za-provider">
+							<span class="za-status-dot"></span>
+							<div>
+								<h3>OpenAI, via Codex</h3>
+								<p class="za-small">Your own account. Coming.</p>
+							</div>
+						</div>
+						<div class="za-provider">
+							<span class="za-status-dot"></span>
+							<div>
+								<h3>Everything else, via OpenRouter</h3>
+								<p class="za-small">Your own key. Coming.</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
 
-						<div class="za-shots-grid">
+		<section class="za-section">
+			<div class="za-container">
 
-							<div class="za-shot-card">
-								<div class="za-shot-frame">
-									<img src="/static/images/zeroagent/web/6-model-selection-1x.png"
-										srcset="/static/images/zeroagent/web/6-model-selection-1x.png 1x, /static/images/zeroagent/web/6-model-selection-2x.png 2x"
-										width="400" height="266"
-										alt="A worker's panel header naming the model it's running on, Sonnet 5, next to its live status and elapsed time."
-										loading="lazy" />
+				<div class="za-section-head">
+					<h2>See it in the app</h2>
+					<p>Six of the pieces above, as they actually look on the canvas.</p>
+				</div>
+
+				<div class="za-grid-3">
+
+					<div class="za-shot">
+						<div class="za-window za-window--3x2">
+							<img src="/static/images/zeroagent/web/6-model-selection-1x.png"
+								srcset="/static/images/zeroagent/web/6-model-selection-1x.png 1x, /static/images/zeroagent/web/6-model-selection-2x.png 2x"
+								width="400" height="266"
+								alt="A worker's panel header naming the model it's running on, Sonnet 5, next to its live status and elapsed time."
+								loading="lazy" />
+						</div>
+						<h3>Model selection per dispatch</h3>
+						<p>Named right in the worker's own panel, not hidden in a settings screen.</p>
+					</div>
+
+					<div class="za-shot">
+						<div class="za-window za-window--3x2">
+							<img src="/static/images/zeroagent/web/7-artifact-window-1x.png"
+								srcset="/static/images/zeroagent/web/7-artifact-window-1x.png 1x, /static/images/zeroagent/web/7-artifact-window-2x.png 2x"
+								width="400" height="266"
+								alt="A worker-built page open in ZeroAgent's sandboxed artifact window, with its own address bar and open-in-browser and reveal-in-Finder controls."
+								loading="lazy" />
+						</div>
+						<h3>Artifacts, not just diffs</h3>
+						<p>A chart, a page, a small app a worker built, opened right inside the app.</p>
+					</div>
+
+					<div class="za-shot">
+						<div class="za-window za-window--3x2">
+							<img src="/static/images/zeroagent/web/9-cmd-k-1x.png"
+								srcset="/static/images/zeroagent/web/9-cmd-k-1x.png 1x, /static/images/zeroagent/web/9-cmd-k-2x.png 2x"
+								width="400" height="266"
+								alt="The Cmd+K fuzzy finder open with 'zeroagent' typed, showing matched file paths with bolded characters."
+								loading="lazy" />
+						</div>
+						<h3>Fuzzy search, every repo</h3>
+						<p>Find any file in any repo without leaving the app.</p>
+					</div>
+
+					<div class="za-shot">
+						<div class="za-window za-window--3x2">
+							<img src="/static/images/zeroagent/web/12-worker-transcript-1x.png"
+								srcset="/static/images/zeroagent/web/12-worker-transcript-1x.png 1x, /static/images/zeroagent/web/12-worker-transcript-2x.png 2x"
+								width="400" height="266"
+								alt="An open worker transcript mid-conversation, with a message box to send the worker a correction directly."
+								loading="lazy" />
+						</div>
+						<h3>Talk to a running agent</h3>
+						<p>Send a message mid flight instead of killing it and starting over.</p>
+					</div>
+
+					<div class="za-shot">
+						<div class="za-window za-window--3x2">
+							<img src="/static/images/zeroagent/web/8-file-explorer-1x.png"
+								srcset="/static/images/zeroagent/web/8-file-explorer-1x.png 1x, /static/images/zeroagent/web/8-file-explorer-2x.png 2x"
+								width="400" height="266"
+								alt="The file explorer's sidebar listing dozens of repositories under one projects folder, with a markdown file open on the right."
+								loading="lazy" />
+						</div>
+						<h3>One workspace, many repositories</h3>
+						<p>The same conversation reaches every repository in your projects folder.</p>
+					</div>
+
+					<div class="za-shot">
+						<div class="za-window za-window--3x2">
+							<img src="/static/images/zeroagent/web/13-report-rendered-1x.png"
+								srcset="/static/images/zeroagent/web/13-report-rendered-1x.png 1x, /static/images/zeroagent/web/13-report-rendered-2x.png 2x"
+								width="400" height="266"
+								alt="A worker's markdown report open in the app, formatted with headings, bullets and inline code rather than a wall of plain text."
+								loading="lazy" />
+						</div>
+						<h3>A report, not a wall of text</h3>
+						<p>A worker's writeup renders as a formatted page, right where the work happened.</p>
+					</div>
+
+				</div>
+			</div>
+		</section>
+
+		<section class="za-section" id="phone">
+			<div class="za-container">
+				<div class="za-split">
+					<div class="za-split-copy">
+						<h2>Watch your workers from your phone</h2>
+						<p>ZeroAgent Premium pairs a native iOS companion with your Mac by scanning a QR
+							code. It's a viewer and a nudger, not a second orchestrator: glance at the canvas,
+							open a worker's transcript, answer a question it's waiting on, or send it a
+							message from wherever you are. The work still runs on your own Mac; the phone
+							only watches and steers it, with a push notification the moment a worker needs
+							you.</p>
+						<p class="za-small">Part of Premium, $5 a month, coming to the App Store.</p>
+					</div>
+					<div class="za-phone-mock">
+						<div class="za-phone-frame">
+							<div class="za-phone-screen">
+								<div class="za-phone-notch"></div>
+								<p class="za-phone-title">Workers</p>
+								<div class="za-phone-row">
+									<span class="za-status-dot"></span>
+									Reading the ticket
 								</div>
-								<h3>Model selection per dispatch</h3>
-								<p>Named right in the worker's own panel, not hidden in a settings screen.</p>
-							</div>
-
-							<div class="za-shot-card">
-								<div class="za-shot-frame">
-									<img src="/static/images/zeroagent/web/7-artifact-window-1x.png"
-										srcset="/static/images/zeroagent/web/7-artifact-window-1x.png 1x, /static/images/zeroagent/web/7-artifact-window-2x.png 2x"
-										width="400" height="266"
-										alt="A worker-built page open in ZeroAgent's sandboxed artifact window, with its own address bar and open-in-browser and reveal-in-Finder controls."
-										loading="lazy" />
+								<div class="za-phone-row">
+									<span class="za-status-dot"></span>
+									Tests passing, opening a pull request
 								</div>
-								<h3>Artifacts, not just diffs</h3>
-								<p>A chart, a page, a small app a worker built, opened right inside the app.</p>
-							</div>
-
-							<div class="za-shot-card">
-								<div class="za-shot-frame">
-									<img src="/static/images/zeroagent/web/9-cmd-k-1x.png"
-										srcset="/static/images/zeroagent/web/9-cmd-k-1x.png 1x, /static/images/zeroagent/web/9-cmd-k-2x.png 2x"
-										width="400" height="266"
-										alt="The Cmd+K fuzzy finder open with 'zeroagent' typed, showing matched file paths with bolded characters."
-										loading="lazy" />
+								<div class="za-phone-row">
+									<span class="za-status-dot"></span>
+									Waiting for you
 								</div>
-								<h3>Fuzzy search, every repo</h3>
-								<p>Find any file in any repo without leaving the app.</p>
+								<div class="za-phone-input">Message this worker&hellip;</div>
 							</div>
-
-							<div class="za-shot-card">
-								<div class="za-shot-frame">
-									<img src="/static/images/zeroagent/web/12-worker-transcript-1x.png"
-										srcset="/static/images/zeroagent/web/12-worker-transcript-1x.png 1x, /static/images/zeroagent/web/12-worker-transcript-2x.png 2x"
-										width="400" height="266"
-										alt="An open worker transcript mid-conversation, with a message box to send the worker a correction directly."
-										loading="lazy" />
-								</div>
-								<h3>Talk to a running agent</h3>
-								<p>Send a message mid flight instead of killing it and starting over.</p>
-							</div>
-
-							<div class="za-shot-card">
-								<div class="za-shot-frame">
-									<img src="/static/images/zeroagent/web/8-file-explorer-1x.png"
-										srcset="/static/images/zeroagent/web/8-file-explorer-1x.png 1x, /static/images/zeroagent/web/8-file-explorer-2x.png 2x"
-										width="400" height="266"
-										alt="The file explorer's sidebar listing dozens of repositories under one projects folder, with a markdown file open on the right."
-										loading="lazy" />
-								</div>
-								<h3>One workspace, many repositories</h3>
-								<p>The same conversation reaches every repository in your projects folder.</p>
-							</div>
-
-							<div class="za-shot-card">
-								<div class="za-shot-frame">
-									<img src="/static/images/zeroagent/web/13-report-rendered-1x.png"
-										srcset="/static/images/zeroagent/web/13-report-rendered-1x.png 1x, /static/images/zeroagent/web/13-report-rendered-2x.png 2x"
-										width="400" height="266"
-										alt="A worker's markdown report open in the app, formatted with headings, bullets and inline code rather than a wall of plain text."
-										loading="lazy" />
-								</div>
-								<h3>A report, not a wall of text</h3>
-								<p>A worker's writeup renders as a formatted page, right where the work happened.</p>
-							</div>
-
 						</div>
 					</div>
 				</div>
+			</div>
+		</section>
 
-				<div class="section nobottommargin notopmargin">
-					<div class="container clearfix">
+		<section class="za-section">
+			<div class="za-container">
 
-						<div class="heading-block center">
-							<h2>How ZeroAgent orchestrates Claude Code</h2>
-						</div>
-
-						<div class="col_one_third">
-							<div class="feature-box fbox-center fbox-light fbox-effect nobottomborder">
-								<div class="fbox-icon"><i class="i-alt noborder icon-map-marker"></i></div>
-								<h3>Point it at your projects folder</h3>
-								<p>Set the root once in settings. ZeroAgent resolves it sensibly even if you don't,
-									and the file explorer, memory and state all live under that one folder.</p>
-							</div>
-						</div>
-
-						<div class="col_one_third">
-							<div class="feature-box fbox-center fbox-light fbox-effect nobottomborder">
-								<div class="fbox-icon"><i class="i-alt noborder icon-pencil"></i></div>
-								<h3>Describe the work in a sentence</h3>
-								<p>Tell the lead agent orchestrator what you want in plain words. It writes the
-									brief, decides what the work should cost, and dispatches a worker.</p>
-							</div>
-						</div>
-
-						<div class="col_one_third col_last">
-							<div class="feature-box fbox-center fbox-light fbox-effect nobottomborder">
-								<div class="fbox-icon"><i class="i-alt noborder icon-check"></i></div>
-								<h3>Workers open their own pull requests</h3>
-								<p>A worker's job isn't done at "here's a diff." It follows your workspace
-									conventions through tests, a pull request and a closed ticket, then its
-									worktree is retired.</p>
-							</div>
-						</div>
-
-					</div>
+				<div class="za-section-head">
+					<h2>How ZeroAgent orchestrates Claude Code</h2>
 				</div>
 
-				<div class="container clearfix topmargin-lg bottommargin-lg">
+				<ol class="za-steps">
+					<li class="za-step">
+						<h3>Point it at your projects folder</h3>
+						<p>Set the root once in settings. ZeroAgent resolves it sensibly even if you don't,
+							and the file explorer, memory and state all live under that one folder.</p>
+					</li>
+					<li class="za-step">
+						<h3>Describe the work in a sentence</h3>
+						<p>Tell the lead agent orchestrator what you want in plain words. It writes the
+							brief, decides what the work should cost, and dispatches a worker.</p>
+					</li>
+					<li class="za-step">
+						<h3>Workers open their own pull requests</h3>
+						<p>A worker's job isn't done at "here's a diff." It follows your workspace
+							conventions through tests, a pull request and a closed ticket, then its
+							worktree is retired.</p>
+					</li>
+				</ol>
 
-					<div class="heading-block center">
-						<h2>What ZeroAgent is not</h2>
-					</div>
+			</div>
+		</section>
 
-					<ul class="za-not-list">
-						<li>Not an IDE. Keep your editor.</li>
-						<li>Not a terminal with more panes in it.</li>
-						<li>Not five agents you have to babysit yourself.</li>
-						<li>Not a kanban board.</li>
-						<li>Not a cloud service. Your code never leaves your Mac.</li>
-					</ul>
+		<section class="za-section">
+			<div class="za-container">
 
+				<div class="za-section-head">
+					<h2>What ZeroAgent is not</h2>
 				</div>
 
-				<div class="container clearfix bottommargin-lg">
+				<ul class="za-not-list">
+					<li>Not an IDE. Keep your editor.</li>
+					<li>Not a terminal with more panes in it.</li>
+					<li>Not five agents you have to babysit yourself.</li>
+					<li>Not a kanban board.</li>
+					<li>Not a cloud service. Your code never leaves your Mac.</li>
+				</ul>
 
-					<div class="heading-block center">
-						<h2>Requirements</h2>
-					</div>
+			</div>
+		</section>
 
-					<div class="za-note center">
-						<p>macOS 14 or later, Apple Silicon or Intel. <strong>Prerequisite:</strong> ZeroAgent
-							coordinates the work; it drives a coding agent CLI already installed on your Mac to do
-							it. Works with Claude Code today. Codex and other agents are planned.</p>
-					</div>
+		<section class="za-section za-section--tight">
+			<div class="za-container">
 
+				<div class="za-section-head">
+					<h2>Requirements</h2>
 				</div>
 
-				<div class="promo promo-light promo-full bottommargin-lg">
-					<div class="container clearfix">
-						<h4>Download ZeroAgent for Mac</h4>
-						<a href="/download" class="button button-rounded button-dark">Download for Mac</a>
-						<p class="za-meta topmargin-sm">Free, local, and yours to keep. Requires Claude Code.</p>
-					</div>
+				<div class="za-note">
+					<p>macOS 14 or later, Apple Silicon or Intel. <strong>Prerequisite:</strong> ZeroAgent
+						coordinates the work; it drives a coding agent CLI already installed on your Mac to do
+						it. Works with Claude Code today. Codex and other agents are planned.</p>
 				</div>
 
-				<div class="container clearfix bottommargin-lg">
-					<p class="center za-meta">Free for local work on your own Mac, with no account. Remote, mobile
-						and cloud workspaces are coming later as paid options.</p>
+			</div>
+		</section>
+
+		<section class="za-band">
+			<div class="za-container">
+				<h2>Download ZeroAgent for Mac</h2>
+				<div class="za-btn-row">
+					<a href="/download" class="za-btn za-btn--primary za-btn--large">Download for Mac</a>
+				</div>
+				<p>Free, local, and yours to keep. Requires Claude Code.</p>
+				<p>Free for local work on your own Mac, with no account. Remote monitoring and
+					the phone companion are Premium, $5 a month; cloud workspaces are coming later
+					as Platinum.</p>
+			</div>
+		</section>
+
+		<section class="za-section">
+			<div class="za-container">
+
+				<div class="za-section-head">
+					<h2>Questions</h2>
 				</div>
 
-				<div class="container clearfix topmargin-lg bottommargin-lg">
+				<div class="za-faq">
 
-					<div class="heading-block center">
-						<h2>Questions</h2>
-					</div>
-
-					<div class="toggle toggle-border">
-						<div class="togglet"><i class="icon-plus toggle-closed"></i><i class="icon-minus toggle-open"></i>How many coding agents can I run at once?</div>
-						<div class="togglec"><p>As many as your Mac and your model account can support. The default
+					<details>
+						<summary>How many coding agents can I run at once?</summary>
+						<div><p>As many as your Mac and your model account can support. The default
 							cap is eight worktrees at a time so a workspace doesn't fill the disk unnoticed; raise
 							it in settings, and a dispatch past the cap is refused with a note on what to reclaim
 							first.</p></div>
-					</div>
+					</details>
 
-					<div class="toggle toggle-border">
-						<div class="togglet"><i class="icon-plus toggle-closed"></i><i class="icon-minus toggle-open"></i>Does ZeroAgent work with Claude Code?</div>
-						<div class="togglec"><p>Yes, today. ZeroAgent drives the Claude Code CLI already installed
+					<details>
+						<summary>Does ZeroAgent work with Claude Code?</summary>
+						<div><p>Yes, today. ZeroAgent drives the Claude Code CLI already installed
 							on your Mac. Codex and other agent runtimes are planned, not shipped yet.</p></div>
-					</div>
+					</details>
 
-					<div class="toggle toggle-border">
-						<div class="togglet"><i class="icon-plus toggle-closed"></i><i class="icon-minus toggle-open"></i>Do I need an account or a subscription?</div>
-						<div class="togglec"><p>No. ZeroAgent runs entirely on your Mac with your own model keys,
-							with nothing to sign in to and nothing that costs money today. Remote monitoring,
-							mobile and cloud workspaces are coming later as paid options.</p></div>
-					</div>
+					<details>
+						<summary>Do I need an account or a subscription?</summary>
+						<div><p>No. ZeroAgent runs entirely on your Mac with your own model keys,
+							with nothing to sign in to and nothing that costs money today. Remote monitoring
+							and the phone companion are Premium, $5 a month; cloud workspaces are coming
+							later as Platinum.</p></div>
+					</details>
 
-					<div class="toggle toggle-border">
-						<div class="togglet"><i class="icon-plus toggle-closed"></i><i class="icon-minus toggle-open"></i>How is this different from running git worktree by hand?</div>
-						<div class="togglec"><p>git worktree gives you the isolation. ZeroAgent is what decides when
+					<details>
+						<summary>How is this different from running git worktree by hand?</summary>
+						<div><p>git worktree gives you the isolation. ZeroAgent is what decides when
 							to cut one, keeps it separate from every other worker's, retires it safely once the
 							work has landed, and sweeps up whatever a previous session left behind, automatically,
 							across your whole projects folder rather than one repo at a time.</p></div>
-					</div>
+					</details>
 
-					<div class="toggle toggle-border">
-						<div class="togglet"><i class="icon-plus toggle-closed"></i><i class="icon-minus toggle-open"></i>Does my code leave my Mac?</div>
-						<div class="togglec"><p>No. Your files, memory and settings live on disk on your machine.
+					<details>
+						<summary>Does my code leave my Mac?</summary>
+						<div><p>No. Your files, memory and settings live on disk on your machine.
 							ZeroAgent talks to whichever model provider your coding agent CLI is already configured
 							for, the same as if you ran that CLI yourself; nothing routes through a server we
 							run.</p></div>
-					</div>
+					</details>
 
-					<div class="toggle toggle-border">
-						<div class="togglet"><i class="icon-plus toggle-closed"></i><i class="icon-minus toggle-open"></i>Is ZeroAgent open source?</div>
-						<div class="togglec"><p>Not today. The app itself is closed source. That could change
+					<details>
+						<summary>Is ZeroAgent open source?</summary>
+						<div><p>Not today. The app itself is closed source. That could change
 							later, but there's no timeline for it yet.</p></div>
-					</div>
+					</details>
 
 				</div>
-
 			</div>
+		</section>
 
-		</section><!-- #content end -->
+	</main>
 
-		<!-- Footer
-		============================================= -->
-		<footer id="footer" class="dark">
-
-			<div class="container">
-
-				<div id="section-contact">
-
-					<div class="footer-widgets-wrap clearfix">
-
-						<img src="/static/images/footer-widget-logo.png" alt="" class="footer-logo">
-
-						<div class="col_two_third">
-
-							<div class="col_one_third">
-								<div class="widget clearfix">
-									<p>ZeroAgent is a free, local desktop app from <strong>MVPLean</strong>.</p>
-								</div>
-							</div>
-
-							<div class="col_one_third">
-								<div class="widget clearfix">
-									<p><a href="/download">Download</a><br>
-									<a href="/terms">Terms</a><br>
-									<a href="/privacy">Privacy</a></p>
-								</div>
-							</div>
-
-							<div class="col_one_third col_last">
-								<div class="widget clearfix">
-									<abbr title="Send Us An email"><strong>Email:</strong></abbr> hello@mvplean.com
-								</div>
-							</div>
-
-						</div>
-
-					</div><!-- .footer-widgets-wrap end -->
+	<!-- Footer
+	============================================= -->
+	<footer class="za-footer">
+		<div class="za-container">
+			<div class="za-footer-grid">
+				<div>
+					<img src="/static/images/footer-widget-logo.png" alt="" class="za-footer-logo" width="123" height="38" />
+					<p>ZeroAgent is a free, local desktop app from <strong>MVPLean</strong>.</p>
 				</div>
-
+				<ul>
+					<li><a href="/download">Download</a></li>
+					<li><a href="/terms">Terms</a></li>
+					<li><a href="/privacy">Privacy</a></li>
+				</ul>
+				<div>
+					<p><strong>Email:</strong> hello@mvplean.com</p>
+				</div>
 			</div>
-
-			<!-- Copyrights
-			============================================= -->
-			<div id="copyrights">
-
-				<div class="container clearfix">
-
-					<div class="col_half">
-						Copyrights &copy; 2026 All Rights Reserved by MVPLean.<br>
-					</div>
-
-				</div>
-
-			</div><!-- #copyrights end -->
-
-		</footer><!-- #footer end -->
-
-	</div><!-- #wrapper end -->
-
-	<!-- Go To Top
-	============================================= -->
-	<div id="gotoTop" class="icon-angle-up"></div>
-
-	<!-- External JavaScripts
-	============================================= -->
-	<script src="/static/js/jquery.js"></script>
-	<script src="/static/js/plugins.js"></script>
+			<div class="za-footer-copy">Copyrights &copy; 2026 All Rights Reserved by MVPLean.</div>
+		</div>
+	</footer>
 
 	<!-- Footer Scripts
 	============================================= -->
-	<script src="/static/js/functions.js"></script>
 	<script src="/static/js/zeroagent-copy.js"></script>
+
+	<!-- The hero video is the page's only unprompted motion. Someone who has
+	     asked their system for reduced motion gets the poster instead. -->
+	<script>
+	(function () {
+		if (!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		var video = document.querySelector('.za-hero-window video');
+		if (!video) return;
+		video.removeAttribute('autoplay');
+		video.pause();
+		video.setAttribute('controls', '');
+	})();
+	</script>
 
 	<!-- Google analytics -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-BTHHJB4E4T"></script>
