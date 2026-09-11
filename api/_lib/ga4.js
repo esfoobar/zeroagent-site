@@ -12,7 +12,7 @@
  * and sendGa4Event, the one function that actually calls fetch.
  */
 
-export const GA4_MEASUREMENT_ID = 'G-BTHHJB4E4T';
+export const GA4_MEASUREMENT_ID = 'G-9J7FZ4N6Z0';
 const GA4_COLLECT_URL = 'https://www.google-analytics.com/mp/collect';
 const GA4_DEBUG_COLLECT_URL = 'https://www.google-analytics.com/debug/mp/collect';
 

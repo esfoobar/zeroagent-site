@@ -50,17 +50,17 @@ test('randomClientId returns a unique-looking string each call', () => {
 });
 
 test('extractSessionId reads the session id out of a GS1-format _ga_<container> cookie', () => {
-	const cookie = '_ga=GA1.2.111.222; _ga_BTHHJB4E4T=GS1.1.1728318000.5.1.1728318010.0.0.0';
+	const cookie = '_ga=GA1.2.111.222; _ga_9J7FZ4N6Z0=GS1.1.1728318000.5.1.1728318010.0.0.0';
 	assert.equal(extractSessionId(cookie), '1728318000');
 });
 
 test('extractSessionId reads the session id out of a GS2-format _ga_<container> cookie', () => {
-	const cookie = '_ga_BTHHJB4E4T=GS2.1.s1728318000$o5$g1$t1728318010$j60$l0$h0';
+	const cookie = '_ga_9J7FZ4N6Z0=GS2.1.s1728318000$o5$g1$t1728318010$j60$l0$h0';
 	assert.equal(extractSessionId(cookie), '1728318000');
 });
 
 test('extractSessionId decodes a URL-encoded cookie value', () => {
-	const cookie = '_ga_BTHHJB4E4T=GS1.1.1728318000.5.1.1728318010.0.0.0'.replace('.', '%2E');
+	const cookie = '_ga_9J7FZ4N6Z0=GS1.1.1728318000.5.1.1728318010.0.0.0'.replace('.', '%2E');
 	assert.equal(extractSessionId(cookie), '1728318000');
 });
 
@@ -72,8 +72,8 @@ test('extractSessionId returns null when there is no matching cookie', () => {
 });
 
 test('extractSessionId returns null for a value with too few segments or an unparseable third segment', () => {
-	assert.equal(extractSessionId('_ga_BTHHJB4E4T=GS1.1'), null);
-	assert.equal(extractSessionId('_ga_BTHHJB4E4T=GS2.1.onotasessionid'), null);
+	assert.equal(extractSessionId('_ga_9J7FZ4N6Z0=GS1.1'), null);
+	assert.equal(extractSessionId('_ga_9J7FZ4N6Z0=GS2.1.onotasessionid'), null);
 });
 
 test('extractSessionId honors a custom measurementId when deriving the cookie name', () => {
