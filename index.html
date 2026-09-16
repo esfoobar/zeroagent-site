@@ -197,7 +197,7 @@
 				<p class="za-hero-cask">or <code id="za-hero-cask-cmd" data-copy-target="za-hero-cask-cmd" role="button" tabindex="0" title="Click to copy">brew trust zeroagentdev/tap
 brew install --cask zeroagentdev/tap/zeroagent</code></p>
 				<p class="za-hero-req">Homebrew 6 or newer needs that trust line before it will load the cask; older Homebrew can skip straight to installing.</p>
-				<p class="za-hero-req">macOS 14 or later, Apple Silicon or Intel. Requires Claude Code.</p>
+				<p class="za-hero-req">macOS 14 or later, Apple Silicon or Intel. Requires Claude Code for Zero Agent.</p>
 
 				<div class="za-hero-window">
 					<div class="za-window">
@@ -223,7 +223,8 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 					<div class="za-split-copy">
 						<h2>You talk to one agent, not to five.</h2>
 						<p>Zero Agent reads the request, writes the brief and names a tier: read, routine,
-							judgment or hard. The app picks an enabled model for that tier and dispatches a worker. It messages them mid flight, checks in on a timer that
+							judgment or hard. The app picks an enabled model for that tier and dispatches a worker.
+							Zero Agent messages workers mid flight, checks in on a timer that
 							backs off when nothing changes, keeps watching anything that outlives the conversation
 							like a CI run or a reply from another machine, and remembers what it learned about you
 							between sessions. Workers land their own pull requests under your conventions. You get
@@ -471,7 +472,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 							open a worker's transcript, answer a question it's waiting on, or send it a
 							message from wherever you are. The work still runs on your own Mac; the phone
 							only watches and steers it, with push notifications when Zero Agent needs your attention.</p>
-						<p class="za-small">Part of Premium, $5 a month, coming to the App Store.</p>
+						<p class="za-small">Part of Premium, $5 a month. Requires a paired Mac connected to the relay.</p>
 					</div>
 					<div class="za-phone-mock">
 						<div class="za-phone-frame">
@@ -568,7 +569,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 				<div class="za-btn-row">
 					<a href="/download" class="za-btn za-btn--primary za-btn--large">Download for Mac</a>
 				</div>
-				<p>Free, local, and yours to keep. Requires Claude Code.</p>
+				<p>Free, local, and yours to keep. Requires Claude Code for Zero Agent.</p>
 				<p>Free for local work on your own Mac, with no account. Remote monitoring and
 					the phone companion are Premium, $5 a month; cloud workspaces are coming later
 					as Platinum.</p>
@@ -599,7 +600,9 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 
 					<details>
 						<summary>Do I need an account or a subscription?</summary>
-						<div><p>The local app is free and needs no ZeroAgent account. You need your own model provider accounts or keys, and their charges and usage limits apply. Remote monitoring and the phone companion are Premium, $5 a month; cloud workspaces are planned as Platinum.</p></div>
+						<div><p>The local app is free and needs no ZeroAgent account. You need your own model provider accounts
+							or keys, and their charges and usage limits apply. Remote monitoring and the phone companion
+							are Premium, $5 a month; cloud workspaces are planned as Platinum.</p></div>
 					</details>
 
 					<details>
