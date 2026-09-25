@@ -12,9 +12,12 @@
 			document.getElementById('za-select-' + name).setAttribute('aria-pressed', String(name === os));
 		});
 		document.getElementById('za-mac-homebrew').hidden = os !== 'mac';
+		document.getElementById('za-mac-prerequisite').hidden = os !== 'mac';
+		document.getElementById('za-mac-intro').hidden = os !== 'mac';
+		document.getElementById('za-linux-intro').hidden = os !== 'linux';
+		document.getElementById('za-release-detail').hidden = os !== 'mac';
 		if (os === 'linux') {
 			document.getElementById('za-version').textContent = 'v' + linuxVersion + ' beta';
-			document.getElementById('za-release-date').textContent = 'see release notes';
 			window.ZA_RELEASE_VERSION = linuxVersion;
 		} else {
 			if (macVersion) document.getElementById('za-version').textContent = 'v' + macVersion;
@@ -31,11 +34,8 @@
 			macVersion = manifest.mac && manifest.mac.version;
 			var version = manifest.linux && manifest.linux.version;
 			if (!version) return;
-			return Promise.all([
-				fetch(base + 'ZeroAgent-linux-x64.deb', { method: 'HEAD' }),
-				fetch(base + 'ZeroAgent-linux-x64.AppImage', { method: 'HEAD' })
-			]).then(function (responses) {
-				if (!responses[0].ok || !responses[1].ok) return;
+			return fetch(base + 'ZeroAgent-linux-x64.deb', { method: 'HEAD' }).then(function (res) {
+				if (!res.ok) return;
 				linuxVersion = version;
 				document.getElementById('za-select-linux').hidden = false;
 				if (/Linux/i.test(navigator.userAgent || '') && !/Android|CrOS/i.test(navigator.userAgent || '')) show('linux');

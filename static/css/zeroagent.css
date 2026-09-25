@@ -1145,6 +1145,16 @@ video {
 	margin-top: 14px;
 }
 
+.za-linux-requirements {
+	margin: 28px 0 20px;
+	color: var(--ink-2);
+	line-height: 1.6;
+}
+
+.za-linux-requirements a {
+	color: var(--ink);
+}
+
 .za-agree {
 	font-size: 13px;
 	color: var(--ink-3);
