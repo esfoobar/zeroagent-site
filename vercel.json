@@ -5,6 +5,14 @@
     {
       "source": "/download/:arch(arm64|x64)",
       "destination": "/api/download?arch=:arch"
+    },
+    {
+      "source": "/download/:os/:arch/:format",
+      "destination": "/api/download?os=:os&arch=:arch&format=:format"
+    },
+    {
+      "source": "/download/:os/:arch",
+      "destination": "/api/download?os=:os&arch=:arch"
     }
   ],
   "headers": [

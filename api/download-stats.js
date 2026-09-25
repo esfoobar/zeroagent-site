@@ -53,9 +53,13 @@ function parsePathname(pathname) {
 	const basename = parts[2].replace(/\.json$/, '');
 	const fields = basename.split('-');
 	if (fields.length < 6) return null;
-	const [epochMs, arch, version, country, browser, os] = fields;
+	const modern = fields.length >= 9;
+	const [epochMs, arch] = fields;
+	const platform = modern ? fields[2] : 'mac';
+	const format = modern ? fields[3] : 'dmg';
+	const [version, country, browser, os] = fields.slice(modern ? 4 : 2);
 	const tsMs = Number(epochMs);
-	return { date, arch, version, country, browser, os, tsMs: Number.isFinite(tsMs) ? tsMs : null };
+	return { date, arch, platform, format, version, country, browser, os, tsMs: Number.isFinite(tsMs) ? tsMs : null };
 }
 
 function isHuman(browser) {
@@ -137,6 +141,8 @@ export default async function handler(req, res) {
 	let bots = 0;
 	const byDayMap = {};
 	const byArch = {};
+	const byPlatform = {};
+	const byFormat = {};
 	const byVersion = {};
 	const byCountry = {};
 	const byBrowser = {};
@@ -151,6 +157,8 @@ export default async function handler(req, res) {
 		}
 		bump(byDayMap, row.date);
 		bump(byArch, row.arch);
+		bump(byPlatform, row.platform);
+		bump(byFormat, row.format);
 		bump(byVersion, row.version);
 		bump(byCountry, row.country);
 		bump(byBrowser, row.browser);
@@ -173,6 +181,8 @@ export default async function handler(req, res) {
 			date: row.date,
 			ts,
 			arch: row.arch,
+			platform: row.platform,
+			format: row.format,
 			version: row.version,
 			country: (body && body.country) || row.country,
 			city: body ? body.city : null,
@@ -197,6 +207,8 @@ export default async function handler(req, res) {
 			bots,
 			byDay,
 			byArch,
+			byPlatform,
+			byFormat,
 			byVersion,
 			byCountry,
 			byBrowser,

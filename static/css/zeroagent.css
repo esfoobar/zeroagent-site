@@ -1280,3 +1280,7 @@ video {
 	font-size: 12px;
 	color: var(--ink-3);
 }
+.za-os-selector { display: flex; gap: 8px; justify-content: center; margin: 0 0 30px; }
+.za-os-selector button { background: transparent; color: inherit; border: 1px solid currentColor; border-radius: 999px; padding: 9px 20px; font: inherit; cursor: pointer; }
+.za-os-selector button[aria-pressed="true"] { background: #e8785c; color: #000; border-color: #e8785c; }
+[hidden] { display: none !important; }
