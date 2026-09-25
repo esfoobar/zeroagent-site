@@ -1145,43 +1145,76 @@ video {
 	margin-top: 14px;
 }
 
-.za-linux-install {
-	margin-top: 40px;
-	text-align: left;
-}
-
-.za-linux-install p,
-.za-linux-other p {
+.za-linux-requirements {
+	margin: 28px 0 20px;
 	color: var(--ink-2);
 	line-height: 1.6;
 }
 
-.za-linux-install a,
-.za-linux-prerequisites a,
-.za-linux-other a {
+.za-linux-requirements a,
+.za-method-panel a {
 	color: var(--ink);
 }
 
-.za-linux-install .za-snippet code,
-.za-linux-other .za-snippet code {
+.za-method-tabs {
+	display: flex;
+	gap: 8px;
+	border-bottom: 1px solid var(--line);
+}
+
+.za-method-tabs button {
+	padding: 12px 14px;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	background: transparent;
+	color: var(--ink-3);
+	font: inherit;
+	cursor: pointer;
+}
+
+.za-method-tabs button[aria-selected="true"] {
+	border-color: var(--accent);
+	color: var(--ink);
+}
+
+.za-method-panel {
+	padding: 28px;
+	border: 1px solid var(--line);
+	border-top: 0;
+	border-radius: 0 0 var(--radius-l) var(--radius-l);
+	background: var(--surface);
+}
+
+.za-method-panel > p,
+.za-install-steps p {
+	margin: 0 0 16px;
+	color: var(--ink-2);
+	line-height: 1.6;
+}
+
+.za-install-steps {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.za-install-steps li + li {
+	margin-top: 26px;
+}
+
+.za-install-steps h3 {
+	font-size: 16px;
+	margin: 0 0 10px;
+}
+
+.za-method-panel .za-snippet code {
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
 }
 
-.za-linux-prerequisites,
-.za-linux-other {
-	margin-top: 24px;
-}
-
-.za-linux-other {
-	padding: 20px 24px;
-	border: 1px solid var(--line);
-	border-radius: var(--radius);
-}
-
-.za-linux-other summary {
-	cursor: pointer;
-	font-weight: 500;
+@media (max-width: 520px) {
+	.za-method-tabs button { padding: 12px 8px; font-size: 13px; }
+	.za-method-panel { padding: 20px; }
 }
 
 .za-agree {

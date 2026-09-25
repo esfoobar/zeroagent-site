@@ -122,15 +122,38 @@ brew install --cask zeroagentdev/tap/zeroagent</code>
 			<p class="za-caption">Homebrew 6 or newer needs that trust line before it will load the cask; older Homebrew can skip straight to installing.</p>
 			</div>
 			<div id="za-linux-panel" hidden>
-				<div class="za-linux-install za-platform-card">
-					<h2>Ubuntu 24.04 x64 <span class="za-badge-recommended">Beta</span></h2>
-					<p>Open a terminal and paste this command to install ZeroAgent:</p>
-					<div class="za-snippet"><code id="za-linux-install-cmd">curl -fsSL https://zeroagenthq.com/install.sh | bash</code><button type="button" class="za-copy-btn" data-copy-target="za-linux-install-cmd">Copy</button></div>
-					<p>Open ZeroAgent from your app menu. To update, run the same command.</p>
-					<p>Prefer a browser download? <a id="za-download-linux-deb" href="/download/linux/x64">Download deb</a>.</p>
+				<p class="za-linux-requirements">Ubuntu 24.04 or newer on a 64-bit Intel or AMD PC, with <a href="https://claude.com/product/claude-code">Claude Code</a> and <a href="https://nodejs.org/en/download">Node.js</a> installed.</p>
+				<div class="za-method-tabs" role="tablist" aria-label="Linux installation method">
+					<button type="button" id="za-tab-installer" role="tab" aria-controls="za-method-installer" aria-selected="true">With the installer</button>
+					<button type="button" id="za-tab-deb" role="tab" aria-controls="za-method-deb" aria-selected="false">Deb package</button>
+					<button type="button" id="za-tab-appimage" role="tab" aria-controls="za-method-appimage" aria-selected="false">AppImage</button>
 				</div>
-				<div class="za-note za-linux-prerequisites"><p><strong>Before you start:</strong> Install <a href="https://nodejs.org/en/download">Node.js</a> and <a href="https://claude.com/product/claude-code">Claude Code</a>. ZeroAgent needs Claude Code to run its lead agent.</p></div>
-				<details class="za-linux-other"><summary>Other option: AppImage</summary><p>Choose this if you want the app to update itself.</p><a id="za-download-linux-appimage" href="/download/linux/x64/appimage">Download AppImage</a><p>Save it as <code>ZeroAgent.AppImage</code>. Open a terminal in Downloads, then run:</p><div class="za-snippet"><code id="za-linux-appimage-cmd">sudo apt install -y libfuse2t64 &amp;&amp; chmod +x ./ZeroAgent.AppImage &amp;&amp; ./ZeroAgent.AppImage --no-sandbox</code><button type="button" class="za-copy-btn" data-copy-target="za-linux-appimage-cmd">Copy</button></div></details>
+				<div id="za-method-installer" class="za-method-panel">
+					<p>ZeroAgent for Linux can be installed by running:</p>
+					<ol class="za-install-steps">
+					<li><h3>1. Install</h3><div class="za-snippet"><code id="za-linux-install-cmd">curl -fsSL https://zeroagenthq.com/install.sh | bash</code><button type="button" class="za-copy-btn" data-copy-target="za-linux-install-cmd">Copy</button></div></li>
+					<li><h3>2. Open ZeroAgent</h3><p>Or find ZeroAgent in your app menu.</p><div class="za-snippet"><code id="za-linux-open-cmd">gtk-launch com.mvplean.zeroagent</code><button type="button" class="za-copy-btn" data-copy-target="za-linux-open-cmd">Copy</button></div></li>
+					<li><h3>3. Update</h3><p>Run the same command.</p><div class="za-snippet"><code id="za-linux-update-cmd">curl -fsSL https://zeroagenthq.com/install.sh | bash</code><button type="button" class="za-copy-btn" data-copy-target="za-linux-update-cmd">Copy</button></div></li>
+					<li><h3>4. Uninstall</h3><div class="za-snippet"><code id="za-linux-uninstall-cmd">sudo apt remove zeroagent</code><button type="button" class="za-copy-btn" data-copy-target="za-linux-uninstall-cmd">Copy</button></div></li>
+					</ol>
+				</div>
+				<div id="za-method-deb" class="za-method-panel" hidden>
+					<ol class="za-install-steps">
+					<li><h3>1. Install</h3><p><a id="za-download-linux-deb" href="/download/linux/x64">Download deb</a>, then open the downloaded package to install it.</p></li>
+					<li><h3>2. Open ZeroAgent</h3><p>Or find ZeroAgent in your app menu.</p><div class="za-snippet"><code id="za-deb-open-cmd">gtk-launch com.mvplean.zeroagent</code><button type="button" class="za-copy-btn" data-copy-target="za-deb-open-cmd">Copy</button></div></li>
+					<li><h3>3. Update</h3><p>Download the latest deb and install it the same way.</p></li>
+					<li><h3>4. Uninstall</h3><div class="za-snippet"><code id="za-deb-uninstall-cmd">sudo apt remove zeroagent</code><button type="button" class="za-copy-btn" data-copy-target="za-deb-uninstall-cmd">Copy</button></div></li>
+					</ol>
+				</div>
+				<div id="za-method-appimage" class="za-method-panel" hidden>
+					<p>The AppImage updates itself when you open it.</p>
+					<ol class="za-install-steps">
+					<li><h3>1. Install</h3><div class="za-snippet"><code id="za-appimage-install-cmd">sudo apt install -y libfuse2t64 &amp;&amp; curl -fsSL https://zeroagenthq.com/download/linux/x64/appimage -o "$HOME/ZeroAgent.AppImage" &amp;&amp; chmod +x "$HOME/ZeroAgent.AppImage"</code><button type="button" class="za-copy-btn" data-copy-target="za-appimage-install-cmd">Copy</button></div></li>
+					<li><h3>2. Open ZeroAgent</h3><div class="za-snippet"><code id="za-appimage-open-cmd">"$HOME/ZeroAgent.AppImage" --no-sandbox</code><button type="button" class="za-copy-btn" data-copy-target="za-appimage-open-cmd">Copy</button></div></li>
+					<li><h3>3. Update</h3><p>Open it to check for updates.</p><div class="za-snippet"><code id="za-appimage-update-cmd">"$HOME/ZeroAgent.AppImage" --no-sandbox</code><button type="button" class="za-copy-btn" data-copy-target="za-appimage-update-cmd">Copy</button></div></li>
+					<li><h3>4. Uninstall</h3><p>Delete the AppImage.</p><div class="za-snippet"><code id="za-appimage-uninstall-cmd">rm "$HOME/ZeroAgent.AppImage"</code><button type="button" class="za-copy-btn" data-copy-target="za-appimage-uninstall-cmd">Copy</button></div></li>
+					</ol>
+				</div>
 				<p class="za-caption">Other Linux architectures are not available yet.</p>
 			</div>
 

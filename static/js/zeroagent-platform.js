@@ -27,6 +27,15 @@
 	document.addEventListener('DOMContentLoaded', function () {
 		document.getElementById('za-select-mac').addEventListener('click', function () { show('mac'); });
 		document.getElementById('za-select-linux').addEventListener('click', function () { show('linux'); });
+		['installer', 'deb', 'appimage'].forEach(function (method) {
+			document.getElementById('za-tab-' + method).addEventListener('click', function () {
+				['installer', 'deb', 'appimage'].forEach(function (name) {
+					var active = name === method;
+					document.getElementById('za-tab-' + name).setAttribute('aria-selected', String(active));
+					document.getElementById('za-method-' + name).hidden = !active;
+				});
+			});
+		});
 		fetch(base + 'release.json').then(function (res) {
 			if (!res.ok) throw new Error('manifest unavailable');
 			return res.json();
