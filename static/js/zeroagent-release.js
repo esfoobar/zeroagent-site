@@ -112,10 +112,12 @@ var RELEASE_FEED = {
 				var manifest = parseLatestMacYml(text);
 				if (!manifest) throw new Error('unrecognized release feed format');
 
-				setText('za-version', 'v' + manifest.version);
-				window.ZA_RELEASE_VERSION = manifest.version;
+				if (document.getElementById('za-linux-panel').hidden) {
+					setText('za-version', 'v' + manifest.version);
+					window.ZA_RELEASE_VERSION = manifest.version;
+				}
 				var releaseDate = formatDate(manifest.releaseDate);
-				setText('za-release-date', releaseDate || 'unknown');
+				if (document.getElementById('za-linux-panel').hidden) setText('za-release-date', releaseDate || 'unknown');
 
 				var arm64Dmg = findArchFile(manifest.files, 'arm64', 'dmg');
 				var x64Dmg = findArchFile(manifest.files, 'x64', 'dmg');

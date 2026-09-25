@@ -61,3 +61,23 @@ test('Linux returns 404 before publication; macOS aliases still redirect', async
 		assert.equal(mac.headers.Location, 'https://releases.zeroagenthq.com/latest/ZeroAgent-arm64.dmg');
 	} finally { globalThis.fetch = originalFetch; }
 });
+
+test('Linux requires the stable object even when the manifest has a version', async () => {
+	const originalFetch = globalThis.fetch;
+	let objectExists = false;
+	globalThis.fetch = async (url, options) => {
+		if (String(url).endsWith('release.json')) return { ok: true, json: async () => ({ linux: { version: '0.17.0' } }) };
+		if (options && options.method === 'HEAD') return { ok: objectExists };
+		throw new Error('unexpected request');
+	};
+	try {
+		const missing = response();
+		await handler({ method: 'HEAD', query: { os: 'linux', arch: 'x64', format: 'appimage' }, headers: {} }, missing);
+		assert.equal(missing.statusCode, 404);
+		objectExists = true;
+		const published = response();
+		await handler({ method: 'HEAD', query: { os: 'linux', arch: 'x64', format: 'appimage' }, headers: {} }, published);
+		assert.equal(published.statusCode, 302);
+		assert.equal(published.headers.Location, 'https://releases.zeroagenthq.com/latest/ZeroAgent-linux-x64.AppImage');
+	} finally { globalThis.fetch = originalFetch; }
+});

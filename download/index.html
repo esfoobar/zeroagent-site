@@ -20,7 +20,7 @@
 
 	<!-- Document Title
 	============================================= -->
-	<title>Download ZeroAgent for Mac, Free for Apple Silicon or Intel</title>
+	<title>Download ZeroAgent for Mac or Linux</title>
 	<meta name="description" content="Download ZeroAgent free for Apple Silicon or Intel Macs. Notarized, no registration, no account. Supports Claude, Codex, Gemini and open models through OpenRouter." />
 	<link rel="canonical" href="https://zeroagenthq.com/download" />
 
@@ -89,6 +89,11 @@
 		</div>
 
 		<div class="za-container za-narrow">
+			<div class="za-os-selector" role="group" aria-label="Operating system">
+				<button type="button" id="za-select-mac" aria-pressed="true">macOS</button>
+				<button type="button" id="za-select-linux" aria-pressed="false" hidden>Linux beta</button>
+			</div>
+			<div id="za-mac-panel">
 
 			<div class="za-platforms">
 				<div class="za-platform-card" id="za-card-arm64">
@@ -115,12 +120,27 @@ brew install --cask zeroagentdev/tap/zeroagent</code>
 			</div>
 
 			<p class="za-caption">Homebrew 6 or newer needs that trust line before it will load the cask; older Homebrew can skip straight to installing.</p>
+			</div>
+			<div id="za-linux-panel" hidden>
+				<div class="za-platforms">
+					<div class="za-platform-card"><h2>Ubuntu 24.04 x64 <span class="za-badge-recommended">Beta</span></h2>
+						<p class="za-meta">Deb package. Sandboxed and keyring-ready; install upgrades manually.</p>
+						<a id="za-download-linux-deb" href="/download/linux/x64" class="za-btn za-btn--primary za-btn--full">Download deb</a>
+						<p>Install with <code>sudo apt install ./ZeroAgent-linux-x64.deb</code></p>
+					</div>
+					<div class="za-platform-card"><h2>AppImage</h2>
+						<p class="za-meta">Updates itself. On stock Ubuntu 24.04 it runs without the sandbox and needs <code>libfuse2t64</code>.</p>
+						<a id="za-download-linux-appimage" href="/download/linux/x64/appimage" class="za-btn za-btn--primary za-btn--full">Download AppImage</a>
+					</div>
+				</div>
+				<p class="za-caption">Other Linux architectures and formats are not available yet.</p>
+			</div>
 
 			<p class="za-agree">By downloading, you agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</p>
 
 		</div>
 
-		<section class="za-section za-section--tight">
+		<section id="za-mac-prerequisite" class="za-section za-section--tight">
 			<div class="za-container za-narrow">
 				<div class="za-note">
 					<p><strong>Prerequisite:</strong> ZeroAgent coordinates the work; it drives a coding agent CLI already installed on your Mac to do it. Supports Claude, Codex, Gemini and open models through OpenRouter. Claude Code is required for Zero Agent; other workers use their own provider accounts or keys.</p>
@@ -128,7 +148,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code>
 			</div>
 		</section>
 
-		<section class="za-section">
+		<section id="za-mac-homebrew" class="za-section">
 			<div class="za-container za-narrow">
 				<div class="za-section-head za-section-head--minor">
 					<h2>Prefer Homebrew?</h2>
@@ -163,6 +183,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code>
 	============================================= -->
 	<script src="/static/js/zeroagent-copy.js"></script>
 	<script src="/static/js/zeroagent-release.js"></script>
+	<script src="/static/js/zeroagent-platform.js"></script>
 	<script src="/static/js/zeroagent-arch.js"></script>
 
 	<!-- Google analytics -->
