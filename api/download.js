@@ -38,10 +38,11 @@ const PUT_TIMEOUT_MS = 1500;
 // Module-scope cache: this survives across invocations on a warm instance
 // and costs nothing on a cold one beyond the first fetch.
 let versionCache = { value: null, fetchedAt: 0 };
+let macVersionCache = { value: null, fetchedAt: 0 };
 
 async function currentVersions() {
 	const now = Date.now();
-	if (versionCache.value && now - versionCache.fetchedAt < VERSION_CACHE_MS) {
+	if (versionCache.fetchedAt && now - versionCache.fetchedAt < VERSION_CACHE_MS) {
 		return versionCache.value;
 	}
 	try {
@@ -51,21 +52,31 @@ async function currentVersions() {
 		versionCache = { value: versions, fetchedAt: now };
 		return versions;
 	} catch (err) {
+		versionCache.fetchedAt = now;
 		return versionCache.value || null;
 	}
 }
 
 async function macVersion() {
+	const now = Date.now();
+	if (macVersionCache.fetchedAt && now - macVersionCache.fetchedAt < VERSION_CACHE_MS) return macVersionCache.value;
 	const manifest = await currentVersions();
 	const version = releaseVersion(manifest, 'mac');
-	if (version) return version;
+	if (version) {
+		macVersionCache = { value: version, fetchedAt: now };
+		return version;
+	}
 	// Existing macOS links must continue to work before release.json exists.
 	try {
 		const res = await fetch(`${RELEASES_BASE}/latest-mac.yml`, { signal: AbortSignal.timeout(3000) });
-		if (!res.ok) return 'unknown';
-		const match = (await res.text()).match(/^version:\s*(.+?)\s*$/m);
-		return match ? match[1].replace(/^['"]|['"]$/g, '') : 'unknown';
-	} catch { return 'unknown'; }
+		if (res.ok) {
+			const match = (await res.text()).match(/^version:\s*(.+?)\s*$/m);
+			macVersionCache = { value: match ? match[1].replace(/^['"]|['"]$/g, '') : 'unknown', fetchedAt: now };
+			return macVersionCache.value;
+		}
+	} catch { /* Keep the fallback for this cache window. */ }
+	macVersionCache = { value: 'unknown', fetchedAt: now };
+	return macVersionCache.value;
 }
 
 function sanitizeSegment(value) {

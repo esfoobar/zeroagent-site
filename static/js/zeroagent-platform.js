@@ -11,7 +11,6 @@
 			document.getElementById('za-' + name + '-panel').hidden = name !== os;
 			document.getElementById('za-select-' + name).setAttribute('aria-pressed', String(name === os));
 		});
-		document.getElementById('za-mac-prerequisite').hidden = os !== 'mac';
 		document.getElementById('za-mac-homebrew').hidden = os !== 'mac';
 		if (os === 'linux') {
 			document.getElementById('za-version').textContent = 'v' + linuxVersion + ' beta';
@@ -39,7 +38,7 @@
 				if (!responses[0].ok || !responses[1].ok) return;
 				linuxVersion = version;
 				document.getElementById('za-select-linux').hidden = false;
-				if (/Linux/i.test(navigator.userAgent || '')) show('linux');
+				if (/Linux/i.test(navigator.userAgent || '') && !/Android|CrOS/i.test(navigator.userAgent || '')) show('linux');
 			});
 		}).catch(function () { /* macOS remains available. */ });
 	});

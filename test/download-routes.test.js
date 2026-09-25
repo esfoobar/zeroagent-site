@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveDownloadRoute, releaseVersion } from '../api/_lib/download-routes.js';
 import config from '../vercel.json' with { type: 'json' };
-import handler from '../api/download.js';
 
 test('canonical routes and permanent macOS aliases resolve to stable names', () => {
 	const rows = [
@@ -45,8 +44,11 @@ function response() {
 }
 
 test('Linux returns 404 before publication; macOS aliases still redirect', async () => {
+	const { default: handler } = await import('../api/download.js?test=unpublished');
 	const originalFetch = globalThis.fetch;
+	let fetches = 0;
 	globalThis.fetch = async (url) => {
+		fetches++;
 		if (String(url).endsWith('release.json')) return { ok: false, status: 403 };
 		return { ok: true, text: async () => 'version: 0.16.0\n' };
 	};
@@ -59,10 +61,16 @@ test('Linux returns 404 before publication; macOS aliases still redirect', async
 		await handler({ method: 'HEAD', query: { arch: 'arm64' }, headers: {} }, mac);
 		assert.equal(mac.statusCode, 302);
 		assert.equal(mac.headers.Location, 'https://releases.zeroagenthq.com/latest/ZeroAgent-arm64.dmg');
+		const firstRequestFetches = fetches;
+		const secondMac = response();
+		await handler({ method: 'HEAD', query: { arch: 'x64' }, headers: {} }, secondMac);
+		assert.equal(secondMac.statusCode, 302);
+		assert.equal(fetches, firstRequestFetches);
 	} finally { globalThis.fetch = originalFetch; }
 });
 
 test('Linux requires the stable object even when the manifest has a version', async () => {
+	const { default: handler } = await import('../api/download.js?test=published');
 	const originalFetch = globalThis.fetch;
 	let objectExists = false;
 	globalThis.fetch = async (url, options) => {
@@ -79,5 +87,23 @@ test('Linux requires the stable object even when the manifest has a version', as
 		await handler({ method: 'HEAD', query: { os: 'linux', arch: 'x64', format: 'appimage' }, headers: {} }, published);
 		assert.equal(published.statusCode, 302);
 		assert.equal(published.headers.Location, 'https://releases.zeroagenthq.com/latest/ZeroAgent-linux-x64.AppImage');
+	} finally { globalThis.fetch = originalFetch; }
+});
+
+test('macOS reuses a version resolved from release.json', async () => {
+	const { default: handler } = await import('../api/download.js?test=mac-manifest');
+	const originalFetch = globalThis.fetch;
+	let fetches = 0;
+	globalThis.fetch = async () => {
+		fetches++;
+		return { ok: true, json: async () => ({ mac: { version: '0.16.1' } }) };
+	};
+	try {
+		for (const arch of ['arm64', 'x64']) {
+			const res = response();
+			await handler({ method: 'HEAD', query: { arch }, headers: {} }, res);
+			assert.equal(res.statusCode, 302);
+		}
+		assert.equal(fetches, 1);
 	} finally { globalThis.fetch = originalFetch; }
 });
