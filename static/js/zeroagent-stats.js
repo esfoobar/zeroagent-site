@@ -183,6 +183,8 @@
 			return '<tr>' +
 				'<td>' + esc(fmtDateTime(r.ts, r.date)) + '</td>' +
 				'<td class="arch">' + esc(r.arch) + '</td>' +
+				'<td>' + esc(r.platform || 'mac') + '</td>' +
+				'<td>' + esc(r.format || 'dmg') + '</td>' +
 				'<td>' + esc(r.version) + '</td>' +
 				'<td>' + esc(r.country || 'unknown') + '</td>' +
 				'<td>' + esc(r.city || '—') + '</td>' +
@@ -197,6 +199,8 @@
 		renderTiles(data);
 		renderDayChart(data.byDay);
 		renderBarlist('by-arch', data.byArch);
+		renderBarlist('by-platform', data.byPlatform);
+		renderBarlist('by-format', data.byFormat);
 		renderBarlist('by-version', data.byVersion);
 		renderBarlist('by-country', data.byCountry);
 		renderBarlist('by-browser', data.byBrowser);

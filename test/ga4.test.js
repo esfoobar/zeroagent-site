@@ -135,6 +135,8 @@ test('buildDownloadServedPayload builds a well-formed Measurement Protocol body'
 		session_id: '1728318000',
 		engagement_time_msec: '100',
 		arch: 'arm64',
+		platform: 'mac',
+		format: 'dmg',
 		version: '1.2.3',
 		source: 'redirect',
 		referrer_host: 'mvplean.com',

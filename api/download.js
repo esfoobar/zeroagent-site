@@ -20,6 +20,7 @@
 import { put } from '@vercel/blob';
 import { waitUntil } from '@vercel/functions';
 import { parseUserAgent } from './_lib/ua.js';
+import { resolveDownloadRoute, releaseVersion } from './_lib/download-routes.js';
 import {
 	extractClientId,
 	randomClientId,
@@ -30,7 +31,6 @@ import {
 	sendGa4Event,
 } from './_lib/ga4.js';
 
-const VALID_ARCHES = new Set(['arm64', 'x64']);
 const RELEASES_BASE = 'https://releases.zeroagenthq.com';
 const VERSION_CACHE_MS = 5 * 60 * 1000;
 const PUT_TIMEOUT_MS = 1500;
@@ -39,24 +39,33 @@ const PUT_TIMEOUT_MS = 1500;
 // and costs nothing on a cold one beyond the first fetch.
 let versionCache = { value: null, fetchedAt: 0 };
 
-async function currentVersion() {
+async function currentVersions() {
 	const now = Date.now();
 	if (versionCache.value && now - versionCache.fetchedAt < VERSION_CACHE_MS) {
 		return versionCache.value;
 	}
 	try {
-		const res = await fetch(`${RELEASES_BASE}/latest-mac.yml`);
-		if (!res.ok) throw new Error(`latest-mac.yml responded ${res.status}`);
-		const text = await res.text();
-		const match = text.match(/^version:\s*(.+?)\s*$/m);
-		const version = match ? match[1].replace(/^['"]|['"]$/g, '') : 'unknown';
-		versionCache = { value: version, fetchedAt: now };
-		return version;
+		const res = await fetch(`${RELEASES_BASE}/latest/release.json`);
+		if (!res.ok) throw new Error(`release.json responded ${res.status}`);
+		const versions = await res.json();
+		versionCache = { value: versions, fetchedAt: now };
+		return versions;
 	} catch (err) {
-		// Never block the redirect on a slow or failing feed. Fall back to
-		// the last known good value, or "unknown" if there has never been one.
-		return versionCache.value || 'unknown';
+		return versionCache.value || null;
 	}
+}
+
+async function macVersion() {
+	const manifest = await currentVersions();
+	const version = releaseVersion(manifest, 'mac');
+	if (version) return version;
+	// Existing macOS links must continue to work before release.json exists.
+	try {
+		const res = await fetch(`${RELEASES_BASE}/latest-mac.yml`);
+		if (!res.ok) return 'unknown';
+		const match = (await res.text()).match(/^version:\s*(.+?)\s*$/m);
+		return match ? match[1].replace(/^['"]|['"]$/g, '') : 'unknown';
+	} catch { return 'unknown'; }
 }
 
 function sanitizeSegment(value) {
@@ -100,7 +109,7 @@ function firstHeader(value) {
 // Fire-and-forget: builds and sends the GA4 event, catching everything
 // internally so a caller never needs to await or catch this. Returns the
 // in-flight promise only so it can be handed to waitUntil.
-function reportToGa4(req, { arch, version, ts }) {
+function reportToGa4(req, { arch, platform, format, version, ts }) {
 	const apiSecret = process.env.GA4_API_SECRET;
 	if (!apiSecret) {
 		console.log('[ga4] GA4_API_SECRET is not set; skipping the Measurement Protocol event');
@@ -118,6 +127,8 @@ function reportToGa4(req, { arch, version, ts }) {
 		clientId,
 		sessionId,
 		arch,
+		platform,
+		format,
 		version,
 		ua,
 		ip,
@@ -131,19 +142,34 @@ function reportToGa4(req, { arch, version, ts }) {
 }
 
 export default async function handler(req, res) {
-	const rawArch = req.query && req.query.arch;
-	const arch = String(Array.isArray(rawArch) ? rawArch[0] : rawArch || '');
+	const query = req.query || {};
+	const scalar = (value) => Array.isArray(value) ? value[0] : value;
+	const route = resolveDownloadRoute({ os: scalar(query.os), arch: scalar(query.arch), format: scalar(query.format) });
 
-	if (!VALID_ARCHES.has(arch)) {
+	if (!route) {
 		res.statusCode = 404;
 		res.setHeader('Content-Type', 'text/plain; charset=utf-8');
 		res.setHeader('Cache-Control', 'no-store');
-		res.end('not found: unknown architecture\n');
+		res.end('not found: unsupported download\n');
 		return;
 	}
 
-	const version = await currentVersion();
-	const targetUrl = `${RELEASES_BASE}/latest/ZeroAgent-${arch}.dmg`;
+	const { arch, platform, format } = route;
+	const version = platform === 'mac' ? await macVersion() : releaseVersion(await currentVersions(), platform);
+	const targetUrl = `${RELEASES_BASE}/latest/${route.file}`;
+	if (platform === 'linux') {
+		let published = false;
+		if (version) {
+			try { published = (await fetch(targetUrl, { method: 'HEAD' })).ok; } catch { /* Keep the route closed. */ }
+		}
+		if (!published) {
+			res.statusCode = 404;
+			res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+			res.setHeader('Cache-Control', 'no-store');
+			res.end('not found: not released yet\n');
+			return;
+		}
+	}
 
 	if (req.method !== 'HEAD') {
 		const ts = new Date();
@@ -156,6 +182,8 @@ export default async function handler(req, res) {
 			ts: ts.toISOString(),
 			date,
 			arch,
+			platform,
+			format,
 			version,
 			country: firstHeader(req.headers['x-vercel-ip-country']) || null,
 			region: firstHeader(req.headers['x-vercel-ip-country-region']) || null,
@@ -180,6 +208,8 @@ export default async function handler(req, res) {
 			[
 				ts.getTime(),
 				sanitizeSegment(arch),
+				sanitizeSegment(platform),
+				sanitizeSegment(format),
 				sanitizeSegment(version),
 				sanitizeSegment(event.country),
 				sanitizeSegment(event.browser),
@@ -201,7 +231,7 @@ export default async function handler(req, res) {
 		// Dispatched in parallel with the Blob write above, never awaited on
 		// the response path; waitUntil keeps it alive past the 302 that
 		// follows below.
-		waitUntil(reportToGa4(req, { arch, version, ts }));
+		waitUntil(reportToGa4(req, { arch, platform, format, version, ts }));
 
 		await blobWrite;
 	}
