@@ -12,9 +12,12 @@
 			document.getElementById('za-select-' + name).setAttribute('aria-pressed', String(name === os));
 		});
 		document.getElementById('za-mac-homebrew').hidden = os !== 'mac';
+		document.getElementById('za-mac-prerequisite').hidden = os !== 'mac';
+		document.getElementById('za-mac-intro').hidden = os !== 'mac';
+		document.getElementById('za-linux-intro').hidden = os !== 'linux';
+		document.getElementById('za-release-detail').hidden = os !== 'mac';
 		if (os === 'linux') {
 			document.getElementById('za-version').textContent = 'v' + linuxVersion + ' beta';
-			document.getElementById('za-release-date').textContent = 'see release notes';
 			window.ZA_RELEASE_VERSION = linuxVersion;
 		} else {
 			if (macVersion) document.getElementById('za-version').textContent = 'v' + macVersion;

@@ -1145,6 +1145,45 @@ video {
 	margin-top: 14px;
 }
 
+.za-linux-install {
+	margin-top: 40px;
+	text-align: left;
+}
+
+.za-linux-install p,
+.za-linux-other p {
+	color: var(--ink-2);
+	line-height: 1.6;
+}
+
+.za-linux-install a,
+.za-linux-prerequisites a,
+.za-linux-other a {
+	color: var(--ink);
+}
+
+.za-linux-install .za-snippet code,
+.za-linux-other .za-snippet code {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.za-linux-prerequisites,
+.za-linux-other {
+	margin-top: 24px;
+}
+
+.za-linux-other {
+	padding: 20px 24px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+}
+
+.za-linux-other summary {
+	cursor: pointer;
+	font-weight: 500;
+}
+
 .za-agree {
 	font-size: 13px;
 	color: var(--ink-3);
