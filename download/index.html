@@ -124,11 +124,10 @@ brew install --cask zeroagentdev/tap/zeroagent</code>
 			<div id="za-linux-panel" hidden>
 				<div class="za-linux-install za-platform-card">
 					<h2>Ubuntu 24.04 x64 <span class="za-badge-recommended">Beta</span></h2>
-					<p>Open a terminal and paste this whole block to download and install ZeroAgent:</p>
-					<div class="za-snippet"><code id="za-linux-install-cmd">curl -fL https://zeroagenthq.com/download/linux/x64 -o /tmp/zeroagent.deb &amp;&amp; sudo apt install -y /tmp/zeroagent.deb</code><button type="button" class="za-copy-btn" data-copy-target="za-linux-install-cmd">Copy</button></div>
-					<p>Open ZeroAgent from your app menu. To update later, run the same command again.</p>
-					<p>Prefer a browser download? <a id="za-download-linux-deb" href="/download/linux/x64">Download deb</a> and save it as <code>zeroagent.deb</code>. Open a terminal in Downloads and run:</p>
-					<div class="za-snippet"><code id="za-linux-downloaded-cmd">sudo apt install -y ./zeroagent.deb</code><button type="button" class="za-copy-btn" data-copy-target="za-linux-downloaded-cmd">Copy</button></div>
+					<p>Open a terminal and paste this command to install ZeroAgent:</p>
+					<div class="za-snippet"><code id="za-linux-install-cmd">curl -fsSL https://zeroagenthq.com/install.sh | bash</code><button type="button" class="za-copy-btn" data-copy-target="za-linux-install-cmd">Copy</button></div>
+					<p>Open ZeroAgent from your app menu. To update, run the same command.</p>
+					<p>Prefer a browser download? <a id="za-download-linux-deb" href="/download/linux/x64">Download deb</a>.</p>
 				</div>
 				<div class="za-note za-linux-prerequisites"><p><strong>Before you start:</strong> Install <a href="https://nodejs.org/en/download">Node.js</a> and <a href="https://claude.com/product/claude-code">Claude Code</a>. ZeroAgent needs Claude Code to run its lead agent.</p></div>
 				<details class="za-linux-other"><summary>Other option: AppImage</summary><p>Choose this if you want the app to update itself.</p><a id="za-download-linux-appimage" href="/download/linux/x64/appimage">Download AppImage</a><p>Save it as <code>ZeroAgent.AppImage</code>. Open a terminal in Downloads, then run:</p><div class="za-snippet"><code id="za-linux-appimage-cmd">sudo apt install -y libfuse2t64 &amp;&amp; chmod +x ./ZeroAgent.AppImage &amp;&amp; ./ZeroAgent.AppImage --no-sandbox</code><button type="button" class="za-copy-btn" data-copy-target="za-linux-appimage-cmd">Copy</button></div></details>
