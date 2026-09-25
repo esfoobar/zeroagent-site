@@ -45,7 +45,7 @@ async function currentVersions() {
 		return versionCache.value;
 	}
 	try {
-		const res = await fetch(`${RELEASES_BASE}/latest/release.json`);
+		const res = await fetch(`${RELEASES_BASE}/latest/release.json`, { signal: AbortSignal.timeout(3000) });
 		if (!res.ok) throw new Error(`release.json responded ${res.status}`);
 		const versions = await res.json();
 		versionCache = { value: versions, fetchedAt: now };
@@ -61,7 +61,7 @@ async function macVersion() {
 	if (version) return version;
 	// Existing macOS links must continue to work before release.json exists.
 	try {
-		const res = await fetch(`${RELEASES_BASE}/latest-mac.yml`);
+		const res = await fetch(`${RELEASES_BASE}/latest-mac.yml`, { signal: AbortSignal.timeout(3000) });
 		if (!res.ok) return 'unknown';
 		const match = (await res.text()).match(/^version:\s*(.+?)\s*$/m);
 		return match ? match[1].replace(/^['"]|['"]$/g, '') : 'unknown';
@@ -160,7 +160,7 @@ export default async function handler(req, res) {
 	if (platform === 'linux') {
 		let published = false;
 		if (version) {
-			try { published = (await fetch(targetUrl, { method: 'HEAD' })).ok; } catch { /* Keep the route closed. */ }
+			try { published = (await fetch(targetUrl, { method: 'HEAD', signal: AbortSignal.timeout(3000) })).ok; } catch { /* Keep the route closed. */ }
 		}
 		if (!published) {
 			res.statusCode = 404;
