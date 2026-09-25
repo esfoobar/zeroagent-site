@@ -1151,70 +1151,8 @@ video {
 	line-height: 1.6;
 }
 
-.za-linux-requirements a,
-.za-method-panel a {
+.za-linux-requirements a {
 	color: var(--ink);
-}
-
-.za-method-tabs {
-	display: flex;
-	gap: 8px;
-	border-bottom: 1px solid var(--line);
-}
-
-.za-method-tabs button {
-	padding: 12px 14px;
-	border: 0;
-	border-bottom: 2px solid transparent;
-	background: transparent;
-	color: var(--ink-3);
-	font: inherit;
-	cursor: pointer;
-}
-
-.za-method-tabs button[aria-selected="true"] {
-	border-color: var(--accent);
-	color: var(--ink);
-}
-
-.za-method-panel {
-	padding: 28px;
-	border: 1px solid var(--line);
-	border-top: 0;
-	border-radius: 0 0 var(--radius-l) var(--radius-l);
-	background: var(--surface);
-}
-
-.za-method-panel > p,
-.za-install-steps p {
-	margin: 0 0 16px;
-	color: var(--ink-2);
-	line-height: 1.6;
-}
-
-.za-install-steps {
-	list-style: none;
-	padding: 0;
-	margin: 0;
-}
-
-.za-install-steps li + li {
-	margin-top: 26px;
-}
-
-.za-install-steps h3 {
-	font-size: 16px;
-	margin: 0 0 10px;
-}
-
-.za-method-panel .za-snippet code {
-	white-space: pre-wrap;
-	overflow-wrap: anywhere;
-}
-
-@media (max-width: 520px) {
-	.za-method-tabs button { padding: 12px 8px; font-size: 13px; }
-	.za-method-panel { padding: 20px; }
 }
 
 .za-agree {
