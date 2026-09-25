@@ -143,6 +143,15 @@ test('buildDownloadServedPayload builds a well-formed Measurement Protocol body'
 	});
 });
 
+test('Linux download event includes platform and format', () => {
+	const payload = buildDownloadServedPayload({
+		clientId: '111.222', sessionId: '1728318000', arch: 'x64',
+		platform: 'linux', format: 'appimage', version: '0.17.0',
+	});
+	assert.equal(payload.events[0].params.platform, 'linux');
+	assert.equal(payload.events[0].params.format, 'appimage');
+});
+
 test('buildDownloadServedPayload omits user_agent, ip_override and timestamp_micros when absent', () => {
 	const payload = buildDownloadServedPayload({
 		clientId: 'random-id',

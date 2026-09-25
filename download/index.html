@@ -20,16 +20,16 @@
 
 	<!-- Document Title
 	============================================= -->
-	<title>Download ZeroAgent for Mac, Free for Apple Silicon or Intel</title>
-	<meta name="description" content="Download ZeroAgent free for Apple Silicon or Intel Macs. Notarized, no registration, no account. Supports Claude, Codex, Gemini and open models through OpenRouter." />
+	<title>Download ZeroAgent for Mac and Linux beta</title>
+	<meta name="description" content="Download ZeroAgent free for Mac or Linux beta on Ubuntu 24.04 x64. Choose a Mac build, Linux deb, or AppImage." />
 	<link rel="canonical" href="https://zeroagenthq.com/download" />
 
 	<!-- Open Graph / Twitter
 	============================================= -->
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="MVPLean" />
-	<meta property="og:title" content="Download ZeroAgent for Mac, Free for Apple Silicon or Intel" />
-	<meta property="og:description" content="Download ZeroAgent free for Apple Silicon or Intel Macs. Notarized, no registration, no account. Supports Claude, Codex, Gemini and open models through OpenRouter." />
+	<meta property="og:title" content="Download ZeroAgent for Mac and Linux beta" />
+	<meta property="og:description" content="Download ZeroAgent free for Mac or Linux beta on Ubuntu 24.04 x64. Choose a Mac build, Linux deb, or AppImage." />
 	<meta property="og:url" content="https://zeroagenthq.com/download" />
 	<meta property="og:image" content="https://zeroagenthq.com/static/images/zeroagent/web/og-zeroagent-v3.jpg" />
 	<meta property="og:image:width" content="1200" />
@@ -38,8 +38,8 @@
 	<meta property="og:locale" content="en_US" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:site" content="@mvplean" />
-	<meta name="twitter:title" content="Download ZeroAgent for Mac, Free for Apple Silicon or Intel" />
-	<meta name="twitter:description" content="Download ZeroAgent free for Apple Silicon or Intel Macs. Notarized, no registration, no account. Supports Claude, Codex, Gemini and open models through OpenRouter." />
+	<meta name="twitter:title" content="Download ZeroAgent for Mac and Linux beta" />
+	<meta name="twitter:description" content="Download ZeroAgent free for Mac or Linux beta on Ubuntu 24.04 x64. Choose a Mac build, Linux deb, or AppImage." />
 	<meta name="twitter:image" content="https://zeroagenthq.com/static/images/zeroagent/web/og-zeroagent-v3.jpg" />
 	<meta name="twitter:image:alt" content="Five glowing ZeroAgent worker bots on a dark canvas, surrounded by colored task tags." />
 
@@ -126,11 +126,13 @@ brew install --cask zeroagentdev/tap/zeroagent</code>
 					<div class="za-platform-card"><h2>Ubuntu 24.04 x64 <span class="za-badge-recommended">Beta</span></h2>
 						<p class="za-meta">Deb package. Sandboxed and keyring-ready; install upgrades manually.</p>
 						<a id="za-download-linux-deb" href="/download/linux/x64" class="za-btn za-btn--primary za-btn--full">Download deb</a>
-						<p>Install with <code>sudo apt install ./ZeroAgent-linux-x64.deb</code></p>
+						<p>Install with <code>sudo apt install ./ZeroAgent-*-linux-amd64.deb</code></p>
+						<p>To upgrade, download the new deb and run the same command.</p>
 					</div>
 					<div class="za-platform-card"><h2>AppImage</h2>
 						<p class="za-meta">Updates itself. On stock Ubuntu 24.04 it runs without the sandbox and needs <code>libfuse2t64</code>.</p>
 						<a id="za-download-linux-appimage" href="/download/linux/x64/appimage" class="za-btn za-btn--primary za-btn--full">Download AppImage</a>
+						<p>After installing <code>libfuse2t64</code>, run <code>chmod +x ZeroAgent-*-linux-x86_64.AppImage</code>, then <code>./ZeroAgent-*-linux-x86_64.AppImage</code>.</p>
 					</div>
 				</div>
 				<p class="za-caption">Other Linux architectures and formats are not available yet.</p>
@@ -191,7 +193,6 @@ brew install --cask zeroagentdev/tap/zeroagent</code>
 	<script src="/static/js/zeroagent-ga.js"></script>
 
 	<!-- Vercel Web Analytics (page views, free on Hobby) -->
-	<script defer src="/_vercel/insights/script.js"></script>
 
 	<script src="/static/js/zeroagent-download-track.js"></script>
 

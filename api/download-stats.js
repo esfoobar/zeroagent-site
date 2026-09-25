@@ -45,8 +45,8 @@ function extractToken(req) {
 	return null;
 }
 
-function parsePathname(pathname) {
-	// downloads/<YYYY-MM-DD>/<ts>-<arch>-<version>-<country>-<browser>-<os>-<randomSuffix>.json
+export function parsePathname(pathname) {
+	// Current pathnames include platform and format after arch; older Mac events omit them.
 	const parts = pathname.split('/');
 	if (parts.length !== 3 || parts[0] !== 'downloads') return null;
 	const date = parts[1];
