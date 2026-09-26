@@ -21,7 +21,7 @@
 	<!-- Document Title
 	============================================= -->
 	<title>ZeroAgent: Your AI VP of Engineering</title>
-	<meta name="description" content="Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac." />
+	<meta name="description" content="Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac and Linux." />
 	<link rel="canonical" href="https://zeroagenthq.com/" />
 
 	<!-- Open Graph / Twitter
@@ -29,7 +29,7 @@
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="ZeroAgent" />
 	<meta property="og:title" content="ZeroAgent: Your AI VP of Engineering" />
-	<meta property="og:description" content="Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac." />
+	<meta property="og:description" content="Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac and Linux." />
 	<meta property="og:url" content="https://zeroagenthq.com/" />
 	<meta property="og:image" content="https://zeroagenthq.com/static/images/zeroagent/web/og-zeroagent-v3.jpg" />
 	<meta property="og:image:width" content="1200" />
@@ -39,7 +39,7 @@
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:site" content="@mvplean" />
 	<meta name="twitter:title" content="ZeroAgent: Your AI VP of Engineering" />
-	<meta name="twitter:description" content="Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac." />
+	<meta name="twitter:description" content="Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac and Linux." />
 	<meta name="twitter:image" content="https://zeroagenthq.com/static/images/zeroagent/web/og-zeroagent-v3.jpg" />
 	<meta name="twitter:image:alt" content="Five glowing ZeroAgent worker bots on a dark canvas, surrounded by colored task tags." />
 
@@ -51,8 +51,8 @@
 		"@type": "SoftwareApplication",
 		"name": "ZeroAgent",
 		"applicationCategory": "DeveloperApplication",
-		"operatingSystem": "macOS 14 or later",
-		"description": "Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac.",
+		"operatingSystem": "macOS 14 or later, Ubuntu 24.04 or newer (Linux beta)",
+		"description": "Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac and Linux.",
 		"url": "https://zeroagenthq.com/",
 		"downloadUrl": "https://zeroagenthq.com/download",
 		"image": "https://zeroagenthq.com/static/images/zeroagent/web/og-zeroagent-v3.jpg",
@@ -97,7 +97,7 @@
 				"name": "How many coding agents can I run at once?",
 				"acceptedAnswer": {
 					"@type": "Answer",
-					"text": "As many as your Mac and your model account can support. The default cap is eight worktrees at a time so a workspace doesn't fill the disk unnoticed; raise it in settings, and a dispatch past the cap is refused with a note on what to reclaim first."
+					"text": "As many as your computer and your model account can support. The default cap is eight worktrees at a time so a workspace doesn't fill the disk unnoticed; raise it in settings, and a dispatch past the cap is refused with a note on what to reclaim first."
 				}
 			},
 			{
@@ -126,10 +126,10 @@
 			},
 			{
 				"@type": "Question",
-				"name": "Does my code leave my Mac?",
+				"name": "Does my code leave my computer?",
 				"acceptedAnswer": {
 					"@type": "Answer",
-					"text": "Your files, memory and settings live on your Mac. Agents send prompts, code and related context to your chosen model providers. If you enable remote access, the relay also carries worker state, transcripts and messages between your Mac and phone."
+					"text": "Your files, memory and settings live on your computer. Agents send prompts, code and related context to your chosen model providers. If you enable remote access, the relay also carries worker state, transcripts and messages between your computer and phone."
 				}
 			},
 			{
@@ -192,6 +192,8 @@
 					<a href="/download" class="za-btn za-btn--primary za-btn--large">Download</a>
 					<a href="#coordinator" class="za-btn za-btn--ghost za-btn--large">See how it works</a>
 				</div>
+
+				<p class="za-hero-req">Mac and Linux beta. Windows coming soon.</p>
 
 				<p class="za-hero-cask">or <code id="za-hero-cask-cmd" data-copy-target="za-hero-cask-cmd" role="button" tabindex="0" title="Click to copy">brew trust zeroagentdev/tap
 brew install --cask zeroagentdev/tap/zeroagent</code></p>
@@ -542,7 +544,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 					<li>Not a terminal with more panes in it.</li>
 					<li>Not five agents you have to babysit yourself.</li>
 					<li>Not a kanban board.</li>
-					<li>Not cloud compute. Workers run on your Mac and use your model providers.</li>
+					<li>Not cloud compute. Workers run on your computer and use your model providers.</li>
 				</ul>
 
 			</div>
@@ -557,7 +559,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 
 				<div class="za-note">
 					<p>macOS 14 or later, Apple Silicon or Intel. <strong>Prerequisite:</strong> ZeroAgent
-						coordinates the work; it drives a coding agent CLI already installed on your Mac to do
+						coordinates the work; it drives a coding agent CLI already installed on your computer to do
 						it. Claude Code is required for Zero Agent. Workers can also use Codex, Gemini
 						and open models through OpenRouter with the corresponding accounts or keys.</p>
 				</div>
@@ -572,7 +574,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 					<a href="/download" class="za-btn za-btn--primary za-btn--large">Choose your download</a>
 				</div>
 				<p>Free, local, and yours to keep. Linux beta supports Ubuntu 24.04 x64. Requires Claude Code for Zero Agent.</p>
-				<p>Free for local work on your own Mac, with no account. Remote monitoring and
+				<p>Free for local work on your own computer, with no account. Remote monitoring and
 					the phone companion are Premium, $5 a month; cloud workspaces are coming later
 					as Platinum.</p>
 			</div>
@@ -589,7 +591,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 
 					<details>
 						<summary>How many coding agents can I run at once?</summary>
-						<div><p>As many as your Mac and your model account can support. The default
+						<div><p>As many as your computer and your model account can support. The default
 							cap is eight worktrees at a time so a workspace doesn't fill the disk unnoticed; raise
 							it in settings, and a dispatch past the cap is refused with a note on what to reclaim
 							first.</p></div>
@@ -616,8 +618,8 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 					</details>
 
 					<details>
-						<summary>Does my code leave my Mac?</summary>
-						<div><p>Your files, memory and settings live on your Mac. Agents send prompts, code and related context to your chosen model providers. If you enable remote access, the relay also carries worker state, transcripts and messages between your Mac and phone.</p></div>
+						<summary>Does my code leave my computer?</summary>
+						<div><p>Your files, memory and settings live on your computer. Agents send prompts, code and related context to your chosen model providers. If you enable remote access, the relay also carries worker state, transcripts and messages between your computer and phone.</p></div>
 					</details>
 
 					<details>
