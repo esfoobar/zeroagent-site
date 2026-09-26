@@ -28,8 +28,11 @@
 		} else if (os === 'windows') {
 			window.ZA_RELEASE_VERSION = 'unknown';
 		} else {
-			if (macVersion) document.getElementById('za-version').textContent = 'v' + macVersion;
-			window.ZA_RELEASE_VERSION = macVersion || 'unknown';
+			// release.json and latest-mac.yml both carry the macOS version;
+			// either one is enough to label the tab.
+			var mac = macVersion || (window.ZA_PLATFORM && window.ZA_PLATFORM.macVersion);
+			if (mac) document.getElementById('za-version').textContent = 'v' + mac;
+			window.ZA_RELEASE_VERSION = mac || 'unknown';
 		}
 	}
 	document.addEventListener('DOMContentLoaded', function () {

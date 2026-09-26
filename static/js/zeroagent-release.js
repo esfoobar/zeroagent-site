@@ -119,6 +119,7 @@ var RELEASE_FEED = {
 				var manifest = parseLatestMacYml(text);
 				if (!manifest) throw new Error('unrecognized release feed format');
 
+				if (window.ZA_PLATFORM) window.ZA_PLATFORM.macVersion = manifest.version;
 				if (macSelected()) {
 					setText('za-version', 'v' + manifest.version);
 					window.ZA_RELEASE_VERSION = manifest.version;

@@ -147,6 +147,19 @@ test('clicking Windows and back to macOS restores the macOS chrome', () => {
 	assert.equal(elements.get('za-mac-prerequisite').hidden, false);
 });
 
+test('clicking macOS after the Windows default labels the tab with the version', async () => {
+	const { elements, flush } = boot({
+		userAgent: 'Windows NT 10.0',
+		manifest: { mac: { version: '0.16.0' }, linux: { version: '0.16.0' } },
+	});
+	await flush();
+	await flush();
+	elements.get('za-select-mac').click();
+	assert.equal(elements.get('za-version-line').hidden, false);
+	assert.equal(elements.get('za-agree').hidden, false);
+	assert.equal(elements.get('za-version').textContent, 'v0.16.0');
+});
+
 test('a Linux user agent still auto-selects the Linux tab once the build is confirmed', async () => {
 	const { elements, flush } = boot({
 		userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
