@@ -93,6 +93,13 @@ var RELEASE_FEED = {
 		}
 	}
 
+	// The version line belongs to the macOS tab. platform.js keeps the
+	// selected tab in ZA_PLATFORM; without it (script not loaded) behave as
+	// before and assume macOS.
+	function macSelected() {
+		return !window.ZA_PLATFORM || window.ZA_PLATFORM.selected === 'mac';
+	}
+
 	function init() {
 		// The buttons' hrefs are static in the HTML (ZA-165): the counted
 		// redirect at /zeroagent/download/arm64 and /zeroagent/download/x64,
@@ -112,12 +119,12 @@ var RELEASE_FEED = {
 				var manifest = parseLatestMacYml(text);
 				if (!manifest) throw new Error('unrecognized release feed format');
 
-				if (document.getElementById('za-linux-panel').hidden) {
+				if (macSelected()) {
 					setText('za-version', 'v' + manifest.version);
 					window.ZA_RELEASE_VERSION = manifest.version;
 				}
 				var releaseDate = formatDate(manifest.releaseDate);
-				if (document.getElementById('za-linux-panel').hidden) setText('za-release-date', releaseDate || 'unknown');
+				if (macSelected()) setText('za-release-date', releaseDate || 'unknown');
 
 				var arm64Dmg = findArchFile(manifest.files, 'arm64', 'dmg');
 				var x64Dmg = findArchFile(manifest.files, 'x64', 'dmg');
@@ -126,8 +133,10 @@ var RELEASE_FEED = {
 				applyHash('za-x64', x64Dmg);
 			})
 			.catch(function () {
-				setText('za-version', 'Version unavailable');
-				setText('za-release-date', 'unavailable');
+				if (macSelected()) {
+					setText('za-version', 'Version unavailable');
+					setText('za-release-date', 'unavailable');
+				}
 				setText('za-arm64-hash', 'Checksum unavailable.');
 				setText('za-x64-hash', 'Checksum unavailable.');
 			})

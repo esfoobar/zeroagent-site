@@ -84,14 +84,15 @@
 
 		<div class="za-container za-narrow za-page-head za-page-head--center">
 			<h1>Download ZeroAgent</h1>
-			<p><span id="za-mac-intro">Free, notarized, and yours to keep.</span><span id="za-linux-intro" hidden>Free and yours to keep.</span> No registration, no invite code.</p>
-			<p class="za-version-line"><span class="za-dot"></span>Version <strong id="za-version">Checking latest version&hellip;</strong> <span id="za-release-detail">&middot; Released <span id="za-release-date">&mdash;</span></span></p>
+			<p><span id="za-mac-intro">Free, notarized, and yours to keep.</span><span id="za-linux-intro" hidden>Free and yours to keep.</span><span id="za-windows-intro" hidden>Free and yours to keep.</span> No registration, no invite code.</p>
+			<p class="za-version-line" id="za-version-line"><span class="za-dot"></span>Version <strong id="za-version">Checking latest version&hellip;</strong> <span id="za-release-detail">&middot; Released <span id="za-release-date">&mdash;</span></span></p>
 		</div>
 
 		<div class="za-container za-narrow">
 			<div class="za-os-selector" role="group" aria-label="Operating system">
 				<button type="button" id="za-select-mac" aria-pressed="true">macOS</button>
 				<button type="button" id="za-select-linux" aria-pressed="false" hidden>Linux beta</button>
+				<button type="button" id="za-select-windows" aria-pressed="false">Windows</button>
 			</div>
 			<div id="za-mac-panel">
 
@@ -130,8 +131,11 @@ brew install --cask zeroagentdev/tap/zeroagent</code>
 				<p class="za-caption">Then open ZeroAgent from your app menu. Run the same command to update.</p>
 				<p class="za-caption">Other Linux architectures are not available yet.</p>
 			</div>
+			<div id="za-windows-panel" hidden>
+				<p class="za-caption">Windows version coming soon.</p>
+			</div>
 
-			<p class="za-agree">By downloading, you agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</p>
+			<p class="za-agree" id="za-agree">By downloading, you agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</p>
 
 		</div>
 
