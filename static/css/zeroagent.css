@@ -1155,6 +1155,14 @@ video {
 	color: var(--ink);
 }
 
+/* A tab with nothing to download yet: centered body copy where its panel
+   would sit, with the same gap below the selector the Linux panel has. */
+
+.za-empty {
+	margin: 28px 0 0;
+	color: var(--ink);
+}
+
 .za-agree {
 	font-size: 13px;
 	color: var(--ink-3);

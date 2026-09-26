@@ -28,7 +28,7 @@ test('the Windows button is always visible, not gated on the release manifest', 
 
 test('the Windows panel offers nothing to download', () => {
 	assert.ok(windowsPanel, 'the Windows panel is on the page');
-	assert.match(windowsPanel[0], /<p class="za-caption">Windows version coming soon\.<\/p>/);
+	assert.match(windowsPanel[0], /<p class="za-center za-empty">Windows version coming soon\.<\/p>/);
 	assert.doesNotMatch(windowsPanel[0], /<a\s/, 'no link');
 	assert.doesNotMatch(windowsPanel[0], /<button/, 'no button');
 	assert.doesNotMatch(windowsPanel[0], /<form|<input/, 'no sign-up form');
