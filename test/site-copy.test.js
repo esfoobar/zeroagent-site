@@ -44,12 +44,12 @@ test('the homepage hero button reads exactly Download', () => {
 	assert.match(homepage, /class="za-btn za-btn--primary za-btn--large">Download<\/a>/);
 });
 
-test('every homepage description ends Free for Mac and Linux', () => {
-	const described = homepage.match(/Free for Mac\.(?! and Linux)/g) || [];
+test('every homepage description ends Free for Mac, Linux and Windows', () => {
+	const described = homepage.match(/Free for Mac\.(?!, Linux and Windows)/g) || [];
 	assert.equal(described.length, 0, 'a homepage description still says "Free for Mac" alone');
-	const linux = homepage.match(/Free for Mac and Linux\./g) || [];
+	const linux = homepage.match(/Free for Mac, Linux and Windows\./g) || [];
 	assert.equal(linux.length, 4, 'the meta, og, twitter and JSON-LD descriptions all carry the new line');
-	assert.match(homepage, /"description": "[^"]*Free for Mac and Linux\."/);
+	assert.match(homepage, /"description": "[^"]*Free for Mac, Linux and Windows\."/);
 });
 
 test('the homepage hero carries the platform caption last, after the brew block', () => {
@@ -82,8 +82,8 @@ test('the homepage OS requirement line and the download band no longer assume a 
 	assert.match(homepage, /Workers run on your computer and use your model providers\./);
 });
 
-test('the download page keeps its own Mac and Linux titles', async () => {
+test('the download page keeps its own Mac, Linux and Windows titles', async () => {
 	const download = await readFile(join(root, 'download/index.html'), 'utf8');
-	assert.match(download, /<title>Download ZeroAgent for Mac and Linux beta<\/title>/);
+	assert.match(download, /<title>Download ZeroAgent for Mac, Linux and Windows beta<\/title>/);
 	assert.match(download, /id="za-select-mac"[^>]*>macOS</);
 });
