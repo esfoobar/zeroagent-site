@@ -12,6 +12,7 @@ test('canonical routes and permanent macOS aliases resolve to stable names', () 
 		[{ os: 'linux' }, 'x64', undefined, 'linux', 'deb', 'ZeroAgent-linux-x64.deb'],
 		[{ os: 'linux' }, 'x64', 'deb', 'linux', 'deb', 'ZeroAgent-linux-x64.deb'],
 		[{ os: 'linux' }, 'x64', 'appimage', 'linux', 'appimage', 'ZeroAgent-linux-x64.AppImage'],
+		[{ os: 'windows' }, 'x64', undefined, 'windows', 'exe', 'ZeroAgent-win-x64.exe'],
 	];
 	for (const [input, arch, format, platform, expectedFormat, file] of rows) {
 		assert.deepEqual(resolveDownloadRoute({ ...input, arch, format }), { platform, arch, format: expectedFormat, file });
@@ -21,7 +22,7 @@ test('canonical routes and permanent macOS aliases resolve to stable names', () 
 test('unsupported combinations have no redirect', () => {
 	for (const route of [
 		{ os: 'linux', arch: 'arm64' }, { os: 'mac', arch: 'x64', format: 'deb' },
-		{ os: 'windows', arch: 'x64' }, { os: 'linux', arch: 'x64', format: 'rpm' },
+		{ os: 'windows', arch: 'arm64' }, { os: 'windows', arch: 'x64', format: 'msi' }, { os: 'linux', arch: 'x64', format: 'rpm' },
 	]) assert.equal(resolveDownloadRoute(route), null);
 });
 
@@ -105,5 +106,30 @@ test('macOS reuses a version resolved from release.json', async () => {
 			assert.equal(res.statusCode, 302);
 		}
 		assert.equal(fetches, 1);
+	} finally { globalThis.fetch = originalFetch; }
+});
+
+test('Windows answers 404 while release.json has no Windows entry', async () => {
+	const { default: handler } = await import('../api/download.js?test=windows-absent');
+	const originalFetch = globalThis.fetch;
+	globalThis.fetch = async () => ({ ok: true, json: async () => ({ mac: { version: '0.16.1' }, linux: { version: '0.16.1' } }) });
+	try {
+		const res = response();
+		await handler({ method: 'GET', query: { os: 'windows', arch: 'x64' }, headers: {} }, res);
+		assert.equal(res.statusCode, 404);
+		assert.equal(res.body, 'not found: not released yet\n');
+		assert.equal(res.headers.Location, undefined);
+	} finally { globalThis.fetch = originalFetch; }
+});
+
+test('Windows redirects to the stable exe once release.json names a version', async () => {
+	const { default: handler } = await import('../api/download.js?test=windows-present');
+	const originalFetch = globalThis.fetch;
+	globalThis.fetch = async () => ({ ok: true, json: async () => ({ windows: { version: '0.17.0' } }) });
+	try {
+		const res = response();
+		await handler({ method: 'HEAD', query: { os: 'windows', arch: 'x64' }, headers: {} }, res);
+		assert.equal(res.statusCode, 302);
+		assert.equal(res.headers.Location, 'https://releases.zeroagenthq.com/latest/ZeroAgent-win-x64.exe');
 	} finally { globalThis.fetch = originalFetch; }
 });

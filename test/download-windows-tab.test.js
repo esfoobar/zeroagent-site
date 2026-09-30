@@ -26,11 +26,19 @@ test('the Windows button is always visible, not gated on the release manifest', 
 	assert.match(script, /getElementById\('za-select-linux'\)\.hidden = false;/);
 });
 
-test('the Windows panel offers nothing to download', () => {
+test('the Windows panel offers the counted download and the install notes', () => {
 	assert.ok(windowsPanel, 'the Windows panel is on the page');
-	assert.match(windowsPanel[0], /<p class="za-center za-empty">Windows version coming soon\.<\/p>/);
-	assert.doesNotMatch(windowsPanel[0], /<a\s/, 'no link');
-	assert.doesNotMatch(windowsPanel[0], /<button/, 'no button');
+	assert.doesNotMatch(windowsPanel[0], /coming soon/i);
+	assert.match(windowsPanel[0], /<a id="za-download-windows" href="\/download\/windows\/x64"[^>]*>Download for Windows<\/a>/);
+	assert.match(windowsPanel[0], /Windows 11, 64-bit/);
+	assert.match(windowsPanel[0], /Node\.js/);
+	assert.match(windowsPanel[0], /no administrator rights/);
+	assert.match(windowsPanel[0], /updates install automatically/);
+	assert.match(windowsPanel[0], /unsigned/);
+	assert.match(windowsPanel[0], /SmartScreen/);
+	assert.match(windowsPanel[0], /More info/);
+	assert.match(windowsPanel[0], /Run anyway/);
+	assert.match(windowsPanel[0], /uninstall/i);
 	assert.doesNotMatch(windowsPanel[0], /<form|<input/, 'no sign-up form');
 });
 
@@ -123,10 +131,10 @@ test('a Windows user agent opens the Windows tab by default', () => {
 	assert.equal(elements.get('za-mac-prerequisite').hidden, true);
 });
 
-test('the Windows tab shows no version number and no agree line', () => {
+test('the Windows tab shows no version number but keeps the agree line', () => {
 	const { elements } = boot({ userAgent: 'Windows NT 10.0' });
 	assert.equal(elements.get('za-version-line').hidden, true);
-	assert.equal(elements.get('za-agree').hidden, true);
+	assert.equal(elements.get('za-agree').hidden, false);
 	assert.equal(elements.get('za-windows-intro').hidden, false);
 	assert.equal(elements.get('za-mac-intro').hidden, true);
 	assert.equal(elements.get('za-version').textContent, '', 'no version text is written');

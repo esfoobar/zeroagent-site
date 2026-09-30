@@ -182,6 +182,14 @@ export default async function handler(req, res) {
 		}
 	}
 
+	if (platform === 'windows' && !version) {
+		res.statusCode = 404;
+		res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+		res.setHeader('Cache-Control', 'no-store');
+		res.end('not found: not released yet\n');
+		return;
+	}
+
 	if (req.method !== 'HEAD') {
 		const ts = new Date();
 		const date = ts.toISOString().slice(0, 10);
