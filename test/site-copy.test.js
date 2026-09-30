@@ -52,18 +52,18 @@ test('every homepage description ends Free for Mac and Linux', () => {
 	assert.match(homepage, /"description": "[^"]*Free for Mac and Linux\."/);
 });
 
-test('the homepage hero carries the Windows caption last, after the brew block', () => {
+test('the homepage hero carries the platform caption last, after the brew block', () => {
 	const hero = homepage.match(/<div class="za-btn-row">[\s\S]*?<\/div>([\s\S]*?)<div class="za-hero-window">/);
 	assert.ok(hero, 'the hero copy between the buttons and the window is on the page');
 	const order = hero[1];
 	const cask = order.indexOf('za-hero-cask');
 	const note = order.indexOf('Homebrew 6 or newer');
 	const requirement = order.indexOf('macOS 14 or later');
-	const caption = order.indexOf('Mac and Linux beta. Windows coming soon.');
+	const caption = order.indexOf('Mac, Linux and Windows beta.');
 	assert.ok(cask > -1 && note > cask && requirement > note && caption > requirement,
-		'the order is: brew block, Homebrew note, macOS requirement line, Windows caption');
+		'the order is: brew block, Homebrew note, macOS requirement line, platform caption');
 	assert.equal(order.match(/<p class="za-hero-req">([^<]*)<\/p>/g).at(-1),
-		'<p class="za-hero-req">Mac and Linux beta. Windows coming soon.</p>');
+		'<p class="za-hero-req">Mac, Linux and Windows beta.</p>');
 });
 
 test('the legal pages cover macOS and Linux rather than macOS alone', () => {

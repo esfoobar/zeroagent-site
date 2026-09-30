@@ -133,3 +133,25 @@ test('Windows redirects to the stable exe once release.json names a version', as
 		assert.equal(res.headers.Location, 'https://releases.zeroagenthq.com/latest/ZeroAgent-win-x64.exe');
 	} finally { globalThis.fetch = originalFetch; }
 });
+
+test('Windows requires the stable object even when the manifest has a version', async () => {
+	const { default: handler } = await import('../api/download.js?test=windows-published');
+	const originalFetch = globalThis.fetch;
+	let objectExists = false;
+	globalThis.fetch = async (url, options) => {
+		if (String(url).endsWith('release.json')) return { ok: true, json: async () => ({ windows: { version: '0.17.0' } }) };
+		if (options && options.method === 'HEAD') return { ok: objectExists };
+		throw new Error('unexpected request');
+	};
+	try {
+		const missing = response();
+		await handler({ method: 'HEAD', query: { os: 'windows', arch: 'x64' }, headers: {} }, missing);
+		assert.equal(missing.statusCode, 404);
+		assert.equal(missing.body, 'not found: not released yet\n');
+		objectExists = true;
+		const published = response();
+		await handler({ method: 'HEAD', query: { os: 'windows', arch: 'x64' }, headers: {} }, published);
+		assert.equal(published.statusCode, 302);
+		assert.equal(published.headers.Location, 'https://releases.zeroagenthq.com/latest/ZeroAgent-win-x64.exe');
+	} finally { globalThis.fetch = originalFetch; }
+});

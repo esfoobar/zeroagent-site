@@ -168,7 +168,7 @@ export default async function handler(req, res) {
 	const { arch, platform, format } = route;
 	const version = platform === 'mac' ? await macVersion() : releaseVersion(await currentVersions(), platform);
 	const targetUrl = `${RELEASES_BASE}/latest/${route.file}`;
-	if (platform === 'linux') {
+	if (platform === 'linux' || platform === 'windows') {
 		let published = false;
 		if (version) {
 			try { published = (await fetch(targetUrl, { method: 'HEAD', signal: AbortSignal.timeout(3000) })).ok; } catch { /* Keep the route closed. */ }
@@ -180,14 +180,6 @@ export default async function handler(req, res) {
 			res.end('not found: not released yet\n');
 			return;
 		}
-	}
-
-	if (platform === 'windows' && !version) {
-		res.statusCode = 404;
-		res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-		res.setHeader('Cache-Control', 'no-store');
-		res.end('not found: not released yet\n');
-		return;
 	}
 
 	if (req.method !== 'HEAD') {
