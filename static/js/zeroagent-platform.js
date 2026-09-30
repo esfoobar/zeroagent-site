@@ -21,7 +21,6 @@
 		document.getElementById('za-mac-prerequisite').hidden = os !== 'mac';
 		document.getElementById('za-version-line').hidden = os === 'windows';
 		document.getElementById('za-release-detail').hidden = os !== 'mac';
-		document.getElementById('za-agree').hidden = os === 'windows';
 		if (os === 'linux') {
 			document.getElementById('za-version').textContent = 'v' + linuxVersion + ' beta';
 			window.ZA_RELEASE_VERSION = linuxVersion;

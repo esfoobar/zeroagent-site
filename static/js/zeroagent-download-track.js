@@ -21,6 +21,8 @@
 		var deb = document.getElementById('za-download-linux-deb');
 		var appimage = document.getElementById('za-download-linux-appimage');
 		if (deb) deb.addEventListener('click', function () { trackDownload('x64', 'linux', 'deb'); });
+		var exe = document.getElementById('za-download-windows');
+		if (exe) exe.addEventListener('click', function () { trackDownload('x64', 'windows', 'exe'); });
 		if (appimage) appimage.addEventListener('click', function () { trackDownload('x64', 'linux', 'appimage'); });
 	});
 })();

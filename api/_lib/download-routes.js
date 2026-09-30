@@ -4,6 +4,7 @@ const routes = {
 	'linux/x64': { platform: 'linux', arch: 'x64', format: 'deb', file: 'ZeroAgent-linux-x64.deb' },
 	'linux/x64/deb': { platform: 'linux', arch: 'x64', format: 'deb', file: 'ZeroAgent-linux-x64.deb' },
 	'linux/x64/appimage': { platform: 'linux', arch: 'x64', format: 'appimage', file: 'ZeroAgent-linux-x64.AppImage' },
+	'windows/x64': { platform: 'windows', arch: 'x64', format: 'exe', file: 'ZeroAgent-win-x64.exe' },
 };
 
 export function resolveDownloadRoute({ os, arch, format }) {

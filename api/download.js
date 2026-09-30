@@ -168,7 +168,7 @@ export default async function handler(req, res) {
 	const { arch, platform, format } = route;
 	const version = platform === 'mac' ? await macVersion() : releaseVersion(await currentVersions(), platform);
 	const targetUrl = `${RELEASES_BASE}/latest/${route.file}`;
-	if (platform === 'linux') {
+	if (platform === 'linux' || platform === 'windows') {
 		let published = false;
 		if (version) {
 			try { published = (await fetch(targetUrl, { method: 'HEAD', signal: AbortSignal.timeout(3000) })).ok; } catch { /* Keep the route closed. */ }
