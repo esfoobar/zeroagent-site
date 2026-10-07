@@ -67,6 +67,11 @@ test('the homepage hero has no Homebrew block and carries the platform caption l
 		'<p class="za-hero-req">Mac, Linux and Windows beta.</p>');
 });
 
+test('the homepage closing download heading does not name only Mac or Linux', () => {
+	assert.doesNotMatch(homepage, /for Mac or Linux beta/);
+	assert.match(homepage, /<h2>Download ZeroAgent<\/h2>/);
+});
+
 test('the legal pages cover macOS and Linux rather than macOS alone', () => {
 	assert.doesNotMatch(terms, /a free macOS\s+desktop application/);
 	assert.doesNotMatch(terms, /a free desktop application for macOS\./);
