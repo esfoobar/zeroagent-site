@@ -21,7 +21,7 @@
 	<!-- Document Title
 	============================================= -->
 	<title>ZeroAgent: Your AI VP of Engineering</title>
-	<meta name="description" content="Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac, Linux and Windows." />
+	<meta name="description" content="Work with Zero Agent, your AI VP of Engineering, running on Claude, Codex or Gemini with your own account. It coordinates worker agents and learns which enabled models deliver quality for less. Free for Mac, Linux and Windows." />
 	<link rel="canonical" href="https://zeroagenthq.com/" />
 
 	<!-- Open Graph / Twitter
@@ -29,7 +29,7 @@
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="ZeroAgent" />
 	<meta property="og:title" content="ZeroAgent: Your AI VP of Engineering" />
-	<meta property="og:description" content="Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac, Linux and Windows." />
+	<meta property="og:description" content="Work with Zero Agent, your AI VP of Engineering, running on Claude, Codex or Gemini with your own account. It coordinates worker agents and learns which enabled models deliver quality for less. Free for Mac, Linux and Windows." />
 	<meta property="og:url" content="https://zeroagenthq.com/" />
 	<meta property="og:image" content="https://zeroagenthq.com/static/images/zeroagent/web/og-zeroagent-v3.jpg" />
 	<meta property="og:image:width" content="1200" />
@@ -39,7 +39,7 @@
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:site" content="@mvplean" />
 	<meta name="twitter:title" content="ZeroAgent: Your AI VP of Engineering" />
-	<meta name="twitter:description" content="Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac, Linux and Windows." />
+	<meta name="twitter:description" content="Work with Zero Agent, your AI VP of Engineering, running on Claude, Codex or Gemini with your own account. It coordinates worker agents and learns which enabled models deliver quality for less. Free for Mac, Linux and Windows." />
 	<meta name="twitter:image" content="https://zeroagenthq.com/static/images/zeroagent/web/og-zeroagent-v3.jpg" />
 	<meta name="twitter:image:alt" content="Five glowing ZeroAgent worker bots on a dark canvas, surrounded by colored task tags." />
 
@@ -52,7 +52,7 @@
 		"name": "ZeroAgent",
 		"applicationCategory": "DeveloperApplication",
 		"operatingSystem": "macOS 14 or later, Ubuntu 24.04 or newer (Linux beta), Windows 11 64-bit (beta)",
-		"description": "Work with Zero Agent, your AI VP of Engineering. It coordinates worker agents so you get more done, and learns which enabled models deliver quality for less. Free for Mac, Linux and Windows.",
+		"description": "Work with Zero Agent, your AI VP of Engineering, running on Claude, Codex or Gemini with your own account. It coordinates worker agents and learns which enabled models deliver quality for less. Free for Mac, Linux and Windows.",
 		"url": "https://zeroagenthq.com/",
 		"downloadUrl": "https://zeroagenthq.com/download",
 		"image": "https://zeroagenthq.com/static/images/zeroagent/web/og-zeroagent-v3.jpg",
@@ -105,7 +105,15 @@
 				"name": "Which models can ZeroAgent use?",
 				"acceptedAnswer": {
 					"@type": "Answer",
-					"text": "Claude, Codex, Gemini and open models through OpenRouter. Enable the models you want in Settings, and the app selects from them per task. Zero Agent itself still requires Claude Code."
+					"text": "Claude, Codex, Gemini and open models through OpenRouter. Enable the models you want in Settings, and the app selects from them per task. The main agent you talk to, Zero Agent, runs on Claude, Codex or Gemini, whichever you choose."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "Do I need a Claude account?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "No. Zero Agent, the main agent you talk to, runs on Claude, Codex or Gemini, so you need only one of them. Claude needs Claude Code signed in; Codex needs a ChatGPT sign-in or an OpenAI key; Gemini needs the Gemini CLI and a Gemini API key. You choose on first launch and can change it in Settings. With Gemini, ZeroAgent cannot see how full the conversation is, so it starts a fresh session after a set number of turns or hours instead."
 				}
 			},
 			{
@@ -179,14 +187,15 @@
 			<div class="za-container">
 
 				<div class="za-hero-pill">
-					<span class="za-pill"><span class="za-dot"></span>Free local app &middot; Your model accounts</span>
+					<span class="za-pill"><span class="za-dot"></span>Free local app &middot; Claude, Codex or Gemini</span>
 				</div>
 
 				<h1>One agent to direct. More done each day.</h1>
 
-				<p class="za-lead">Zero Agent is your AI VP of Engineering. Describe the work once; it writes the
-					tickets, spawns workers, picks the model that earns its price, and tells you when
-					it's done. You review the result, not the process.</p>
+				<p class="za-lead">Zero Agent is your AI VP of Engineering, and it runs on Claude, Codex or
+					Gemini with your own account: use the one you already have. Describe the work once; it
+					writes the tickets, spawns workers, picks the model that earns its price, and tells you
+					when it's done. You review the result, not the process.</p>
 
 				<div class="za-btn-row">
 					<a href="/download" class="za-btn za-btn--primary za-btn--large">Download</a>
@@ -196,7 +205,7 @@
 				<p class="za-hero-cask">or <code id="za-hero-cask-cmd" data-copy-target="za-hero-cask-cmd" role="button" tabindex="0" title="Click to copy">brew trust zeroagentdev/tap
 brew install --cask zeroagentdev/tap/zeroagent</code></p>
 				<p class="za-hero-req">Homebrew 6 or newer needs that trust line before it will load the cask; older Homebrew can skip straight to installing.</p>
-				<p class="za-hero-req">macOS 14 or later, Apple Silicon or Intel. Requires Claude Code for Zero Agent.</p>
+				<p class="za-hero-req">macOS 14 or later, Apple Silicon or Intel. Zero Agent needs Claude Code, Codex or Gemini set up; any one of them will do.</p>
 				<p class="za-hero-req">Mac, Linux and Windows beta.</p>
 
 				<div class="za-hero-window">
@@ -340,13 +349,61 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 			</div>
 		</section>
 
+		<section class="za-section" id="main-agent">
+			<div class="za-container">
+
+				<div class="za-section-head">
+					<h2>Choose your main agent</h2>
+					<p>The main agent is Zero Agent: the one you talk to, which plans the work and
+						dispatches the workers. It runs on Claude, Codex or Gemini, so you can run the
+						whole app on an account you already have. Available from ZeroAgent 0.22.0.</p>
+				</div>
+
+				<div class="za-grid-3">
+
+					<div class="za-fact">
+						<h3>Claude</h3>
+						<p>Needs Claude Code installed and signed in to your own Claude account.</p>
+					</div>
+
+					<div class="za-fact">
+						<h3>Codex</h3>
+						<p>Signed in with your ChatGPT account, or with your own OpenAI API key.</p>
+					</div>
+
+					<div class="za-fact">
+						<h3>Gemini</h3>
+						<p>Needs the Gemini CLI and your own Gemini API key. Signing in with a
+							personal Google account no longer works.</p>
+					</div>
+
+				</div>
+
+			</div>
+		</section>
+
+		<section class="za-section za-section--tight">
+			<div class="za-container">
+
+				<div class="za-note">
+					<p>The first time you open ZeroAgent it checks which of the three are installed and
+						signed in, and asks you to choose. You can reopen that choice any time in Settings.
+						Whichever one leads, workers can still be any model you have switched on, across
+						Claude, Codex, Gemini and open models through OpenRouter.</p>
+				</div>
+
+			</div>
+		</section>
+
 		<section class="za-section" id="models">
 			<div class="za-container">
 				<div class="za-split">
 					<div class="za-split-copy">
 						<h2>Your subscriptions, your keys</h2>
-						<p>Switch on the models you want to use across Claude, Codex, Gemini and
-							open models through OpenRouter. ZeroAgent selects from that pool for each task.
+						<p>Run Zero Agent on the account you have, then switch on the models you want
+							to use across Claude, Codex, Gemini and open models through OpenRouter. No one
+							provider leads: whichever you chose as your main agent, ZeroAgent selects from
+							that pool for each task.
 							It compares quality against published input and output prices per million tokens,
 							even for models on a subscription. A subscription never counts as free usage
 							in that comparison. ZeroAgent adds no markup to your model calls.</p>
@@ -356,21 +413,28 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 							<span class="za-status-dot"></span>
 							<div>
 								<h3>Claude, via Claude Code</h3>
-								<p class="za-small">Your own Claude account.</p>
+								<p class="za-small">Your own Claude account. Main agent or worker.</p>
 							</div>
 						</div>
 						<div class="za-provider za-provider--live">
 							<span class="za-status-dot"></span>
 							<div>
-								<h3>Codex and Gemini</h3>
-								<p class="za-small">Your own accounts or keys.</p>
+								<h3>Codex</h3>
+								<p class="za-small">Your ChatGPT account or OpenAI key. Main agent or worker.</p>
+							</div>
+						</div>
+						<div class="za-provider za-provider--live">
+							<span class="za-status-dot"></span>
+							<div>
+								<h3>Gemini</h3>
+								<p class="za-small">Your own Gemini API key. Main agent or worker.</p>
 							</div>
 						</div>
 						<div class="za-provider za-provider--live">
 							<span class="za-status-dot"></span>
 							<div>
 								<h3>Open models, via OpenRouter</h3>
-								<p class="za-small">Your own OpenRouter key.</p>
+								<p class="za-small">Your own OpenRouter key. Workers.</p>
 							</div>
 						</div>
 					</div>
@@ -559,8 +623,9 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 				<div class="za-note">
 					<p>macOS 14 or later, Apple Silicon or Intel. <strong>Prerequisite:</strong> ZeroAgent
 						coordinates the work; it drives a coding agent CLI already installed on your computer to do
-						it. Claude Code is required for Zero Agent. Workers can also use Codex, Gemini
-						and open models through OpenRouter with the corresponding accounts or keys.</p>
+						it. Zero Agent itself needs one of Claude Code, Codex or Gemini set up on your
+						computer; you do not need a Claude account if you use Codex or Gemini. Workers can
+						also use open models through OpenRouter with your own key.</p>
 				</div>
 
 			</div>
@@ -572,7 +637,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 				<div class="za-btn-row">
 					<a href="/download" class="za-btn za-btn--primary za-btn--large">Choose your download</a>
 				</div>
-				<p>Free, local, and yours to keep. Linux beta supports Ubuntu 24.04 x64. Requires Claude Code for Zero Agent.</p>
+				<p>Free, local, and yours to keep. Linux beta supports Ubuntu 24.04 x64. Zero Agent runs on Claude, Codex or Gemini; you need any one of them.</p>
 				<p>Free for local work on your own computer, with no account. Remote monitoring and
 					the phone companion are Premium, $5 a month; cloud workspaces are coming later
 					as Platinum.</p>
@@ -597,8 +662,18 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 					</details>
 
 					<details>
+						<summary>Do I need a Claude account?</summary>
+						<div><p>No. Zero Agent, the main agent you talk to, runs on Claude, Codex or Gemini,
+							so you need only one of them. Claude needs Claude Code signed in; Codex needs
+							a ChatGPT sign-in or an OpenAI key; Gemini needs the Gemini CLI and a Gemini
+							API key. You choose on first launch and can change it in Settings. With Gemini,
+							ZeroAgent cannot see how full the conversation is, so it starts a fresh session
+							after a set number of turns or hours instead.</p></div>
+					</details>
+
+					<details>
 						<summary>Which models can ZeroAgent use?</summary>
-						<div><p>Claude, Codex, Gemini and open models through OpenRouter. Enable the models you want in Settings, and the app selects from them per task. Zero Agent itself still requires Claude Code.</p></div>
+						<div><p>Claude, Codex, Gemini and open models through OpenRouter. Enable the models you want in Settings, and the app selects from them per task. The main agent you talk to, Zero Agent, runs on Claude, Codex or Gemini, whichever you choose.</p></div>
 					</details>
 
 					<details>

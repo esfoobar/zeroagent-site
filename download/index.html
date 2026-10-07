@@ -21,7 +21,7 @@
 	<!-- Document Title
 	============================================= -->
 	<title>Download ZeroAgent for Mac, Linux and Windows beta</title>
-	<meta name="description" content="Download ZeroAgent free for Mac, Linux or Windows beta. Choose a Mac build, install the Linux beta on Ubuntu 24.04 x64 with one command, or get the Windows installer." />
+	<meta name="description" content="Download ZeroAgent free for Mac, Linux or Windows beta. Choose a Mac build, install the Linux beta on Ubuntu 24.04 x64 with one command, or get the Windows installer. Zero Agent runs on Claude, Codex or Gemini." />
 	<link rel="canonical" href="https://zeroagenthq.com/download" />
 
 	<!-- Open Graph / Twitter
@@ -29,7 +29,7 @@
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="MVPLean" />
 	<meta property="og:title" content="Download ZeroAgent for Mac, Linux and Windows beta" />
-	<meta property="og:description" content="Download ZeroAgent free for Mac, Linux or Windows beta. Choose a Mac build, install the Linux beta on Ubuntu 24.04 x64 with one command, or get the Windows installer." />
+	<meta property="og:description" content="Download ZeroAgent free for Mac, Linux or Windows beta. Choose a Mac build, install the Linux beta on Ubuntu 24.04 x64 with one command, or get the Windows installer. Zero Agent runs on Claude, Codex or Gemini." />
 	<meta property="og:url" content="https://zeroagenthq.com/download" />
 	<meta property="og:image" content="https://zeroagenthq.com/static/images/zeroagent/web/og-zeroagent-v3.jpg" />
 	<meta property="og:image:width" content="1200" />
@@ -39,12 +39,28 @@
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:site" content="@mvplean" />
 	<meta name="twitter:title" content="Download ZeroAgent for Mac, Linux and Windows beta" />
-	<meta name="twitter:description" content="Download ZeroAgent free for Mac, Linux or Windows beta. Choose a Mac build, install the Linux beta on Ubuntu 24.04 x64 with one command, or get the Windows installer." />
+	<meta name="twitter:description" content="Download ZeroAgent free for Mac, Linux or Windows beta. Choose a Mac build, install the Linux beta on Ubuntu 24.04 x64 with one command, or get the Windows installer. Zero Agent runs on Claude, Codex or Gemini." />
 	<meta name="twitter:image" content="https://zeroagenthq.com/static/images/zeroagent/web/og-zeroagent-v3.jpg" />
 	<meta name="twitter:image:alt" content="Five glowing ZeroAgent worker bots on a dark canvas, surrounded by colored task tags." />
 
 	<!-- Structured data
 	============================================= -->
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "SoftwareApplication",
+		"name": "ZeroAgent",
+		"applicationCategory": "DeveloperApplication",
+		"operatingSystem": "macOS 14 or later, Ubuntu 24.04 or newer (Linux beta), Windows 11 64-bit (beta)",
+		"description": "Download ZeroAgent free for Mac, Linux or Windows beta. Choose a Mac build, install the Linux beta on Ubuntu 24.04 x64 with one command, or get the Windows installer. Zero Agent runs on Claude, Codex or Gemini.",
+		"url": "https://zeroagenthq.com/download",
+		"offers": {
+			"@type": "Offer",
+			"price": "0",
+			"priceCurrency": "USD"
+		}
+	}
+	</script>
 	<script type="application/ld+json">
 	{
 		"@context": "https://schema.org",
@@ -123,7 +139,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code>
 			<p class="za-caption">Homebrew 6 or newer needs that trust line before it will load the cask; older Homebrew can skip straight to installing.</p>
 			</div>
 			<div id="za-linux-panel" hidden>
-				<p class="za-linux-requirements">Ubuntu 24.04 or newer, 64-bit. Requires <a href="https://claude.com/product/claude-code">Claude Code</a>.</p>
+				<p class="za-linux-requirements">Ubuntu 24.04 or newer, 64-bit. Zero Agent needs any one of <a href="https://claude.com/product/claude-code">Claude Code</a>, Codex or Gemini set up.</p>
 				<div class="za-snippet">
 					<code id="za-linux-install-cmd">curl -fsSL https://zeroagenthq.com/install.sh | sh</code>
 					<button type="button" class="za-copy-btn" data-copy-target="za-linux-install-cmd">Copy</button>
@@ -132,7 +148,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code>
 				<p class="za-caption">Other Linux architectures are not available yet.</p>
 			</div>
 			<div id="za-windows-panel" hidden>
-				<p class="za-linux-requirements">Windows 11, 64-bit. Requires <a href="https://nodejs.org/">Node.js</a> and <a href="https://claude.com/product/claude-code">Claude Code</a>.</p>
+				<p class="za-linux-requirements">Windows 11, 64-bit. Requires <a href="https://nodejs.org/">Node.js</a>, and Zero Agent needs any one of <a href="https://claude.com/product/claude-code">Claude Code</a>, Codex or Gemini set up.</p>
 				<a id="za-download-windows" href="/download/windows/x64" class="za-btn za-btn--primary za-btn--full">Download for Windows</a>
 				<p class="za-caption">Windows beta. It installs for your user only, so no administrator rights are needed, and updates install automatically.</p>
 				<p class="za-caption">This beta is unsigned, so Windows SmartScreen shows an &ldquo;unrecognized app&rdquo; warning. Click &ldquo;More info&rdquo;, then &ldquo;Run anyway&rdquo;.</p>
@@ -146,7 +162,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code>
 		<section id="za-mac-prerequisite" class="za-section za-section--tight">
 			<div class="za-container za-narrow">
 				<div class="za-note">
-					<p><strong>Prerequisite:</strong> ZeroAgent coordinates the work; it drives a coding agent CLI already installed on your computer to do it. Supports Claude, Codex, Gemini and open models through OpenRouter. Claude Code is required for Zero Agent; other workers use their own provider accounts or keys.</p>
+					<p><strong>Prerequisite:</strong> ZeroAgent coordinates the work; it drives a coding agent CLI already installed on your computer to do it. Zero Agent, the main agent you talk to, runs on Claude, Codex or Gemini, so you need only one of them and no Claude account if you use Codex or Gemini: Claude Code signed in, Codex signed in with ChatGPT or an OpenAI key, or the Gemini CLI with a Gemini API key. You choose on first launch (ZeroAgent 0.22.0 or later) and can change it in Settings. Workers can use any of them and open models through OpenRouter, with their own accounts or keys.</p>
 				</div>
 			</div>
 		</section>
