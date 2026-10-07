@@ -1,8 +1,7 @@
 /*
  * Click-to-copy for any element carrying data-copy-target: clicking it
  * copies the target element's text (a code snippet, usually itself) to the
- * clipboard and shows "Copied" briefly. Shared by the /zeroagent/ landing
- * hero's cask line and the /zeroagent/download/ Homebrew snippet.
+ * clipboard and shows "Copied" briefly. Used by the /download Homebrew snippet.
  */
 (function () {
 	'use strict';

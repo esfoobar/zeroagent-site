@@ -52,18 +52,24 @@ test('every homepage description ends Free for Mac, Linux and Windows', () => {
 	assert.match(homepage, /"description": "[^"]*Free for Mac, Linux and Windows\."/);
 });
 
-test('the homepage hero carries the platform caption last, after the brew block', () => {
+test('the homepage hero has no Homebrew block and carries the platform caption last', () => {
 	const hero = homepage.match(/<div class="za-btn-row">[\s\S]*?<\/div>([\s\S]*?)<div class="za-hero-window">/);
 	assert.ok(hero, 'the hero copy between the buttons and the window is on the page');
 	const order = hero[1];
-	const cask = order.indexOf('za-hero-cask');
-	const note = order.indexOf('Homebrew 6 or newer');
+	assert.doesNotMatch(order, /za-hero-cask/);
+	assert.doesNotMatch(order, /brew/i);
+	assert.doesNotMatch(order, /Homebrew/);
 	const requirement = order.indexOf('macOS 14 or later');
 	const caption = order.indexOf('Mac, Linux and Windows beta.');
-	assert.ok(cask > -1 && note > cask && requirement > note && caption > requirement,
-		'the order is: brew block, Homebrew note, macOS requirement line, platform caption');
+	assert.ok(requirement > -1 && caption > requirement,
+		'the order is: macOS requirement line, platform caption');
 	assert.equal(order.match(/<p class="za-hero-req">([^<]*)<\/p>/g).at(-1),
 		'<p class="za-hero-req">Mac, Linux and Windows beta.</p>');
+});
+
+test('the homepage closing download heading does not name only Mac or Linux', () => {
+	assert.doesNotMatch(homepage, /for Mac or Linux beta/);
+	assert.match(homepage, /<h2>Download ZeroAgent<\/h2>/);
 });
 
 test('the legal pages cover macOS and Linux rather than macOS alone', () => {
