@@ -113,7 +113,7 @@
 				"name": "Do I need a Claude account?",
 				"acceptedAnswer": {
 					"@type": "Answer",
-					"text": "No. Zero Agent, the main agent you talk to, runs on Claude, Codex or Gemini, so you need only one of them. Claude needs Claude Code signed in; Codex needs a ChatGPT sign-in or an OpenAI key; Gemini needs the Gemini CLI and a Gemini API key. You choose on first launch and can change it in Settings. With Gemini, ZeroAgent cannot see how full the conversation is, so it starts a fresh session after a set number of turns or hours instead."
+					"text": "No. Zero Agent, the main agent you talk to, runs on Claude, Codex or Gemini, so you need only one of them. Claude needs Claude Code signed in; Codex needs a ChatGPT sign-in or an OpenAI key; Gemini needs the Gemini CLI and a Gemini API key. You choose on first launch and can change it in Settings."
 				}
 			},
 			{
@@ -373,8 +373,9 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 
 					<div class="za-fact">
 						<h3>Gemini</h3>
-						<p>Needs the Gemini CLI and your own Gemini API key. Signing in with a
-							personal Google account no longer works.</p>
+						<p>Needs the Gemini CLI and your own Gemini API key. Google account sign-in
+							no longer works for personal accounts. Gemini does not report context use, so
+							the meter reads unknown and long sessions hand off by turn count and time.</p>
 					</div>
 
 				</div>
@@ -420,16 +421,16 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 							<span class="za-status-dot"></span>
 							<div>
 								<h3>Codex</h3>
-								<p class="za-small">Your ChatGPT account or OpenAI key. Main agent or worker.</p>
+									<p class="za-small">Your ChatGPT account or OpenAI key. Main agent or worker.</p>
+								</div>
 							</div>
-						</div>
-						<div class="za-provider za-provider--live">
-							<span class="za-status-dot"></span>
-							<div>
-								<h3>Gemini</h3>
-								<p class="za-small">Your own Gemini API key. Main agent or worker.</p>
+							<div class="za-provider za-provider--live">
+								<span class="za-status-dot"></span>
+								<div>
+									<h3>Gemini</h3>
+									<p class="za-small">Your own Gemini API key. Main agent or worker.</p>
+								</div>
 							</div>
-						</div>
 						<div class="za-provider za-provider--live">
 							<span class="za-status-dot"></span>
 							<div>
@@ -666,9 +667,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 						<div><p>No. Zero Agent, the main agent you talk to, runs on Claude, Codex or Gemini,
 							so you need only one of them. Claude needs Claude Code signed in; Codex needs
 							a ChatGPT sign-in or an OpenAI key; Gemini needs the Gemini CLI and a Gemini
-							API key. You choose on first launch and can change it in Settings. With Gemini,
-							ZeroAgent cannot see how full the conversation is, so it starts a fresh session
-							after a set number of turns or hours instead.</p></div>
+							API key. You choose on first launch and can change it in Settings.</p></div>
 					</details>
 
 					<details>
