@@ -251,6 +251,31 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 			</div>
 		</section>
 
+		<section class="za-section" id="control">
+			<div class="za-container">
+				<div class="za-split">
+					<div class="za-split-copy">
+						<h2>Control: one tab that sees every workbench</h2>
+						<p>The first tab is Control. Its Zero Agent sees every workbench at once, so you
+							can ask "status" and get one card for the whole workspace: what waits for you,
+							what finished, what comes next. Above the conversation, a triage overview sorts
+							every workbench into needs you, stuck, working or idle, and lets you answer a
+							question or ask Zero Agent to retry without leaving the tab.</p>
+						<p>Control opens, creates and retires workbenches for you. It holds no work of its
+							own: ask for code and it routes the work to a workbench of its own instead of
+							doing it in place, so each stream keeps its own context.</p>
+					</div>
+					<div class="za-window">
+						<img src="/static/images/zeroagent/web/control-triage-1x.png"
+							srcset="/static/images/zeroagent/web/control-triage-1x.png 1x, /static/images/zeroagent/web/control-triage-2x.png 2x"
+							width="1180" height="775"
+							alt="The Control tab with its triage overview: two stuck workbenches, two that need an answer with a reply box, and a working and an idle workbench below, beside a Done and a Next list for the whole workspace."
+							loading="lazy" />
+					</div>
+				</div>
+			</div>
+		</section>
+
 		<section class="za-section">
 			<div class="za-container">
 				<div class="za-split za-split--flip">
@@ -534,7 +559,9 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 					<div class="za-split-copy">
 						<h2>Watch your workers from your phone</h2>
 						<p>ZeroAgent Premium pairs a native iOS companion with your Mac by scanning a QR
-							code. It's a viewer and a nudger, not a second orchestrator: glance at the canvas,
+							code. The phone opens on Control, so the first thing you see is what needs you,
+							what is stuck and what is working across every workbench. It's a viewer and a
+							nudger, not a second orchestrator: glance at the canvas,
 							open a worker's transcript, answer a question it's waiting on, or send it a
 							message from wherever you are. The work still runs on your own Mac; the phone
 							only watches and steers it, with push notifications when Zero Agent needs your attention.</p>
@@ -544,20 +571,20 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 						<div class="za-phone-frame">
 							<div class="za-phone-screen">
 								<div class="za-phone-notch"></div>
-								<p class="za-phone-title">Workers</p>
+								<p class="za-phone-title">Control</p>
 								<div class="za-phone-row">
 									<span class="za-status-dot"></span>
-									Reading the ticket
+									Checkout redesign needs you
 								</div>
 								<div class="za-phone-row">
 									<span class="za-status-dot"></span>
-									Tests passing, opening a pull request
+									Login timeouts stuck
 								</div>
 								<div class="za-phone-row">
 									<span class="za-status-dot"></span>
-									Waiting for you
+									Offline sync working
 								</div>
-								<div class="za-phone-input">Message this worker&hellip;</div>
+								<div class="za-phone-input">Message Control&hellip;</div>
 							</div>
 						</div>
 					</div>
@@ -580,9 +607,9 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 					</li>
 					<li class="za-step">
 						<h3>Describe the work in a sentence</h3>
-						<p>Tell Zero Agent what you want in plain words. It breaks the work into tickets
-							and dispatches workers. The app picks an enabled model for each task, using
-							what it has learned about quality and cost.</p>
+						<p>Tell Zero Agent what you want in plain words. Code work gets a workbench of
+							its own; Zero Agent breaks it into tickets and dispatches workers. The app picks
+							an enabled model for each task, using what it has learned about quality and cost.</p>
 					</li>
 					<li class="za-step">
 						<h3>Workers open their own pull requests</h3>
