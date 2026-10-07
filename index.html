@@ -57,12 +57,12 @@
 		"downloadUrl": "https://zeroagenthq.com/download",
 		"image": "https://zeroagenthq.com/static/images/zeroagent/web/og-zeroagent-v3.jpg",
 		"screenshot": [
-			"https://zeroagenthq.com/static/images/zeroagent/screenshots/1-hero.png",
-			"https://zeroagenthq.com/static/images/zeroagent/screenshots/3-task-menu.png",
-			"https://zeroagenthq.com/static/images/zeroagent/screenshots/2-hover.png",
-			"https://zeroagenthq.com/static/images/zeroagent/screenshots/7-artifact-window.png",
-			"https://zeroagenthq.com/static/images/zeroagent/screenshots/8-file-explorer.png",
-			"https://zeroagenthq.com/static/images/zeroagent/screenshots/9-cmd-k.png"
+			"https://zeroagenthq.com/static/images/zeroagent/web/workbench-offline-sync-2x.png",
+			"https://zeroagenthq.com/static/images/zeroagent/web/control-triage-2x.png",
+			"https://zeroagenthq.com/static/images/zeroagent/web/2-hover-2x.png",
+			"https://zeroagenthq.com/static/images/zeroagent/web/7-artifact-window-2x.png",
+			"https://zeroagenthq.com/static/images/zeroagent/web/8-file-explorer-2x.png",
+			"https://zeroagenthq.com/static/images/zeroagent/web/9-cmd-k-2x.png"
 		],
 		"offers": {
 			"@type": "Offer",
@@ -213,11 +213,11 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 						<video
 							poster="/static/images/zeroagent/web/hero-dark-poster.jpg"
 							autoplay muted loop playsinline
-							aria-label="The ZeroAgent canvas dispatching several worker creatures, each with a task tag and repo badge, spreading across a dark canvas while one runs a background script shown as a spinning gear with an elapsed-time readout.">
+							aria-label="A message typed to Zero Agent in the Release notes workbench, and three worker creatures appearing on the canvas one after another, each labelled with its task and repository; hovering one shows its task, model and the command it is running.">
 							<source src="/static/videos/zeroagent/hero-dark.webm" type="video/webm">
 							<img src="/static/images/zeroagent/web/hero-dark.gif"
 								width="680" height="425"
-								alt="The ZeroAgent canvas dispatching several worker creatures, each with a task tag and repo badge, spreading across a dark canvas while one runs a background script shown as a spinning gear with an elapsed-time readout."
+								alt="A message typed to Zero Agent in the Release notes workbench, and three worker creatures appearing on the canvas one after another, each labelled with its task and repository; hovering one shows its task, model and the command it is running."
 								loading="eager" />
 						</video>
 					</div>
@@ -236,15 +236,17 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 							tracked jobs, reports and pages. Open a new tab for each stream of work, an epic,
 							a client, a side project, and its Zero Agent only ever knows that one stream.
 							Nothing from one project bleeds into another, and switching tabs switches the
-							whole context with it. Every workbench draws from the same worker roster, and a
-							paired phone can open any of them. Run this website in one tab and a separate
-							app in another.</p>
+							whole context with it. Every workbench draws from the same worker roster.</p>
+						<p>Closing a tab archives it rather than deleting it, and only once nothing in it is
+							still running. Its tasks, reports and pages stay on disk, and Control can reopen it
+							when you ask. A paired phone lists every open workbench as a card, so you can switch
+							between them there too.</p>
 					</div>
 					<div class="za-window">
-						<img src="/static/images/zeroagent/web/workbench-tabs-1x.png"
-							srcset="/static/images/zeroagent/web/workbench-tabs-1x.png 1x, /static/images/zeroagent/web/workbench-tabs-2x.png 2x"
-							width="380" height="40"
-							alt="The ZeroAgent tab strip with four workbenches open, each its own Zero Agent conversation, with the active one boxed."
+						<img src="/static/images/zeroagent/web/workbench-offline-sync-1x.png"
+							srcset="/static/images/zeroagent/web/workbench-offline-sync-1x.png 1x, /static/images/zeroagent/web/workbench-offline-sync-2x.png 2x"
+							width="1180" height="775"
+							alt="The ZeroAgent window with seven workbenches on the tab strip and the Offline sync tab active: its own Zero Agent conversation above, and below it three worker creatures labelled with their tasks and repository, each with a running script and elapsed time."
 							loading="lazy" />
 					</div>
 				</div>
@@ -288,8 +290,8 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 					<div class="za-window">
 						<img src="/static/images/zeroagent/web/2-hover-1x.png"
 							srcset="/static/images/zeroagent/web/2-hover-1x.png 1x, /static/images/zeroagent/web/2-hover-2x.png 2x"
-							width="480" height="243"
-							alt="A hovered worker on the canvas showing its task title, the model it's running, the command in progress, elapsed time and its branch name, with no click required."
+							width="480" height="300"
+							alt="A hovered worker on the canvas showing its task title, the model it's running and why, the command in progress, elapsed time and its branch name, with no click required."
 							loading="lazy" />
 					</div>
 				</div>
@@ -482,7 +484,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 							<img src="/static/images/zeroagent/web/6-model-selection-1x.png"
 								srcset="/static/images/zeroagent/web/6-model-selection-1x.png 1x, /static/images/zeroagent/web/6-model-selection-2x.png 2x"
 								width="400" height="266"
-								alt="A worker's panel header naming the model it's running on, next to its live status and elapsed time."
+								alt="A worker's panel header naming the model it's running on and the reason, next to its live status and elapsed time, above the start of its transcript."
 								loading="lazy" />
 						</div>
 						<h3>Model selection per dispatch</h3>
@@ -494,7 +496,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 							<img src="/static/images/zeroagent/web/7-artifact-window-1x.png"
 								srcset="/static/images/zeroagent/web/7-artifact-window-1x.png 1x, /static/images/zeroagent/web/7-artifact-window-2x.png 2x"
 								width="400" height="266"
-								alt="A worker-built page open in ZeroAgent's sandboxed artifact window, with its own address bar and open-in-browser and reveal-in-Finder controls."
+								alt="A worker-built page open in ZeroAgent's sandboxed artifact window, with its own address bar and open-in-browser, reveal-in-Finder and reload controls."
 								loading="lazy" />
 						</div>
 						<h3>Artifacts, not just diffs</h3>
@@ -506,7 +508,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 							<img src="/static/images/zeroagent/web/9-cmd-k-1x.png"
 								srcset="/static/images/zeroagent/web/9-cmd-k-1x.png 1x, /static/images/zeroagent/web/9-cmd-k-2x.png 2x"
 								width="400" height="266"
-								alt="The Cmd+K fuzzy finder open with 'zeroagent' typed, showing matched file paths with bolded characters."
+								alt="The Cmd+K fuzzy finder open with 'readme' typed, listing the README file of every repository in the projects folder with the matched characters in bold."
 								loading="lazy" />
 						</div>
 						<h3>Fuzzy search, every repo</h3>
@@ -518,7 +520,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 							<img src="/static/images/zeroagent/web/12-worker-transcript-1x.png"
 								srcset="/static/images/zeroagent/web/12-worker-transcript-1x.png 1x, /static/images/zeroagent/web/12-worker-transcript-2x.png 2x"
 								width="400" height="266"
-								alt="An open worker transcript mid-conversation, with a message box to send the worker a correction directly."
+								alt="An open worker transcript mid-run beside the workbench, with the worker's messages and a message box to send it a correction directly."
 								loading="lazy" />
 						</div>
 						<h3>Talk to a running agent</h3>
@@ -530,7 +532,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 							<img src="/static/images/zeroagent/web/8-file-explorer-1x.png"
 								srcset="/static/images/zeroagent/web/8-file-explorer-1x.png 1x, /static/images/zeroagent/web/8-file-explorer-2x.png 2x"
 								width="400" height="266"
-								alt="The file explorer's sidebar listing dozens of repositories under one projects folder, with a markdown file open on the right."
+								alt="The file explorer's sidebar listing a dozen repositories under one projects folder, with a markdown file open on the right."
 								loading="lazy" />
 						</div>
 						<h3>One workspace, many repositories</h3>
@@ -542,7 +544,7 @@ brew install --cask zeroagentdev/tap/zeroagent</code></p>
 							<img src="/static/images/zeroagent/web/13-report-rendered-1x.png"
 								srcset="/static/images/zeroagent/web/13-report-rendered-1x.png 1x, /static/images/zeroagent/web/13-report-rendered-2x.png 2x"
 								width="400" height="266"
-								alt="A worker's markdown report open in the app, formatted with headings, bullets and inline code rather than a wall of plain text."
+								alt="A worker's report open as a formatted page, with headings, bullets and inline code rather than a wall of plain text."
 								loading="lazy" />
 						</div>
 						<h3>A report, not a wall of text</h3>
