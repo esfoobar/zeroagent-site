@@ -11,6 +11,13 @@ import { signHs256 } from '../api/_lib/jwt.js';
 const SECRET = 'test-secret-do-not-use-in-prod';
 const REAL_SECRET = process.env.ZEROAGENT_JWT_SECRET;
 
+// The handler reads the wall clock (it passes no `now` into entitlementFor),
+// so the fixtures are dated relative to when the suite runs, never hard-coded:
+// a fixed trialEnds went past on 2026-10-08 and turned these tests red.
+const DAY_MS = 24 * 60 * 60 * 1000;
+const TRIAL_ENDS = new Date(Date.now() + 7 * DAY_MS).toISOString();
+const TRIAL_ENDED = new Date(Date.now() - DAY_MS).toISOString();
+
 beforeEach(() => {
 	process.env.ZEROAGENT_JWT_SECRET = SECRET;
 });
@@ -68,7 +75,7 @@ test('200: a valid token returns the entitlement from the store', async () => {
 				githubId,
 				login: 'octocat',
 				plan: 'free',
-				trialEnds: '2026-10-08T00:00:00.000Z',
+				trialEnds: TRIAL_ENDS,
 				planUntil: null,
 				createdAt: '2026-09-08T00:00:00.000Z',
 				pairedDevices: [],
@@ -79,7 +86,7 @@ test('200: a valid token returns the entitlement from the store', async () => {
 	assert.equal(res.statusCode, 200);
 	assert.deepEqual(JSON.parse(res.body), {
 		plan: 'free',
-		trialEnds: '2026-10-08T00:00:00.000Z',
+		trialEnds: TRIAL_ENDS,
 		planUntil: null,
 		relayAllowed: true,
 	});
@@ -152,13 +159,30 @@ test('200: a device token for an unrevoked device gets the entitlement, same as 
 			githubId: 1234567,
 			login: 'octocat',
 			plan: 'free',
-			trialEnds: '2026-10-08T00:00:00.000Z',
+			trialEnds: TRIAL_ENDS,
 			planUntil: null,
 			pairedDevices: [{ deviceId: 'dev_abc', tokenHash: 'h', name: 'iPhone', createdAt: 'x', revokedAt: null }],
 		}),
 	});
 	assert.equal(res.statusCode, 200);
-	assert.deepEqual(JSON.parse(res.body), { plan: 'free', trialEnds: '2026-10-08T00:00:00.000Z', planUntil: null, relayAllowed: true });
+	assert.deepEqual(JSON.parse(res.body), { plan: 'free', trialEnds: TRIAL_ENDS, planUntil: null, relayAllowed: true });
+});
+
+test('200: a free account whose trial has ended is answered with relayAllowed false', async () => {
+	const req = reqWithAuth(validToken());
+	const res = fakeRes();
+	await handler(req, res, {
+		getUser: async (githubId) => ({
+			githubId,
+			login: 'octocat',
+			plan: 'free',
+			trialEnds: TRIAL_ENDED,
+			planUntil: null,
+			pairedDevices: [],
+		}),
+	});
+	assert.equal(res.statusCode, 200);
+	assert.deepEqual(JSON.parse(res.body), { plan: 'free', trialEnds: TRIAL_ENDED, planUntil: null, relayAllowed: false });
 });
 
 test('401: a device token whose entry has been revoked is unauthorized', async () => {
@@ -169,7 +193,7 @@ test('401: a device token whose entry has been revoked is unauthorized', async (
 			githubId: 1234567,
 			login: 'octocat',
 			plan: 'free',
-			trialEnds: '2026-10-08T00:00:00.000Z',
+			trialEnds: TRIAL_ENDS,
 			planUntil: null,
 			pairedDevices: [{ deviceId: 'dev_abc', tokenHash: 'h', name: 'iPhone', createdAt: 'x', revokedAt: '2026-09-08T21:10:00.000Z' }],
 		}),
@@ -186,7 +210,7 @@ test('401: a device token whose deviceId is not in pairedDevices at all is unaut
 			githubId: 1234567,
 			login: 'octocat',
 			plan: 'free',
-			trialEnds: '2026-10-08T00:00:00.000Z',
+			trialEnds: TRIAL_ENDS,
 			planUntil: null,
 			pairedDevices: [{ deviceId: 'dev_abc', tokenHash: 'h', name: 'iPhone', createdAt: 'x', revokedAt: null }],
 		}),
