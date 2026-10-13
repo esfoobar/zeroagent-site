@@ -84,3 +84,14 @@ test('payment grace is paid-through plus the parameter', () => {
 	assert.equal(paymentGraceUntilFor('2026-12-01T00:00:00.000Z', { ...BILLING_PARAMETERS, paymentGraceSeconds: 60 }), '2026-12-01T00:01:00.000Z');
 	assert.equal(paymentGraceUntilFor(null), null);
 });
+
+test('only a fully absent billing environment is marked not configured', () => {
+	assert.throws(() => loadBillingEnvironment({}), (error) => error instanceof BillingConfigError && error.notConfigured === true);
+	for (const partial of [
+		{ STRIPE_API_KEY: key('test') },
+		{ STRIPE_API_KEY: 'not-a-key', STRIPE_EXPECT_LIVE_MODE: 'false' },
+		{ ...env(), STRIPE_API_KEY: key('live') },
+		{ ...env(), STRIPE_EXPECT_LIVE_MODE: 'invalid' },
+		{ ...env(), STRIPE_ACCOUNT_ID: undefined },
+	]) assert.throws(() => loadBillingEnvironment(partial), (error) => error instanceof BillingConfigError && error.notConfigured === false);
+});

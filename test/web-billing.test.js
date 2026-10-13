@@ -264,3 +264,32 @@ test('an anonymous status call is a 401 before any database or Stripe work', asy
  }
  assert.deepEqual(touched,[]);
 });
+
+test('partial or invalid billing configuration is logged and never cached', async () => {
+ const saved={ ...process.env };
+ const names=Object.values((await import('../api/_lib/billing-config.js')).BILLING_ENV_VARS);
+ const scenarios=[
+  { STRIPE_API_KEY:'not-a-key', STRIPE_EXPECT_LIVE_MODE:'false' },
+  { STRIPE_API_KEY:['rk','live','synthetic'].join('_'), STRIPE_EXPECT_LIVE_MODE:'false', STRIPE_ACCOUNT_ID:'acct_test', STRIPE_PREMIUM_PRODUCT_ID:'prod_test' },
+  { STRIPE_API_KEY:['rk','test','synthetic'].join('_'), STRIPE_EXPECT_LIVE_MODE:'maybe', STRIPE_ACCOUNT_ID:'acct_test', STRIPE_PREMIUM_PRODUCT_ID:'prod_test' },
+  { STRIPE_API_KEY:['rk','test','synthetic'].join('_'), STRIPE_EXPECT_LIVE_MODE:'false' },
+ ];
+ const original=console.error;
+ try {
+  for (const scenario of scenarios) {
+   for (const name of names) delete process.env[name];
+   Object.assign(process.env,scenario);
+   const messages=[]; console.error=(...parts)=>messages.push(parts);
+   const f=fixture(); delete f.deps.environment; delete f.deps.stripe;
+   const res=await f.call(catalog);
+   assert.equal(res.statusCode,503);
+   assert.equal(res.headers['Cache-Control'],'private, no-store');
+   assert.equal(messages.length,1);
+   assert.equal(messages[0][0],'billing route failure');
+  }
+ } finally {
+  console.error=original;
+  for (const name of names) delete process.env[name];
+  Object.assign(process.env,saved);
+ }
+});
