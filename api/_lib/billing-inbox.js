@@ -10,7 +10,8 @@
  *  - A claimed (processing) or failed entry is never "complete".
  *  - A processing entry whose lease expired can be claimed again.
  *  - After maxAttempts the entry is quarantined for an operator, never
- *    silently acknowledged as done.
+ *    silently acknowledged as done: by fail when its holder reports, and by
+ *    the next claim when the holder died without reporting.
  */
 
 import { isDuplicateKeyError } from './mongo-errors.js';
@@ -68,9 +69,23 @@ export async function recordEventWithCollection(collection, { environment, event
 	}
 }
 
-// Atomically takes the entry for `owner`. Null when it is already complete,
-// quarantined, or held by a live lease: the caller answers 5xx on a held
-// lease so Stripe retries, and 2xx on a complete one.
+// Atomically takes the entry for `owner`. Always answers { status, entry }
+// so the caller never has to guess why it did not get the entry:
+//
+//   claimed      the caller holds it now (entry.attempts is this attempt):
+//                process it, then commit or fail it.
+//   held         another holder's lease is still live: answer 5xx so Stripe
+//                retries later.
+//   completed    already applied: answer 2xx, nothing to do.
+//   quarantined  parked for an operator (attempt budget spent, or sent
+//                there by a handler): answer 2xx so Stripe stops retrying;
+//                the quarantine is the alert, not a retry loop.
+//   missing      never recorded: record it first.
+//
+// An entry at the attempt budget whose holder died without calling fail
+// (lease expired in `processing`, or still `failed`) is moved to
+// `quarantined` here, by a conditional update, so concurrent claimants
+// agree and an exhausted entry can never be stranded.
 export async function claimEventWithCollection(
 	collection,
 	{ key, owner, now = new Date(), leaseMs = INBOX_DEFAULTS.leaseMs, maxAttempts = INBOX_DEFAULTS.maxAttempts }
@@ -91,7 +106,34 @@ export async function claimEventWithCollection(
 			{ returnDocument: 'after' }
 		)
 	);
-	return claimed || null;
+	if (claimed) return { status: 'claimed', entry: claimed };
+
+	const exhausted = unwrap(
+		await collection.findOneAndUpdate(
+			{
+				_id: key,
+				attempts: { $gte: maxAttempts },
+				$or: [{ state: 'failed' }, { state: 'processing', leaseExpiresAt: { $lte: nowIso } }],
+			},
+			{
+				$set: {
+					state: 'quarantined',
+					leaseOwner: null,
+					leaseExpiresAt: null,
+					lastError: 'attempts_exhausted',
+					failedAt: nowIso,
+				},
+			},
+			{ returnDocument: 'after' }
+		)
+	);
+	if (exhausted) return { status: 'quarantined', entry: exhausted };
+
+	const entry = await collection.findOne({ _id: key });
+	if (!entry) return { status: 'missing', entry: null };
+	if (entry.state === 'completed') return { status: 'completed', entry };
+	if (entry.state === 'quarantined') return { status: 'quarantined', entry };
+	return { status: 'held', entry };
 }
 
 // The failure path. Only the current owner can record it. A retriable

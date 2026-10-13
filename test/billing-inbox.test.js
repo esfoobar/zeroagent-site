@@ -65,12 +65,15 @@ test('claim: only one concurrent claimant wins, attempts count, lease expires', 
 	const c = inbox();
 	const { entry } = await recordEventWithCollection(c, { environment, event: event(), now: NOW });
 	const a = await claimEventWithCollection(c, { key: entry._id, owner: 'worker-a', now: NOW, leaseMs: 1000 });
-	assert.equal(a.state, 'processing');
-	assert.equal(a.attempts, 1);
-	assert.equal(await claimEventWithCollection(c, { key: entry._id, owner: 'worker-b', now: later(500), leaseMs: 1000 }), null);
+	assert.equal(a.status, 'claimed');
+	assert.equal(a.entry.state, 'processing');
+	assert.equal(a.entry.attempts, 1);
+	const held = await claimEventWithCollection(c, { key: entry._id, owner: 'worker-b', now: later(500), leaseMs: 1000 });
+	assert.equal(held.status, 'held');
 	const b = await claimEventWithCollection(c, { key: entry._id, owner: 'worker-b', now: later(1000), leaseMs: 1000 });
-	assert.equal(b.leaseOwner, 'worker-b');
-	assert.equal(b.attempts, 2);
+	assert.equal(b.status, 'claimed');
+	assert.equal(b.entry.leaseOwner, 'worker-b');
+	assert.equal(b.entry.attempts, 2);
 });
 
 test('failed is retriable, never complete; the budget ends in quarantine', async () => {
@@ -80,11 +83,12 @@ test('failed is retriable, never complete; the budget ends in quarantine', async
 	let t = 0;
 	for (let i = 1; i <= 3; i++) {
 		const claimed = await claimEventWithCollection(c, { key, owner: 'w', now: later((t += 10)), maxAttempts: 3 });
-		assert.ok(claimed, `attempt ${i}`);
+		assert.equal(claimed.status, 'claimed', `attempt ${i}`);
 		const failed = await failEventWithCollection(c, { key, owner: 'w', errorCode: 'stripe_timeout', now: later(t), maxAttempts: 3 });
 		assert.equal(failed.state, i < 3 ? 'failed' : 'quarantined');
 	}
-	assert.equal(await claimEventWithCollection(c, { key, owner: 'w', now: later(t + 10), maxAttempts: 3 }), null);
+	const again = await claimEventWithCollection(c, { key, owner: 'w', now: later(t + 10), maxAttempts: 3 });
+	assert.equal(again.status, 'quarantined');
 	assert.equal(c.docs.get(key).state, 'quarantined');
 });
 
@@ -103,5 +107,51 @@ test('a completed entry cannot be claimed again', async () => {
 	const c = inbox();
 	const { entry } = await recordEventWithCollection(c, { environment, event: event(), now: NOW });
 	c.docs.get(entry._id).state = 'completed';
-	assert.equal(await claimEventWithCollection(c, { key: entry._id, owner: 'w', now: NOW }), null);
+	const r = await claimEventWithCollection(c, { key: entry._id, owner: 'w', now: NOW });
+	assert.equal(r.status, 'completed');
+});
+
+test('a holder that dies on the last attempt is quarantined by the next claim, not stranded', async () => {
+	const c = inbox();
+	const { entry } = await recordEventWithCollection(c, { environment, event: event(), now: NOW });
+	const key = entry._id;
+	let t = 0;
+	for (let i = 1; i <= 2; i++) {
+		assert.equal((await claimEventWithCollection(c, { key, owner: 'w', now: later((t += 10)), leaseMs: 1000, maxAttempts: 2 })).status, 'claimed');
+		if (i < 2) await failEventWithCollection(c, { key, owner: 'w', errorCode: 'stripe_timeout', now: later(t), maxAttempts: 2 });
+	}
+	// The last allowed attempt is held and its owner crashes: no fail call.
+	assert.equal((await claimEventWithCollection(c, { key, owner: 'x', now: later(t + 500), maxAttempts: 2 })).status, 'held');
+	const next = await claimEventWithCollection(c, { key, owner: 'x', now: later(t + 1000), maxAttempts: 2 });
+	assert.equal(next.status, 'quarantined');
+	const stored = c.docs.get(key);
+	assert.equal(stored.state, 'quarantined');
+	assert.equal(stored.leaseOwner, null);
+	assert.equal(stored.leaseExpiresAt, null);
+	assert.equal(stored.lastError, 'attempts_exhausted');
+	assert.ok(stored.failedAt);
+	for (const dt of [2000, 10_000_000]) {
+		const r = await claimEventWithCollection(c, { key, owner: 'y', now: later(t + dt), maxAttempts: 2 });
+		assert.equal(r.status, 'quarantined');
+		assert.equal(c.docs.get(key).attempts, 2);
+	}
+});
+
+test('a failed entry already at the budget is quarantined by claim', async () => {
+	const c = inbox();
+	const { entry } = await recordEventWithCollection(c, { environment, event: event(), now: NOW });
+	const key = entry._id;
+	// Reachable when the budget is lowered between deploys.
+	await claimEventWithCollection(c, { key, owner: 'w', now: NOW, maxAttempts: 5 });
+	await claimEventWithCollection(c, { key, owner: 'w', now: later(2_000_000), maxAttempts: 5 });
+	await failEventWithCollection(c, { key, owner: 'w', errorCode: 'x', now: later(2_000_001), maxAttempts: 5 });
+	assert.equal(c.docs.get(key).state, 'failed');
+	const r = await claimEventWithCollection(c, { key, owner: 'w', now: later(2_000_002), maxAttempts: 2 });
+	assert.equal(r.status, 'quarantined');
+	assert.equal(c.docs.get(key).state, 'quarantined');
+});
+
+test('claiming an unknown entry says missing', async () => {
+	const r = await claimEventWithCollection(inbox(), { key: 'nope', owner: 'w', now: NOW });
+	assert.deepEqual(r, { status: 'missing', entry: null });
 });
