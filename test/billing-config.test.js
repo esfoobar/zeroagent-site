@@ -76,6 +76,7 @@ test('assertLivemode refuses a mismatched or missing mode', () => {
 test('variables are named, the manifest names match the config', () => {
 	assert.equal(BILLING_ENV_VARS.productId, 'STRIPE_PREMIUM_PRODUCT_ID');
 	assert.equal(BILLING_ENV_VARS.expectLiveMode, 'STRIPE_EXPECT_LIVE_MODE');
+	assert.equal(BILLING_ENV_VARS.apiVersion, 'STRIPE_API_VERSION');
 });
 
 test('payment grace is paid-through plus the parameter', () => {

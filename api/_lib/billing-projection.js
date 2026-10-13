@@ -29,6 +29,12 @@ function isoOrNull(value) {
 	return t === null ? null : iso(t);
 }
 
+function hasPaidRecord(account) {
+	const billing = account.billing;
+	if (!billing || typeof billing !== 'object') return false;
+	return typeof billing.status === 'string' || (billing.paidThrough !== null && billing.paidThrough !== undefined);
+}
+
 // The legacy ground. Returns { open: true } for a grant with no known end,
 // { until } for a dated one, or null when no grant holds right now.
 function legacyGround(account, now) {
@@ -40,7 +46,9 @@ function legacyGround(account, now) {
 	}
 	// Unmarked: today's rule. A hand-assigned premium or platinum plan with
 	// no billing record keeps the relay open and its date is not read.
-	if (!account.billing && (account.plan === 'premium' || account.plan === 'platinum')) return { open: true };
+	// A customer mapping written before any payment (no status yet) is not a
+	// billing record in this sense, so it cannot hide a hand-assigned plan.
+	if (!hasPaidRecord(account) && (account.plan === 'premium' || account.plan === 'platinum')) return { open: true };
 	return null;
 }
 
@@ -81,7 +89,7 @@ function paidGrounds(billing, now, parameters) {
 }
 
 function statusFor(billing, legacy) {
-	if (billing) {
+	if (billing && hasPaidRecord({ billing })) {
 		if (billing.status === 'active') return billing.cancelAtPeriodEnd ? 'cancel_scheduled' : 'active';
 		if (billing.status === 'past_due') return 'past_due';
 		if (billing.status === 'ended') return 'ended';
@@ -100,7 +108,7 @@ export function projectEntitlement(account, now = new Date(), parameters = BILLI
 	const trialEnds = ms(account.trialEnds);
 	if (trialEnds !== null && at < trialEnds) grounds.push(trialEnds);
 
-	const legacy = billing ? null : legacyGround(account, at);
+	const legacy = hasPaidRecord(account) ? null : legacyGround(account, at);
 	if (legacy && !legacy.open) grounds.push(legacy.until);
 	if (billing) grounds.push(...paidGrounds(billing, at, parameters));
 

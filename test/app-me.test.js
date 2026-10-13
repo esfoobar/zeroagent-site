@@ -44,6 +44,14 @@ function fakeRes() {
 	};
 }
 
+// ZA-902: /me answers the four original fields unchanged plus six additive
+// ones. These older tests pin the four; test/app-me-compat.test.js pins the
+// six and the agreement with the previous rule.
+function legacyFields(body) {
+	const { plan, trialEnds, planUntil, relayAllowed } = body;
+	return { plan, trialEnds, planUntil, relayAllowed };
+}
+
 function validToken(claims = {}) {
 	const iat = Math.floor(Date.now() / 1000);
 	return signHs256(
@@ -84,7 +92,7 @@ test('200: a valid token returns the entitlement from the store', async () => {
 	});
 
 	assert.equal(res.statusCode, 200);
-	assert.deepEqual(JSON.parse(res.body), {
+	assert.deepEqual(legacyFields(JSON.parse(res.body)), {
 		plan: 'free',
 		trialEnds: TRIAL_ENDS,
 		planUntil: null,
@@ -165,7 +173,7 @@ test('200: a device token for an unrevoked device gets the entitlement, same as 
 		}),
 	});
 	assert.equal(res.statusCode, 200);
-	assert.deepEqual(JSON.parse(res.body), { plan: 'free', trialEnds: TRIAL_ENDS, planUntil: null, relayAllowed: true });
+	assert.deepEqual(legacyFields(JSON.parse(res.body)), { plan: 'free', trialEnds: TRIAL_ENDS, planUntil: null, relayAllowed: true });
 });
 
 test('200: a free account whose trial has ended is answered with relayAllowed false', async () => {
@@ -182,7 +190,7 @@ test('200: a free account whose trial has ended is answered with relayAllowed fa
 		}),
 	});
 	assert.equal(res.statusCode, 200);
-	assert.deepEqual(JSON.parse(res.body), { plan: 'free', trialEnds: TRIAL_ENDED, planUntil: null, relayAllowed: false });
+	assert.deepEqual(legacyFields(JSON.parse(res.body)), { plan: 'free', trialEnds: TRIAL_ENDED, planUntil: null, relayAllowed: false });
 });
 
 test('401: a device token whose entry has been revoked is unauthorized', async () => {
