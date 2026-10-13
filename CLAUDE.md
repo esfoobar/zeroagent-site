@@ -33,6 +33,26 @@ The reason for the third rule is the first two: a crawler that is told to stay a
 - `trailingSlash: false` in `vercel.json` keeps `/download` (no trailing slash) the canonical form, matching the old site.
 - The release feed is `https://releases.zeroagenthq.com` (CloudFront in front of S3, documented in the `zeroagent` repo's `docs/RELEASE.md`). `static/js/zeroagent-release.js` fetches it directly, unproxied, because that feed answers CORS with `Access-Control-Allow-Origin: *`.
 
+## Browser sign-in and account sessions
+
+ZA-900 (esfoobar/zeroagent#1263), first build ticket of paid billing (ZA-154). The website account signs in with GitHub in the browser. This is separate from the desktop device-flow sign-in in `api/auth/github.js`, which is untouched.
+
+- Routes (public URLs, all served by the one function `api/web.js`, handlers in `api/_lib/web-routes/`): `GET /api/auth/github/start` (state + PKCE S256, redirects to GitHub, no scopes), `GET /api/auth/github/callback` (verifies state against the `__Host-za_oauth` cookie, consumes it once, exchanges the code server side, upserts the user with the same `users-store` call as the desktop sign-in, drops the GitHub token, sets the session), `GET /api/account/session` (identity and CSRF token), `POST /api/auth/logout` (revokes the session). `/account` is a minimal noindex landing page; it stays out of `sitemap.xml` and `robots.txt` for the same reason `/stats` does.
+- Sessions are opaque random tokens in a `__Host-za_session` cookie (Secure, HttpOnly, SameSite=Lax, Path=/, 14 days). Only the sha256 hash is stored, in the `webSessions` collection, with `expiresAt`, `revokedAt` and a server-side `authTime`. OAuth attempts live in `webAuthStates` (10 minutes, single use, keyed by hash of the state). A session is rotated at every sign-in. Both collections carry a `purgeAt` date, and the store ensures a TTL index on it (`expireAfterSeconds: 0`) itself, once per cold start (idempotent `createIndex`; a failure is logged and does not fail the request), so no manual database step is needed. Reads ignore expired and revoked documents regardless.
+- Mutating routes need an exact `Origin` match (`BILLING_BASE_URL`, default `https://zeroagenthq.com`) and the session's CSRF token in `X-CSRF-Token` (from `/api/account/session`). Every response is `private, no-store`.
+- `api/_lib/web-auth.js` is what later browser routes call: `requireBrowserSession(req)`, `requireCsrf(req, auth)`, `requireRecentAuth(session)` (15 minutes since sign-in). Browser authority never comes from the app or device JWTs: a request carrying any `Authorization` header is refused, and nothing exchanges a JWT for a session.
+- Return paths are an exact allowlist in `RETURN_PATHS` (`/account`, `/account/plan`, `/billing`); anything else lands on `/account`.
+- Environment (Production and Preview, sensitive): `GITHUB_WEB_CLIENT_ID` and `GITHUB_WEB_CLIENT_SECRET` for a dedicated GitHub OAuth app (not the desktop device-flow client), and optionally `BILLING_BASE_URL` (origin only). The OAuth app's Authorization callback URL is exactly `https://zeroagenthq.com/api/auth/github/callback`; device flow stays off for it, and it needs no scopes. With either client variable unset the routes answer 503 `sign_in_unavailable` and log only the variable names. `MONGODB_URI` and `MONGODB_DB` are reused.
+
+## Function count (Hobby plan limit)
+
+The Vercel team is on the Hobby plan: no more than **12** serverless functions per deployment, and every `.js` file under `api/` outside `_`-prefixed directories counts as one. Exceeding it fails the deployment at "Deploying outputs..." with `exceeded_serverless_functions_per_deployment` (the build itself succeeds, so the log looks clean). There are 10 today: the nine original endpoint files plus `api/web.js`. `test/web-function.test.js` fails if the count passes 12.
+
+The pattern for new routes:
+
+- Browser-session JSON routes (billing catalog, status, checkout, portal) are not new files. Add a handler module under `api/_lib/web-routes/` (plain `handler(req, res, deps)`, unit-tested directly), one line in `ROUTES` in `api/web.js`, and one `/api/<route>` to `/api/web?__route=<route>` rewrite in `vercel.json`. Public URLs stay as designed.
+- A route that needs the raw request body, the Stripe webhook, cannot share `api/web.js`: Vercel parses JSON bodies before the function runs, and a signature check needs the exact bytes. It gets its own file (`api/stripe-webhook.js`, `export const config = { api: { bodyParser: false } }`, read the stream). That is function 11; one slot remains, so fold further endpoints into `api/web.js` or consolidate older ones before adding files.
+
 ## Styling and static assets
 
 The site has one stylesheet, `static/css/zeroagent.css`: tokens (black page, off white text, hairlines, the app's coral as a status colour only), the type scale (Geist from Google Fonts, Geist Mono only for commands and checksums), the nav and footer, and the components the pages use. Pages carry no inline styles. The stats page is the exception: it is self contained on purpose (inline CSS, no nav or footer) and only mirrors the tokens.

@@ -13,6 +13,22 @@
     {
       "source": "/download/:os/:arch",
       "destination": "/api/download?os=:os&arch=:arch"
+    },
+    {
+      "source": "/api/auth/github/start",
+      "destination": "/api/web?__route=auth/github/start"
+    },
+    {
+      "source": "/api/auth/github/callback",
+      "destination": "/api/web?__route=auth/github/callback"
+    },
+    {
+      "source": "/api/account/session",
+      "destination": "/api/web?__route=account/session"
+    },
+    {
+      "source": "/api/auth/logout",
+      "destination": "/api/web?__route=auth/logout"
     }
   ],
   "headers": [
