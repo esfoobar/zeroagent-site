@@ -915,7 +915,7 @@ test('simultaneous subscription and paid invoice deliveries both complete with o
 	assert.equal(w.eventState(created.id).state, 'completed');
 	assert.equal(w.eventState(paid.id).state, 'completed');
 	assert.equal(w.user().billing.revision, 1);
-	assert.equal(w.user().entitlementVersion, 1);
+	assert.equal(w.answer().entitlementVersion, 1);
 });
 
 test('lease expired during a slow Stripe call: the commit is refused and nothing is written', async () => {
