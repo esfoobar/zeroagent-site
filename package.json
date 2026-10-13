@@ -3,7 +3,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "billing:migrate": "node scripts/billing-migrate.mjs"
+    "billing:migrate": "node scripts/billing-migrate.mjs",
+    "billing:audit": "node scripts/billing-audit.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.0",
