@@ -15,17 +15,17 @@ function fixture() {
  const account = { _id: 42, plan: 'free', trialEnds: '2026-10-14T00:00:00.000Z', planUntil: null, billingCustomer: null };
  users.docs.set(42, account);
  const calls = { create: 0, portal: 0, expire: 0, checkoutData: null, customerData: null, portalData: null };
- let priceId = 'price_one', productId = 'prod_test', owner = '42', sessionStatus = 'open', subscriptionStatus = null, sessionExpiresAt = Math.floor(now.getTime()/1000)+1800, customerLivemode = false;
+ let priceId = 'price_one', productId = 'prod_test', owner = '42', sessionStatus = 'open', subscriptionStatus = null, sessionExpiresAt = Math.floor(now.getTime()/1000)+1800, customerLivemode = false, sessionReadError = null, sessionCustomer = 'cus_42';
  const stripe = {
   products: { retrieve: async () => ({ id: 'prod_test', active: true, livemode: false, default_price: { id: priceId, active: true, livemode: false, product: productId, unit_amount: null, currency: 'usd', recurring: { interval: 'month' } } }) },
   customers: { create: async (data) => { calls.customerData=data; return { id: 'cus_42', livemode: false, metadata: data.metadata }; }, retrieve: async () => ({ id: 'cus_42', livemode: customerLivemode, metadata: { zeroagent_github_id: owner } }) },
   subscriptions: { list: async () => ({ data: subscriptionStatus ? [{ id: 'sub_1', customer: 'cus_42', status: subscriptionStatus, livemode: false }] : [], has_more: false }) },
-  checkout: { sessions: { create: async (data) => { calls.create++; calls.checkoutData=data; return { id: 'cs_1', customer: data.customer, status: 'open', livemode: false, expires_at: sessionExpiresAt, url: 'https://checkout.stripe.com/session' }; }, retrieve: async () => ({ id: 'cs_1', customer: 'cus_42', status: sessionStatus, livemode: false, expires_at: sessionExpiresAt, url: 'https://checkout.stripe.com/session' }), expire: async () => { calls.expire++; } } },
+  checkout: { sessions: { create: async (data) => { calls.create++; calls.checkoutData=data; return { id: 'cs_1', customer: data.customer, status: 'open', livemode: false, expires_at: sessionExpiresAt, url: 'https://checkout.stripe.com/session' }; }, retrieve: async () => { if (sessionReadError) throw sessionReadError; return { id: 'cs_1', customer: sessionCustomer, status: sessionStatus, livemode: false, expires_at: sessionExpiresAt, url: 'https://checkout.stripe.com/session' }; }, expire: async () => { calls.expire++; } } },
   billingPortal: { sessions: { create: async (data) => { calls.portal++; calls.portalData=data; assert.equal(data.configuration, 'bpc_test'); return { url: 'https://billing.stripe.com/session', livemode: false }; } } },
  };
  const deps = { now, environment, stripe, store: { collections: { users, catalog: catalogStore, purchases } }, getActiveSession: async () => ({ githubId: 42, authTime: now.toISOString() }) };
  async function call(handler, method = 'GET', body, headers = baseHeaders, query) { const res = response(); await handler({ method, body, headers, query }, res, deps); return res; }
- return { call, deps, account, users, purchases, calls, setPrice(v) { priceId=v; }, setProduct(v) { productId=v; }, setOwner(v) {owner=v;}, setCustomerLivemode(v) {customerLivemode=v;}, setSession(v) {sessionStatus=v;}, setSessionExpiry(v) {sessionExpiresAt=v;}, setSubscription(v) {subscriptionStatus=v;}, pause() { catalogStore.docs.set('catalog:sandbox', { _id: 'catalog:sandbox', salesPaused: true }); } };
+ return { call, deps, account, users, purchases, calls, setPrice(v) { priceId=v; }, setProduct(v) { productId=v; }, setOwner(v) {owner=v;}, setCustomerLivemode(v) {customerLivemode=v;}, setSession(v) {sessionStatus=v;}, setSessionReadError(v) {sessionReadError=v;}, setSessionCustomer(v) {sessionCustomer=v;}, setSessionExpiry(v) {sessionExpiresAt=v;}, setSubscription(v) {subscriptionStatus=v;}, pause() { catalogStore.docs.set('catalog:sandbox', { _id: 'catalog:sandbox', salesPaused: true }); } };
 }
 
 test('catalog resolves live offer and honestly reports paused sales', async () => {
@@ -137,4 +137,20 @@ test('security failures log only name and code, while the response stays generic
  const modeMessages=[]; console.error=(...parts)=>modeMessages.push(parts);
  try { assert.equal((await g.call(portal,'POST')).statusCode,503); } finally { console.error=original; }
  assert.equal(modeMessages[0][1],'BillingModeMismatchError'); assert.equal(modeMessages[0].length,3);
+});
+
+test('status preserves projected entitlement when Stripe Session read fails, but rejects an integrity mismatch', async () => {
+ const f=fixture(); const key='acct_test:sandbox:42';
+ f.purchases.docs.set(key,{ _id:key, operationId:'op', priceId:'price_one', customerId:'cus_42', sessionId:'cs_1', state:'open' });
+ const outage=new Error('private Stripe detail'); outage.name='StripeTimeoutError'; outage.code='ETIMEDOUT'; f.setSessionReadError(outage);
+ const messages=[]; const original=console.error; console.error=(...parts)=>messages.push(parts);
+ try {
+  const res=await f.call(status); assert.equal(res.statusCode,200); assert.equal(res.body.billingStatus,'none'); assert.equal(res.body.relayAllowed,true); assert.equal(res.body.checkoutState,null);
+ } finally { console.error=original; }
+ assert.deepEqual(messages,[['billing route failure','StripeTimeoutError','ETIMEDOUT']]);
+ assert.equal(JSON.stringify(messages).includes('private Stripe detail'),false);
+ f.setSessionReadError(null); f.setSessionCustomer('another-customer');
+ const mismatchMessages=[]; console.error=(...parts)=>mismatchMessages.push(parts);
+ try { const res=await f.call(status); assert.equal(res.statusCode,503); assert.deepEqual(res.body,{error:'billing_unavailable'}); } finally { console.error=original; }
+ assert.deepEqual(mismatchMessages,[['billing route failure','BillingIntegrityError','checkout_customer_mismatch']]);
 });

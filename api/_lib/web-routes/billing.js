@@ -13,8 +13,12 @@ async function context(deps) {
 	return { environment, store, stripe };
 }
 
+function logFailure(error) {
+	console.error('billing route failure', error.name || 'Error', error.code || 'unknown');
+}
+
 function failure(res, error = null) {
-	if (error) console.error('billing route failure', error.name || 'Error', error.code || 'unknown');
+	if (error) logFailure(error);
 	sendJson(res, 503, { error: 'billing_unavailable' });
 }
 
@@ -56,11 +60,18 @@ export async function status(req, res, deps = {}) {
 		if (!['active', 'cancel_scheduled', 'past_due'].includes(entitlement.billingStatus) && attempt) {
 			if (attempt.state === 'creating' && (deps.now || new Date()).getTime() - new Date(attempt.createdAt).getTime() < 60000) checkoutState = 'checkout_pending';
 			else if (attempt.sessionId) {
-				const session = await stripe.checkout.sessions.retrieve(attempt.sessionId);
-				assertLivemode(environment, session, 'Checkout Session');
-				if (session.customer !== attempt.customerId) throw new BillingIntegrityError('checkout_customer_mismatch');
-				if (session.status === 'complete' && entitlement.billingStatus !== 'ended') checkoutState = 'confirming_payment';
-				else if (session.status === 'open' && session.expires_at * 1000 > (deps.now || new Date()).getTime()) checkoutState = 'checkout_pending';
+				let session;
+				try {
+					session = await stripe.checkout.sessions.retrieve(attempt.sessionId);
+				} catch (error) {
+					logFailure(error);
+				}
+				if (session) {
+					assertLivemode(environment, session, 'Checkout Session');
+					if (session.customer !== attempt.customerId) throw new BillingIntegrityError('checkout_customer_mismatch');
+					if (session.status === 'complete' && entitlement.billingStatus !== 'ended') checkoutState = 'confirming_payment';
+					else if (session.status === 'open' && session.expires_at * 1000 > (deps.now || new Date()).getTime()) checkoutState = 'checkout_pending';
+				}
 			}
 		}
 		sendJson(res, 200, { account: `acct_gh${account._id}`, ...entitlement, checkoutState });
