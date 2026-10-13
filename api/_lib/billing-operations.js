@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { assertLivemode } from './billing-config.js';
 import { deriveBillingPatch, idOf, patchMatches, premiumItems } from './billing-reconcile.js';
 
-const ALERT_AFTER_MS = 5 * 60 * 1000;
+const ALERT_AFTER_SECONDS = 5 * 60;
 const ref = (value) => createHash('sha256').update(String(value)).digest('hex').slice(0, 12);
 const age = (date, now) => Math.max(0, Math.floor((now.getTime() - new Date(date).getTime()) / 1000));
 
@@ -17,13 +17,13 @@ export async function auditBilling({ collections, stripe, environment, now = new
 		const seconds = age(event.receivedAt, now);
 		if (event.state === 'quarantined') add('webhook_quarantined', event.eventId, seconds, event.lastError);
 		else if (event.state === 'failed') add('webhook_failed', event.eventId, seconds, event.lastError);
-		else if (seconds >= ALERT_AFTER_MS) add('webhook_lag', event.eventId, seconds, event.state);
+		else if (seconds >= ALERT_AFTER_SECONDS) add('webhook_lag', event.eventId, seconds, event.state);
 	}
 	const purchases = await collections.purchases.find({}).toArray();
 	for (const purchase of purchases) {
 		if (!purchase._id.startsWith(`${environment.stripeAccountId}:${environment.environment}:`)) continue;
 		const seconds = age(purchase.createdAt, now);
-		if (purchase.state === 'creating' && seconds >= ALERT_AFTER_MS) add('checkout_creating', purchase._id, seconds);
+		if (purchase.state === 'creating' && seconds >= ALERT_AFTER_SECONDS) add('checkout_creating', purchase._id, seconds);
 		if (!purchase.sessionId) continue;
 		try {
 			const session = await stripe.checkout.sessions.retrieve(purchase.sessionId);
@@ -32,7 +32,7 @@ export async function auditBilling({ collections, stripe, environment, now = new
 			if (session.status === 'complete') {
 				const accountId = Number(purchase._id.split(':').at(-1));
 				const account = Number.isSafeInteger(accountId) ? await collections.users.findOne({ _id: accountId }) : null;
-				if (!account?.billing?.subscriptionId && seconds >= ALERT_AFTER_MS) add('checkout_unprojected', purchase._id, seconds);
+				if (session.subscription && account?.billing?.subscriptionId !== idOf(session.subscription) && seconds >= ALERT_AFTER_SECONDS) add('checkout_unprojected', purchase._id, seconds);
 			}
 		} catch { add('checkout_read_failure', purchase._id, seconds); }
 	}
