@@ -11,7 +11,7 @@ const rows = (data) => ({ find: () => ({ toArray: async () => data }) });
 
 test('audit reports lag, failed events, pending checkout and drift with redacted references', async () => {
 	const collections = {
-		events: rows([{ eventId: 'evt_private', stripeAccountId: 'acct_test', livemode: false, customerId: 'cus_private', state: 'failed', lastError: 'stripe_unavailable', receivedAt: old }]),
+		events: rows([{ eventId: 'evt_private', stripeAccountId: 'acct_test', livemode: false, customerId: 'cus_private', state: 'failed', lastError: 'processing_error', receivedAt: old }]),
 		purchases: rows([{ _id: 'acct_test:sandbox:42', state: 'open', sessionId: 'cs_private', customerId: 'cus_private', createdAt: old }]),
 		users: { find: () => ({ toArray: async () => [{ _id: 42, billing: { stripeAccountId: 'acct_test', livemode: false, customerId: 'cus_private', subscriptionId: 'sub_old', status: 'active', paidThrough: '2026-10-01T00:00:00.000Z' } }] }), findOne: async () => ({ billing: { subscriptionId: 'sub_old' } }) },
 	};
