@@ -16,7 +16,7 @@ import { fakeBillingDb } from './_fake-mongo.js';
 import { BILLING_INDEXES } from '../api/_lib/billing-schema.js';
 import { signStripePayload } from '../api/_lib/stripe-signature.js';
 import { StripeApiError } from '../api/_lib/stripe-client.js';
-import { EVENT_HANDLING } from '../api/_lib/billing-webhook.js';
+import { EVENT_HANDLING, LEASE_WAIT_MS } from '../api/_lib/billing-webhook.js';
 import { projectEntitlement } from '../api/_lib/billing-projection.js';
 import { acquireLeaseWithCollection, customerLeaseKey } from '../api/_lib/billing-lease.js';
 import { claimEventWithCollection, inboxKey, recordEventWithCollection } from '../api/_lib/billing-inbox.js';
@@ -145,7 +145,7 @@ function world({ user = {}, mapped = true } = {}) {
 			n += 1;
 			return { id: `evt_${n}`, object: 'event', type, created: 1790000000 + n, livemode: false, data: { object }, ...over };
 		},
-		async post(event, { secret = SECRET, timestamp, env = ENV, method = 'POST', rawBody, header, store = w.store } = {}) {
+		async post(event, { secret = SECRET, timestamp, env = ENV, method = 'POST', rawBody, header, store = w.store, sleep = async () => {}, leaseWaitMs } = {}) {
 			const raw = Buffer.from(rawBody ?? JSON.stringify(event), 'utf8');
 			const t = timestamp ?? Math.floor(clock.now.getTime() / 1000);
 			const headers = { 'content-type': 'application/json; charset=utf-8', 'stripe-signature': header ?? `t=${t},v1=${signStripePayload(raw, t, secret)}` };
@@ -154,7 +154,7 @@ function world({ user = {}, mapped = true } = {}) {
 				headers,
 				body: method === 'GET' || method === 'HEAD' ? undefined : raw,
 			});
-			const response = await handleStripeWebhook(request, { env, store, stripe: stripe.client, now: () => clock.now });
+			const response = await handleStripeWebhook(request, { env, store, stripe: stripe.client, now: () => clock.now, sleep, leaseWaitMs });
 			const text = await response.text();
 			return { status: response.status, body: text ? JSON.parse(text) : null, res: { body: text, headers: response.headers } };
 		},
@@ -878,11 +878,44 @@ test('lease held by another worker: 5xx, nothing written, nothing retrieved', as
 		now: START,
 	});
 	const ev = w.event('invoice.paid', invoice());
-	const r = await w.post(ev);
+	const delays = [];
+	const r = await w.post(ev, { sleep: async (ms) => delays.push(ms) });
 	assert.equal(r.status, 503);
+	assert.equal(r.body.reason, 'lease_held');
+	assert.deepEqual(delays, LEASE_WAIT_MS);
 	assert.equal(w.stripe.calls.length, 0);
 	assert.equal(w.user().plan, 'free');
 	assert.equal(w.eventState(ev.id).state, 'failed');
+});
+
+test('simultaneous subscription and paid invoice deliveries both complete with one projection write', async () => {
+	const w = world();
+	w.stripe.setSub(subscription());
+	w.stripe.setInvoice(invoice());
+	let entered;
+	const inStripe = new Promise((resolve) => { entered = resolve; });
+	let release;
+	const blocked = new Promise((resolve) => { release = resolve; });
+	let firstRead = true;
+	w.stripe.hook = async () => {
+		if (!firstRead) return;
+		firstRead = false;
+		entered();
+		await blocked;
+	};
+	const created = w.event('customer.subscription.created', subscription());
+	const paid = w.event('invoice.paid', invoice());
+	const first = w.post(created);
+	await inStripe;
+	const delays = [];
+	const second = w.post(paid, { sleep: async (ms) => { delays.push(ms); release(); await first; } });
+	const [a, b] = await Promise.all([first, second]);
+	assert.deepEqual([a.status, b.status], [200, 200]);
+	assert.deepEqual(delays, [LEASE_WAIT_MS[0]]);
+	assert.equal(w.eventState(created.id).state, 'completed');
+	assert.equal(w.eventState(paid.id).state, 'completed');
+	assert.equal(w.user().billing.revision, 1);
+	assert.equal(w.answer().entitlementVersion, 1);
 });
 
 test('lease expired during a slow Stripe call: the commit is refused and nothing is written', async () => {

@@ -65,6 +65,8 @@ export const EVENT_HANDLING = Object.freeze({
 
 const ok = (outcome) => ({ status: 200, body: { received: true, outcome } });
 const retry = (reason) => ({ status: 503, body: { error: 'retry', reason } });
+export const LEASE_WAIT_MS = Object.freeze([100, 200, 400, 800]);
+const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function customerOf(object) {
 	return object ? idOf(object.customer) : null;
@@ -99,6 +101,8 @@ export async function processWebhookEvent({
 	store,
 	stripe,
 	now = () => new Date(),
+	sleep = defaultSleep,
+	leaseWaitMs = LEASE_WAIT_MS,
 	owner = randomToken(12),
 	log = () => {},
 	referenceKey,
@@ -144,11 +148,13 @@ export async function processWebhookEvent({
 		const subscriptionId = subscriptionIdFor(event);
 		if (!subscriptionId) return await complete('ignored_no_subscription');
 
-		lease = await acquireLeaseWithCollection(leases, {
-			key: customerLeaseKey({ stripeAccountId: environment.stripeAccountId, livemode: environment.livemode, customerId }),
-			owner,
-			now: now(),
-		});
+		const leaseKey = customerLeaseKey({ stripeAccountId: environment.stripeAccountId, livemode: environment.livemode, customerId });
+		lease = await acquireLeaseWithCollection(leases, { key: leaseKey, owner, now: now() });
+		for (const delay of leaseWaitMs) {
+			if (lease) break;
+			await sleep(delay);
+			lease = await acquireLeaseWithCollection(leases, { key: leaseKey, owner, now: now() });
+		}
 		if (!lease) return await fail('lease_held');
 
 		// Everything below runs inside the lease and reads current state.
