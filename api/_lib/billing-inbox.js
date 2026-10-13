@@ -13,7 +13,7 @@
  *    silently acknowledged as done.
  */
 
-import { isDuplicateKeyError } from './billing-store.js';
+import { isDuplicateKeyError } from './mongo-errors.js';
 
 export const INBOX_DEFAULTS = Object.freeze({
 	leaseMs: 60_000,

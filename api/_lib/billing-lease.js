@@ -10,7 +10,7 @@
  * lease; acquisition increments the fence atomically with taking it.
  */
 
-import { isDuplicateKeyError } from './billing-store.js';
+import { isDuplicateKeyError } from './mongo-errors.js';
 
 export const LEASE_DEFAULTS = Object.freeze({ ttlMs: 30_000 });
 

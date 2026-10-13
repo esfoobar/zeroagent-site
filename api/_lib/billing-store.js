@@ -57,7 +57,3 @@ export async function getBillingStore() {
 	}
 	return { collections, withTransaction };
 }
-
-export function isDuplicateKeyError(err) {
-	return Boolean(err) && (err.code === 11000 || /duplicate key/i.test(String(err.message || '')));
-}

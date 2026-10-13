@@ -44,6 +44,19 @@ ZA-900 (esfoobar/zeroagent#1263), first build ticket of paid billing (ZA-154). T
 - Return paths are an exact allowlist in `RETURN_PATHS` (`/account`, `/account/plan`, `/billing`); anything else lands on `/account`.
 - Environment (Production and Preview, sensitive): `GITHUB_WEB_CLIENT_ID` and `GITHUB_WEB_CLIENT_SECRET` for a dedicated GitHub OAuth app (not the desktop device-flow client), and optionally `BILLING_BASE_URL` (origin only). The OAuth app's Authorization callback URL is exactly `https://zeroagenthq.com/api/auth/github/callback`; device flow stays off for it, and it needs no scopes. With either client variable unset the routes answer 503 `sign_in_unavailable` and log only the variable names. `MONGODB_URI` and `MONGODB_DB` are reused.
 
+## Billing primitives (ZA-901)
+
+ZA-901 (esfoobar/zeroagent#1264), second build ticket of paid billing (ZA-154). Library code and tests only: no endpoint, no function, no `/api/app/me` change (`api/_lib/entitlement.js` still answers `/me`; paid enforcement is off). The contract is `docs/BILLING-ENTITLEMENT.md` in the `zeroagent` repo; it wins over the plan.
+
+- `api/_lib/billing-config.js`: the two timing parameters (`BILLING_PARAMETERS`, the only place `paymentGraceSeconds` and `renewalSettlementSeconds` live), the Stripe variable names, `loadBillingEnvironment` and `assertLivemode` (sandbox and live never mix; the mode is never defaulted), `paymentGraceUntilFor`.
+- `api/_lib/billing-projection.js`: `projectEntitlement(account, now)` is the pure `/me` answer; `answerFor` adds the revoked-device 401. Checked against the vendored `test/billing-entitlement.fixtures.json` (source commit in its `_vendored` header) by `test/billing-entitlement-fixtures.test.js`. Refresh the file from the source when the contract changes.
+- `api/_lib/billing-inbox.js`: event inbox (`billingEvents`), unique on (stripeAccountId, livemode, event id); `recordEvent`, `claimEvent`, `failEvent`, `quarantineEvent`.
+- `api/_lib/billing-lease.js` and `billing-commit.js`: the per-customer lease (`billingLeases`, fence only increases) and `commitProjection`, the one write path for paid state: one transaction that re-checks lease and fence, writes `billing` plus derived plan fields, and completes the inbox entry. It refuses an account holding a hand-assigned plan or legacy grant unless `acknowledgeLegacy` is passed.
+- `api/_lib/billing-catalog.js`: the Product's `default_price` resolved at runtime through an injected Stripe client, and `setSalesPaused` (audited in `billingAudit`). No amount or Price id is a constant anywhere; a test scans for them.
+- `api/_lib/billing-store.js` is the only file here that imports the driver; everything else takes collections as arguments.
+- Migration: `npm run billing:migrate` (`scripts/billing-migrate.mjs`, not a function). Creates indexes, prints the legacy-grant inventory, writes no user. Setup manifest and price-change runbook: `docs/stripe-setup.manifest.json`, `docs/STRIPE-SETUP.md` (`.vercelignore` keeps `docs/` and `scripts/` off the site).
+- Still to build: the webhook endpoint and handlers (ZA-902, own file `api/stripe-webhook.js`, function 11), Checkout, portal and status routes (ZA-903, folded into `api/web.js`), pages (ZA-904), and wiring `projectEntitlement` into `/me` once the clients ship.
+
 ## Function count (Hobby plan limit)
 
 The Vercel team is on the Hobby plan: no more than **12** serverless functions per deployment, and every `.js` file under `api/` outside `_`-prefixed directories counts as one. Exceeding it fails the deployment at "Deploying outputs..." with `exceeded_serverless_functions_per_deployment` (the build itself succeeds, so the log looks clean). There are 10 today: the nine original endpoint files plus `api/web.js`. `test/web-function.test.js` fails if the count passes 12.
