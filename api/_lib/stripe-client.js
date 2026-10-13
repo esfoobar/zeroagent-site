@@ -1,8 +1,13 @@
 /*
- * ZA-902 / esfoobar/zeroagent#1265. A small read-only Stripe API client
- * over fetch: the same injected shape billing-catalog.js already uses
+ * ZA-902 / esfoobar/zeroagent#1265. A small Stripe API client over fetch:
+ * the same injected shape billing-catalog.js already uses
  * (`stripe.products.retrieve(id, { expand })`), plus the subscription and
- * invoice reads reconciliation needs. No SDK dependency; only GET.
+ * invoice reads reconciliation needs. No SDK dependency.
+ *
+ * `request` is the general helper (method, path, query, expand, a
+ * form-encoded body, an idempotency key) so other billing code extends the
+ * client with its own methods rather than a second client. The webhook
+ * only ever calls the GET reads below; it never creates anything.
  *
  * Errors carry the HTTP status and Stripe's error type and code, never the
  * response body, the key or a message that could echo either. `retriable`
@@ -30,17 +35,36 @@ function pathSegment(id) {
 export function createStripeClient({ apiKey, apiVersion = null, fetchImpl = globalThis.fetch, timeoutMs = 8000 }) {
 	if (!apiKey) throw new Error('a Stripe key is required');
 
-	async function get(path, { expand = [] } = {}) {
-		const query = expand.map((e) => `expand[]=${encodeURIComponent(e)}`).join('&');
+	// Stripe form-encodes request bodies, nested keys as a[b]=c and arrays as
+	// a[0]=x.
+	function encodeForm(value, prefix, out) {
+		if (value === null || value === undefined) return;
+		if (Array.isArray(value)) {
+			value.forEach((v, i) => encodeForm(v, `${prefix}[${i}]`, out));
+		} else if (typeof value === 'object') {
+			for (const [k, v] of Object.entries(value)) encodeForm(v, prefix ? `${prefix}[${k}]` : k, out);
+		} else {
+			out.push(`${encodeURIComponent(prefix)}=${encodeURIComponent(String(value))}`);
+		}
+	}
+
+	async function request({ method = 'GET', path, query = null, expand = [], form = null, idempotencyKey = null }) {
+		const parts = [];
+		if (query) encodeForm(query, '', parts);
+		for (const e of expand) parts.push(`expand[]=${encodeURIComponent(e)}`);
 		const headers = { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' };
 		if (apiVersion) headers['Stripe-Version'] = apiVersion;
+		if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+		const init = { method, headers, signal: AbortSignal.timeout(timeoutMs) };
+		if (form) {
+			const body = [];
+			encodeForm(form, '', body);
+			headers['Content-Type'] = 'application/x-www-form-urlencoded';
+			init.body = body.join('&');
+		}
 		let response;
 		try {
-			response = await fetchImpl(`${API_ORIGIN}${path}${query ? `?${query}` : ''}`, {
-				method: 'GET',
-				headers,
-				signal: AbortSignal.timeout(timeoutMs),
-			});
+			response = await fetchImpl(`${API_ORIGIN}${path}${parts.length ? `?${parts.join('&')}` : ''}`, init);
 		} catch {
 			throw new StripeApiError({ retriable: true, code: 'network_error' });
 		}
@@ -63,7 +87,11 @@ export function createStripeClient({ apiKey, apiVersion = null, fetchImpl = glob
 		return body;
 	}
 
+	const get = (path, options = {}) => request({ method: 'GET', path, expand: options.expand || [] });
+
 	return {
+		request,
+		pathSegment,
 		products: { retrieve: (id, options) => get(`/v1/products/${pathSegment(id)}`, options) },
 		subscriptions: { retrieve: (id, options) => get(`/v1/subscriptions/${pathSegment(id)}`, options) },
 		invoices: { retrieve: (id, options) => get(`/v1/invoices/${pathSegment(id)}`, options) },

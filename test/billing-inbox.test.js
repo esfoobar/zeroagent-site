@@ -4,6 +4,7 @@ import { fakeMongoCollection } from './_fake-mongo.js';
 import { BILLING_INDEXES } from '../api/_lib/billing-schema.js';
 import {
 	claimEventWithCollection,
+	completeEventWithCollection,
 	failEventWithCollection,
 	inboxKey,
 	quarantineEventWithCollection,
@@ -154,4 +155,16 @@ test('a failed entry already at the budget is quarantined by claim', async () =>
 test('claiming an unknown entry says missing', async () => {
 	const r = await claimEventWithCollection(inbox(), { key: 'nope', owner: 'w', now: NOW });
 	assert.deepEqual(r, { status: 'missing', entry: null });
+});
+
+test('completeEvent: only the owner of a processing entry completes it, with an outcome code', async () => {
+	const c = inbox();
+	const { entry } = await recordEventWithCollection(c, { environment, event: event(), now: NOW });
+	assert.equal(await completeEventWithCollection(c, { key: entry._id, owner: 'w1', outcome: 'no_change', now: NOW }), null);
+	await claimEventWithCollection(c, { key: entry._id, owner: 'w1', now: NOW });
+	assert.equal(await completeEventWithCollection(c, { key: entry._id, owner: 'w2', outcome: 'no_change', now: NOW }), null);
+	const done = await completeEventWithCollection(c, { key: entry._id, owner: 'w1', outcome: 'no_change', now: later(5) });
+	assert.equal(done.state, 'completed');
+	assert.equal(done.outcome, 'no_change');
+	assert.equal((await claimEventWithCollection(c, { key: entry._id, owner: 'w3', now: later(10) })).status, 'completed');
 });

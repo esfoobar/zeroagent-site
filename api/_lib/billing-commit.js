@@ -50,8 +50,12 @@ export function planFieldsFor(billing) {
 	return { plan: 'free', planUntil: null };
 }
 
+// A paid plan the Stripe writer did not put there. It does not depend on the
+// absence of `billing`: Checkout writes a customer mapping onto the account
+// before any payment, and a mapped hand-assigned account is still hand
+// assigned until an operator acknowledges the conflict.
 function isUnmarkedHandGrant(user) {
-	return !user.billing && (user.plan === 'premium' || user.plan === 'platinum') && user.entitlementSource !== 'stripe';
+	return (user.plan === 'premium' || user.plan === 'platinum') && user.entitlementSource !== 'stripe';
 }
 
 // deps: { collections: { users, leases, events }, withTransaction }

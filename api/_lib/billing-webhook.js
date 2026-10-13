@@ -69,14 +69,19 @@ function customerOf(object) {
 	return object ? idOf(object.customer) : null;
 }
 
-// How a customer maps to an account. ZA-903 writes the mapping onto the
-// account's billing record before it starts Checkout; a customer nobody
-// mapped is never matched by email or login.
+// How a customer maps to an account. Checkout (ZA-903) stores a
+// non-entitlement mapping, `billingCustomer: { customerId, stripeAccountId,
+// livemode }`, on the account before any payment; once a payment is
+// committed `billing.customerId` carries the same. Metadata on the Stripe
+// objects is audit only and a customer nobody mapped is never matched by
+// email or login.
 async function findAccountByCustomer(users, environment, customerId) {
+	const scope = { stripeAccountId: environment.stripeAccountId, livemode: environment.livemode, customerId };
 	return users.findOne({
-		'billing.stripeAccountId': environment.stripeAccountId,
-		'billing.livemode': environment.livemode,
-		'billing.customerId': customerId,
+		$or: [
+			{ 'billingCustomer.stripeAccountId': scope.stripeAccountId, 'billingCustomer.livemode': scope.livemode, 'billingCustomer.customerId': customerId },
+			{ 'billing.stripeAccountId': scope.stripeAccountId, 'billing.livemode': scope.livemode, 'billing.customerId': customerId },
+		],
 	});
 }
 
@@ -187,7 +192,7 @@ export async function processWebhookEvent({
 			invoices.push(invoice);
 		}
 
-		const derived = deriveBillingPatch({ subscription, invoices, previous, environment, customerId });
+		const derived = deriveBillingPatch({ subscription, invoices, previous, environment, customerId, fromStatus: stored });
 		if (derived.action === 'skip') return await complete(derived.reason);
 		if (patchMatches(previous, derived.patch)) return await complete('no_change');
 

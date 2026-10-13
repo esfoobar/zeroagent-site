@@ -3,10 +3,6 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/api/stripe/webhook",
-      "destination": "/api/stripe-webhook"
-    },
-    {
       "source": "/download/:arch(arm64|x64)",
       "destination": "/api/download?arch=:arch"
     },
@@ -17,6 +13,10 @@
     {
       "source": "/download/:os/:arch",
       "destination": "/api/download?os=:os&arch=:arch"
+    },
+    {
+      "source": "/api/stripe/webhook",
+      "destination": "/api/stripe-webhook"
     },
     {
       "source": "/api/auth/github/start",

@@ -151,7 +151,7 @@ export default async function handler(req, res, deps = {}) {
 		const store = deps.store || (await getBillingStore());
 		const stripe =
 			deps.stripe ||
-			createStripeClient({ apiKey: env[BILLING_ENV_VARS.apiKey], apiVersion: env.STRIPE_API_VERSION || null });
+			createStripeClient({ apiKey: env[BILLING_ENV_VARS.apiKey], apiVersion: env[BILLING_ENV_VARS.apiVersion] || null });
 		result = await processWebhookEvent({
 			event,
 			environment,

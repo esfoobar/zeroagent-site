@@ -26,6 +26,9 @@ export const BILLING_ENV_VARS = Object.freeze({
 	accountId: 'STRIPE_ACCOUNT_ID',
 	expectLiveMode: 'STRIPE_EXPECT_LIVE_MODE',
 	baseUrl: 'BILLING_BASE_URL',
+	// Optional: the Stripe API version every request pins (ZA-902). Unset
+	// means the account's own default version.
+	apiVersion: 'STRIPE_API_VERSION',
 });
 
 export class BillingConfigError extends Error {

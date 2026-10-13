@@ -108,6 +108,7 @@ export function isTerminalSubscription(subscription) {
 // otherwise null (a replacement starts from nothing).
 // invoices: Stripe invoice objects retrieved just now (the event's invoice
 // and the subscription's latest invoice); only settled ones count.
+// fromStatus: the stored record being replaced, label only.
 // Returns { action: 'write', patch, from, to } or { action: 'skip', reason }.
 export function deriveBillingPatch({
 	subscription,
@@ -116,6 +117,7 @@ export function deriveBillingPatch({
 	environment,
 	customerId,
 	parameters = BILLING_PARAMETERS,
+	fromStatus = null,
 }) {
 	const items = premiumItems(subscription, environment.productId);
 	const scope = { productId: environment.productId, customerId, subscriptionId: subscription.id };
@@ -128,7 +130,15 @@ export function deriveBillingPatch({
 
 	const storedPaidThrough = previous ? previous.paidThrough ?? null : null;
 	const paidThrough = latest(storedPaidThrough, best ? best.end : null);
-	const from = previous ? (previous.status === 'active' && previous.cancelAtPeriodEnd ? 'cancel_scheduled' : previous.status) : 'none';
+	// The label of where the account was, for the outcome code and the audit
+	// trail. A replacement (previous is null) reports the replaced record's.
+	const stored = previous || fromStatus;
+	const from =
+		stored && stored.status
+			? stored.status === 'active' && stored.cancelAtPeriodEnd
+				? 'cancel_scheduled'
+				: stored.status
+			: 'none';
 
 	if (!paidThrough) return { action: 'skip', reason: 'nothing_paid' };
 

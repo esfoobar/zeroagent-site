@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "ticket": "ZA-901",
+  "ticket": "ZA-901, ZA-902",
   "description": "Stripe objects, event destination and variable names ZeroAgent billing expects in each environment. Names and shapes only: no amount, no Price id, no key, no secret and no object id of any kind is recorded here.",
   "separation": {
     "rule": "Sandbox and live are separate Stripe environments with separate keys, signing secrets, Product ids, portal configurations, databases and event destinations. A deployment is configured for exactly one. An event or object whose livemode differs from STRIPE_EXPECT_LIVE_MODE is refused.",
@@ -30,6 +30,7 @@
     "webhookDestination": {
       "signingSecretVariable": "STRIPE_WEBHOOK_SECRET",
       "path": "/api/stripe/webhook",
+      "function": "api/stripe-webhook.js (vercel.json rewrites the path to it)",
       "origins": {
         "live": "https://zeroagenthq.com",
         "sandbox": "a stable staging origin, chosen when the sandbox is provisioned"
@@ -61,6 +62,7 @@
     "STRIPE_PORTAL_CONFIGURATION_ID": { "secret": false, "meaning": "Id of this environment's portal configuration" },
     "STRIPE_ACCOUNT_ID": { "secret": false, "meaning": "Id of the ZeroAgent Stripe account; scopes the event inbox and unique indexes" },
     "STRIPE_EXPECT_LIVE_MODE": { "secret": false, "meaning": "\"true\" in live, \"false\" in sandbox; never defaulted" },
+    "STRIPE_API_VERSION": { "secret": false, "optional": true, "meaning": "Stripe API version every runtime request pins (Stripe-Version header). Unset uses the account's default; set it once the sandbox has proved the shapes" },
     "BILLING_BASE_URL": { "secret": false, "meaning": "Origin only; exact Origin match for mutating routes. Optional, defaults to https://zeroagenthq.com" }
   },
   "runtimeCatalog": {
