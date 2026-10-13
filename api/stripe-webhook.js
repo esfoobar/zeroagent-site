@@ -151,6 +151,7 @@ export async function handleStripeWebhook(request, deps = {}) {
 			stripe,
 			now,
 			log: (entry) => console.error('stripe-webhook:', JSON.stringify(entry)),
+			referenceKey: env[BILLING_ENV_VARS.webhookSecret],
 		});
 	} catch {
 		console.error('stripe-webhook: processing failed before the inbox');

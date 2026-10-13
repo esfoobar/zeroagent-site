@@ -32,9 +32,10 @@ export const BILLING_ENV_VARS = Object.freeze({
 });
 
 export class BillingConfigError extends Error {
-	constructor(message) {
+	constructor(message, { notConfigured = false } = {}) {
 		super(message);
 		this.name = 'BillingConfigError';
+		this.notConfigured = notConfigured;
 	}
 }
 
@@ -65,6 +66,9 @@ function parseExpectLiveMode(raw) {
 // only, never a value. A key whose own mode marker disagrees with
 // STRIPE_EXPECT_LIVE_MODE is refused here, before any call is made with it.
 export function loadBillingEnvironment(env = process.env) {
+	if (Object.values(BILLING_ENV_VARS).every((name) => env[name] === undefined)) {
+		throw new BillingConfigError('billing is not configured', { notConfigured: true });
+	}
 	const livemode = parseExpectLiveMode(env[BILLING_ENV_VARS.expectLiveMode]);
 	const apiKey = required(env, BILLING_ENV_VARS.apiKey);
 	const keyMode = /^(?:sk|rk)_(live|test)_/.exec(apiKey);

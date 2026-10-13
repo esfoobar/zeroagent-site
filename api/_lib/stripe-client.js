@@ -94,6 +94,7 @@ export function createStripeClient({ apiKey, apiVersion = null, fetchImpl = glob
 		pathSegment,
 		products: { retrieve: (id, options) => get(`/v1/products/${pathSegment(id)}`, options) },
 		prices: { retrieve: (id, options) => get(`/v1/prices/${pathSegment(id)}`, options) },
+		testClocks: { retrieve: (id) => get(`/v1/test_helpers/test_clocks/${pathSegment(id)}`) },
 		customers: {
 			create: (form, options = {}) => request({ method: 'POST', path: '/v1/customers', form, idempotencyKey: options.idempotencyKey }),
 			retrieve: (id) => get(`/v1/customers/${pathSegment(id)}`),
@@ -108,6 +109,6 @@ export function createStripeClient({ apiKey, apiVersion = null, fetchImpl = glob
 			retrieve: (id) => get(`/v1/checkout/sessions/${pathSegment(id)}`),
 			expire: (id) => request({ method: 'POST', path: `/v1/checkout/sessions/${pathSegment(id)}/expire` }),
 		} },
-		billingPortal: { sessions: { create: (form) => request({ method: 'POST', path: '/v1/billing_portal/sessions', form }) } },
+		billingPortal: { sessions: { create: (form) => request({ method: 'POST', path: '/v1/billing_portal/sessions', form }) }, configurations: { retrieve: (id) => get(`/v1/billing_portal/configurations/${pathSegment(id)}`) } },
 	};
 }

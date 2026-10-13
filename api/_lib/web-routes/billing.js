@@ -39,7 +39,7 @@ export async function catalog(req, res, deps = {}) {
 	} catch (error) {
 		// Billing is not configured on this deployment: an honest, cacheable
 		// "no offer", not a failure to log once per visitor.
-		if (error instanceof BillingConfigError) return sendJson(res, 200, { status: 'unavailable', reason: 'not_configured' }, { cacheControl: CATALOG_CACHE });
+		if (error instanceof BillingConfigError && error.notConfigured) return sendJson(res, 200, { status: 'unavailable', reason: 'not_configured' }, { cacheControl: CATALOG_CACHE });
 		return failure(res, error);
 	}
 	try {
