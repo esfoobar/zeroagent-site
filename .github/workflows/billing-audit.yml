@@ -1,0 +1,35 @@
+name: Billing audit
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: billing-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      STRIPE_PREMIUM_PRODUCT_ID: ${{ secrets.STRIPE_PREMIUM_PRODUCT_ID }}
+      STRIPE_ACCOUNT_ID: ${{ secrets.STRIPE_ACCOUNT_ID }}
+      STRIPE_EXPECT_LIVE_MODE: ${{ secrets.STRIPE_EXPECT_LIVE_MODE }}
+      STRIPE_API_VERSION: ${{ secrets.STRIPE_API_VERSION }}
+      MONGODB_URI: ${{ secrets.MONGODB_URI }}
+      MONGODB_DB: ${{ secrets.MONGODB_DB }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci --omit=dev
+      - name: Audit billing
+        run: node scripts/billing-audit-ci.mjs
