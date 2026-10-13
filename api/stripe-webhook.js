@@ -1,16 +1,42 @@
 /*
  * ZA-902 / esfoobar/zeroagent#1265. POST /api/stripe/webhook (rewritten to
  * this file in vercel.json): the Stripe event destination. Function 11 of
- * the Hobby plan's 12. It is its own file because the signature is over the
- * exact request bytes and Vercel parses JSON bodies before a function runs
- * unless the body parser is switched off, which is not possible on the
- * shared api/web.js function.
+ * the Hobby plan's 12.
+ *
+ * Why the raw bytes come from a Web-standard `POST(request)` export. The
+ * signature is over the exact request bytes, so this function must never see
+ * a parsed body. What was read (checked, not assumed):
+ *   - @vercel/node 23.0.1 (dist/dev-server.mjs, helpers.ts and
+ *     serverless-handler): for a plain `(req, res)` function the runtime
+ *     calls addHelpers(), which, whenever a content-type is present, reads
+ *     the whole stream first and installs `req.body` as a lazy parser
+ *     (application/json becomes an object). The stream is replayed through a
+ *     patched `req.on`/`req.read`, which an async iterator does not use, so
+ *     a `for await` over `req` can come back empty. Nothing in the package
+ *     reads `config.api.bodyParser` (that is the Next.js pages-router
+ *     convention) and the only opt-out is project-wide (`NODEJS_HELPERS=0`
+ *     or build config `helpers: false`), which the other functions cannot
+ *     take because they rely on `req.query` and `req.body`.
+ *   - The same file: when the module exports an HTTP method (`POST`) or
+ *     `fetch`, the web-handler branch is taken instead and addHelpers() is
+ *     never called; the request is adapted to a Web Request over the
+ *     untouched stream, so `await request.arrayBuffer()` is the raw bytes.
+ *   - Vercel's Node.js runtime and Functions API reference (fetched
+ *     2026-10-13) document the Web-standard `export function POST(request:
+ *     Request)` form for functions in api/.
+ * The production launcher itself is not in the npm packages; the dev
+ * server mirrors it, so scripts/send-test-webhook.mjs exists to prove the
+ * path on a deployment before any Stripe account does.
+ *
+ * Do not add a default export: the runtime unwraps `default` before it
+ * looks for method exports and would fall back to the helpers path.
  *
  * Order, and nothing touches storage before step 4:
- *   1. POST only.
+ *   1. POST only (other methods 405 by the runtime).
  *   2. Billing configuration (names only in any error; 503 when unset).
- *   3. Raw body, size bounded; signature checked with a timestamp
- *      tolerance against STRIPE_WEBHOOK_SECRET.
+ *   3. Raw body, size bounded, never empty when content-length says
+ *      otherwise (that is body_unavailable, a 5xx, not a forgery); then the
+ *      signature with a timestamp tolerance against STRIPE_WEBHOOK_SECRET.
  *   4. Parse, then livemode and Stripe account against the environment.
  *   5. billing-webhook.js: inbox, lease, current-state reconciliation,
  *      fenced commit.
@@ -23,50 +49,24 @@ import { StripeSignatureError, verifyStripeSignature } from './_lib/stripe-signa
 import { createStripeClient } from './_lib/stripe-client.js';
 import { getBillingStore } from './_lib/billing-store.js';
 
-// Vercel must hand over the unparsed stream.
-export const config = { api: { bodyParser: false } };
-
 export const MAX_BODY_BYTES = 1024 * 1024;
 
-function send(res, status, payload) {
-	res.statusCode = status;
-	res.setHeader('Content-Type', 'application/json; charset=utf-8');
-	res.setHeader('Cache-Control', 'no-store');
-	res.end(JSON.stringify(payload));
+function reply(status, payload) {
+	return new Response(JSON.stringify(payload), {
+		status,
+		headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+	});
 }
 
-class BodyTooLargeError extends Error {}
-
-async function readRawBody(req, limit = MAX_BODY_BYTES) {
-	if (Buffer.isBuffer(req.body)) return req.body;
-	if (typeof req.body === 'string') return Buffer.from(req.body, 'utf8');
-	if (req.body !== undefined && req.body !== null && typeof req.on !== 'function') return null;
-	const declared = Number(req.headers && req.headers['content-length']);
-	if (Number.isFinite(declared) && declared > limit) throw new BodyTooLargeError();
-	const chunks = [];
-	let size = 0;
-	for await (const chunk of req) {
-		const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-		size += buf.length;
-		if (size > limit) throw new BodyTooLargeError();
-		chunks.push(buf);
-	}
-	return Buffer.concat(chunks);
-}
-
-function header(req, name) {
-	const value = req.headers && req.headers[name];
-	return Array.isArray(value) ? value[0] : value;
-}
-
-export default async function handler(req, res, deps = {}) {
+// The deps object is for tests: { env, store, stripe, now }.
+export async function handleStripeWebhook(request, deps = {}) {
 	const env = deps.env || process.env;
 	const now = deps.now || (() => new Date());
 
-	if (req.method !== 'POST') {
-		res.setHeader('Allow', 'POST');
-		send(res, 405, { error: 'method_not_allowed' });
-		return;
+	if (request.method !== 'POST') {
+		const res = reply(405, { error: 'method_not_allowed' });
+		res.headers.set('Allow', 'POST');
+		return res;
 	}
 
 	let environment;
@@ -80,33 +80,31 @@ export default async function handler(req, res, deps = {}) {
 	} catch (err) {
 		// Variable names only; never a value.
 		console.error('stripe-webhook: billing not configured:', err instanceof BillingConfigError ? err.message : 'unexpected');
-		send(res, 503, { error: 'billing_unavailable' });
-		return;
+		return reply(503, { error: 'billing_unavailable' });
 	}
+
+	const declared = Number(request.headers.get('content-length'));
+	if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) return reply(413, { error: 'payload_too_large' });
 
 	let raw;
 	try {
-		raw = await (deps.readBody || readRawBody)(req);
-	} catch (err) {
-		if (err instanceof BodyTooLargeError) {
-			send(res, 413, { error: 'payload_too_large' });
-			return;
-		}
-		send(res, 400, { error: 'body_unreadable' });
-		return;
+		raw = Buffer.from(await request.arrayBuffer());
+	} catch {
+		// A consumed or unreadable stream is our fault, not a forged request:
+		// 5xx so Stripe retries and the cause is visible in the logs.
+		console.error('stripe-webhook: body_unavailable: request body could not be read');
+		return reply(503, { error: 'body_unavailable' });
 	}
-	if (!raw) {
-		send(res, 400, { error: 'body_unavailable' });
-		return;
+	if (raw.length > MAX_BODY_BYTES) return reply(413, { error: 'payload_too_large' });
+	if (raw.length === 0 && Number.isFinite(declared) && declared > 0) {
+		console.error('stripe-webhook: body_unavailable: zero bytes read but content-length is', declared);
+		return reply(503, { error: 'body_unavailable' });
 	}
 
 	try {
-		verifyStripeSignature(raw, header(req, 'stripe-signature'), secret.trim(), { now: now() });
+		verifyStripeSignature(raw, request.headers.get('stripe-signature'), secret.trim(), { now: now() });
 	} catch (err) {
-		if (err instanceof StripeSignatureError) {
-			send(res, 400, { error: 'invalid_signature' });
-			return;
-		}
+		if (err instanceof StripeSignatureError) return reply(400, { error: 'invalid_signature' });
 		throw err;
 	}
 
@@ -114,8 +112,7 @@ export default async function handler(req, res, deps = {}) {
 	try {
 		event = JSON.parse(raw.toString('utf8'));
 	} catch {
-		send(res, 400, { error: 'invalid_payload' });
-		return;
+		return reply(400, { error: 'invalid_payload' });
 	}
 	if (
 		!event ||
@@ -126,24 +123,19 @@ export default async function handler(req, res, deps = {}) {
 		typeof event.data.object !== 'object' ||
 		event.data.object === null
 	) {
-		send(res, 400, { error: 'invalid_payload' });
-		return;
+		return reply(400, { error: 'invalid_payload' });
 	}
 
 	try {
 		assertLivemode(environment, event, 'event');
 	} catch (err) {
-		if (err instanceof BillingModeMismatchError) {
-			send(res, 400, { error: 'mode_mismatch' });
-			return;
-		}
+		if (err instanceof BillingModeMismatchError) return reply(400, { error: 'mode_mismatch' });
 		throw err;
 	}
 	// Events for this account carry no `account`; one that names another
 	// account (a Connect event) is not ours.
 	if (event.account !== undefined && event.account !== null && event.account !== environment.stripeAccountId) {
-		send(res, 400, { error: 'account_mismatch' });
-		return;
+		return reply(400, { error: 'account_mismatch' });
 	}
 
 	let result;
@@ -162,8 +154,12 @@ export default async function handler(req, res, deps = {}) {
 		});
 	} catch {
 		console.error('stripe-webhook: processing failed before the inbox');
-		send(res, 503, { error: 'retry', reason: 'store_unavailable' });
-		return;
+		return reply(503, { error: 'retry', reason: 'store_unavailable' });
 	}
-	send(res, result.status, result.body);
+	return reply(result.status, result.body);
+}
+
+// The Web-standard method export the runtime looks for. No default export.
+export async function POST(request) {
+	return handleStripeWebhook(request);
 }

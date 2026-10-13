@@ -40,6 +40,8 @@ It creates the unique partial indexes on `users` (customer and subscription id, 
 
 ## Operating the webhook
 
+Before the Stripe destination exists, prove the endpoint reads the exact request bytes on a deployment: `STRIPE_WEBHOOK_SECRET=<the environment's signing secret> node scripts/send-test-webhook.mjs https://<host>/api/stripe/webhook`. It sends a synthetic, unsupported-type event signed with that secret (recorded as ignored, no account changes) and the same body with a corrupted signature; it expects 200 then 400 and prints PASS. A signed request answered 400 means the function did not get the raw bytes; 503 `body_unavailable` means it could not read the body.
+
 The inbox is the `billingEvents` collection. An event is `completed` (applied, or deliberately ignored: the `outcome` field says which), `failed` (will be retried by Stripe), or `quarantined` (parked, answered 2xx so Stripe stops retrying; `lastError` is the reason). The reasons and what to do:
 
 | `lastError` | Meaning | Repair |

@@ -6,8 +6,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { Readable } from 'node:stream';
-import handler, { config, MAX_BODY_BYTES } from '../api/stripe-webhook.js';
+import * as webhookModule from '../api/stripe-webhook.js';
+import { POST, handleStripeWebhook, MAX_BODY_BYTES } from '../api/stripe-webhook.js';
+import { buildProbe } from '../scripts/send-test-webhook.mjs';
+import { verifyStripeSignature } from '../api/_lib/stripe-signature.js';
 import { fakeBillingDb } from './_fake-mongo.js';
 import { BILLING_INDEXES } from '../api/_lib/billing-schema.js';
 import { signStripePayload } from '../api/_lib/stripe-signature.js';
@@ -33,20 +37,6 @@ const P1_START = '2026-11-01T00:00:00.000Z';
 const P1_END = '2026-12-01T00:00:00.000Z';
 const P2_END = '2026-12-31T00:00:00.000Z';
 const P3_END = '2027-01-30T00:00:00.000Z';
-
-function fakeRes() {
-	return {
-		statusCode: null,
-		headers: {},
-		body: null,
-		setHeader(n, v) {
-			this.headers[n] = v;
-		},
-		end(c) {
-			this.body = c;
-		},
-	};
-}
 
 // ---- Stripe state -------------------------------------------------------
 
@@ -158,10 +148,15 @@ function world({ user = {}, mapped = true } = {}) {
 		async post(event, { secret = SECRET, timestamp, env = ENV, method = 'POST', rawBody, header, store = w.store } = {}) {
 			const raw = Buffer.from(rawBody ?? JSON.stringify(event), 'utf8');
 			const t = timestamp ?? Math.floor(clock.now.getTime() / 1000);
-			const headers = { 'stripe-signature': header ?? `t=${t},v1=${signStripePayload(raw, t, secret)}` };
-			const res = fakeRes();
-			await handler({ method, headers, body: raw }, res, { env, store, stripe: stripe.client, now: () => clock.now });
-			return { status: res.statusCode, body: res.body ? JSON.parse(res.body) : null, res };
+			const headers = { 'content-type': 'application/json; charset=utf-8', 'stripe-signature': header ?? `t=${t},v1=${signStripePayload(raw, t, secret)}` };
+			const request = new Request('https://zeroagent.test/api/stripe/webhook', {
+				method,
+				headers,
+				body: method === 'GET' || method === 'HEAD' ? undefined : raw,
+			});
+			const response = await handleStripeWebhook(request, { env, store, stripe: stripe.client, now: () => clock.now });
+			const text = await response.text();
+			return { status: response.status, body: text ? JSON.parse(text) : null, res: { body: text, headers: response.headers } };
 		},
 		writes: () => Object.values(db.collections).reduce((sum, c) => sum + c.calls.writes, 0),
 		answer: (at = clock.now) => projectEntitlement(w.user(), at),
@@ -180,14 +175,22 @@ async function firstPayment(w, over = {}) {
 
 // ---- Transport and refusal before storage -------------------------------
 
-test('the endpoint turns the body parser off (it reads the raw bytes)', () => {
-	assert.equal(config.api.bodyParser, false);
+test('the endpoint is a Web-standard method export with no default export and no Next-style config', () => {
+	// A default export would be unwrapped by the runtime before it looks for
+	// method exports, and the helpers path (which parses the body) would run.
+	assert.equal(typeof POST, 'function');
+	assert.equal('default' in webhookModule, false);
+	assert.equal('config' in webhookModule, false);
+	for (const method of ['GET', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'fetch']) {
+		assert.equal(method in webhookModule, false, method);
+	}
 });
 
 test('only POST is accepted', async () => {
 	const w = world();
 	const r = await w.post(w.event('invoice.paid', {}), { method: 'GET' });
 	assert.equal(r.status, 405);
+	assert.equal(r.res.headers.get('allow'), 'POST');
 	assert.equal(w.writes(), 0);
 });
 
@@ -215,9 +218,11 @@ test('bad, stale, missing and wrong-secret signatures are refused before storage
 		assert.equal(r.status, 400, JSON.stringify(c));
 		assert.deepEqual(r.body, { error: 'invalid_signature' });
 	}
-	const noHeader = fakeRes();
-	await handler({ method: 'POST', headers: {}, body: Buffer.from(JSON.stringify(ev)) }, noHeader, { env: ENV, store: w.store, stripe: w.stripe.client, now: () => START });
-	assert.equal(noHeader.statusCode, 400);
+	const noHeader = await handleStripeWebhook(
+		new Request('https://zeroagent.test/api/stripe/webhook', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(ev) }),
+		{ env: ENV, store: w.store, stripe: w.stripe.client, now: () => START }
+	);
+	assert.equal(noHeader.status, 400);
 	assert.equal(w.writes(), 0);
 	assert.equal(w.stripe.calls.length, 0);
 });
@@ -233,24 +238,94 @@ test('a re-serialized body does not verify (the exact bytes are signed)', async 
 	assert.equal(w.writes(), 0);
 });
 
-test('a streamed raw body is read and verified; an oversize one is 413', async () => {
+test('an oversize body is 413, declared or actual', async () => {
 	const w = world();
-	const ev = w.event('customer.subscription.created', subscription());
-	const raw = Buffer.from(JSON.stringify(ev));
-	const t = Math.floor(START.getTime() / 1000);
-	w.stripe.setSub(subscription({ status: 'incomplete' }));
-	const req = Object.assign(Readable.from([raw.subarray(0, 10), raw.subarray(10)]), {
+	const declared = {
 		method: 'POST',
-		headers: { 'stripe-signature': `t=${t},v1=${signStripePayload(raw, t, SECRET)}` },
-	});
-	const res = fakeRes();
-	await handler(req, res, { env: ENV, store: w.store, stripe: w.stripe.client, now: () => START });
-	assert.equal(res.statusCode, 200);
+		headers: new Headers({ 'content-length': String(MAX_BODY_BYTES + 1) }),
+		arrayBuffer: async () => assert.fail('must not read a declared-oversize body'),
+	};
+	assert.equal((await handleStripeWebhook(declared, { env: ENV, store: w.store, stripe: w.stripe.client })).status, 413);
+	const actual = new Request('https://zeroagent.test/x', { method: 'POST', body: Buffer.alloc(MAX_BODY_BYTES + 1) });
+	assert.equal((await handleStripeWebhook(actual, { env: ENV, store: w.store, stripe: w.stripe.client })).status, 413);
+	assert.equal(w.writes(), 0);
+});
 
-	const big = Object.assign(Readable.from([Buffer.alloc(10)]), { method: 'POST', headers: { 'content-length': String(MAX_BODY_BYTES + 1) } });
-	const res2 = fakeRes();
-	await handler(big, res2, { env: ENV, store: w.store, stripe: w.stripe.client, now: () => START });
-	assert.equal(res2.statusCode, 413);
+// Production request shapes. The runtime hands a Web-standard handler a
+// Request over the untouched stream; these tests model what must never turn
+// into a silent signature check against empty or parsed bytes.
+
+test('raw bytes survive a real HTTP hop exactly: odd spacing and non-ASCII verify', async () => {
+	const w = world();
+	w.stripe.setSub(subscription({ status: 'incomplete' }));
+	const probe = buildProbe({ secret: SECRET, now: START });
+	// The runtime's own adapter: a node IncomingMessage turned into a Request.
+	const server = createServer(async (req, res) => {
+		const request = new Request('https://zeroagent.test/api/stripe/webhook', {
+			method: req.method,
+			headers: req.headers,
+			body: Readable.toWeb(req),
+			duplex: 'half',
+		});
+		const response = await handleStripeWebhook(request, { env: ENV, store: w.store, stripe: w.stripe.client, now: () => START });
+		res.statusCode = response.status;
+		res.end(await response.text());
+	});
+	await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+	try {
+		const { port } = server.address();
+		const post = (header) =>
+			fetch(`http://127.0.0.1:${port}/`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json; charset=utf-8', 'stripe-signature': header },
+				body: probe.body,
+			});
+		const good = await post(`t=${probe.timestamp},v1=${probe.signature}`);
+		assert.equal(good.status, 200);
+		assert.equal((await good.json()).outcome, 'unsupported_type');
+		const bad = await post(`t=${probe.timestamp},v1=${'0'.repeat(64)}`);
+		assert.equal(bad.status, 400);
+	} finally {
+		await new Promise((resolve) => server.close(resolve));
+	}
+	// The probe script signs what the endpoint verifies.
+	assert.doesNotThrow(() => verifyStripeSignature(Buffer.from(probe.body, 'utf8'), `t=${probe.timestamp},v1=${probe.signature}`, SECRET, { now: START }));
+});
+
+test('a drained body (zero bytes read, content-length says otherwise) is a 5xx body_unavailable, not a forgery', async () => {
+	const w = world();
+	const drained = {
+		method: 'POST',
+		headers: new Headers({ 'content-type': 'application/json', 'content-length': '312', 'stripe-signature': 't=1,v1=' + 'a'.repeat(64) }),
+		arrayBuffer: async () => new ArrayBuffer(0),
+	};
+	const response = await handleStripeWebhook(drained, { env: ENV, store: w.store, stripe: w.stripe.client, now: () => START });
+	assert.equal(response.status, 503);
+	assert.deepEqual(await response.json(), { error: 'body_unavailable' });
+	assert.equal(w.writes(), 0);
+});
+
+test('an already consumed request body is a 5xx body_unavailable, never verified', async () => {
+	const w = world();
+	const request = new Request('https://zeroagent.test/api/stripe/webhook', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json', 'stripe-signature': 't=1,v1=' + 'a'.repeat(64) },
+		body: '{"id":"evt_1"}',
+	});
+	await request.arrayBuffer(); // a helper that read it first
+	const response = await handleStripeWebhook(request, { env: ENV, store: w.store, stripe: w.stripe.client, now: () => START });
+	assert.equal(response.status, 503);
+	assert.equal((await response.json()).error, 'body_unavailable');
+	assert.equal(w.writes(), 0);
+});
+
+test('the empty-bytes signature is never accepted: signing an empty body does not verify a real one', async () => {
+	const w = world();
+	const t = Math.floor(START.getTime() / 1000);
+	const emptySigned = `t=${t},v1=${signStripePayload(Buffer.alloc(0), t, SECRET)}`;
+	const r = await w.post(w.event('invoice.paid', invoice()), { header: emptySigned });
+	assert.equal(r.status, 400);
+	assert.equal(w.writes(), 0);
 });
 
 test('a live event on a sandbox deployment, and a foreign account, are refused before storage', async () => {
