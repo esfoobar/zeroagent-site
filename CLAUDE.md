@@ -98,3 +98,9 @@ Anything durable about ZeroAgent itself (the app, its architecture, its release 
 ## The `vercel dev` worktree pitfall
 
 `vercel link` and `vercel dev` resolve the linked project from the repository root. Run them from a worktree of this repo and they still operate on the main checkout's link, not the worktree's, because there is only one `.vercel` project link per repository and it lives at the root.
+
+## Browser billing APIs (ZA-903)
+
+The four browser billing URLs are rewrites to the existing `api/web.js` function. Their handlers are in `api/_lib/web-routes/billing.js`: `GET /api/billing/catalog` is a public offer read with a 60-second maximum cache; `GET /api/billing/status` reads the stored account through `projectEntitlement` and shows a browser-only Checkout state; `POST /api/billing/checkout` requires a signed-in session, exact Origin, CSRF token, and the Price id the buyer saw; `POST /api/billing/portal` also requires sign-in within the last 15 minutes. The portal uses `STRIPE_PORTAL_CONFIGURATION_ID`, whose allowed actions are set in `docs/STRIPE-SETUP.md`.
+
+Checkout and portal use `api/_lib/stripe-client.js`, with an injected client in tests. Checkout records a non-entitlement `billingCustomer` mapping on the user and a per-account `billingPurchases` attempt. The attempt stores a stable creation operation id, current Price id, customer id, and open Session id so concurrent requests and retries reuse a Session, including after a lost response. Neither record sets plan, billing status, paid dates, or any other entitlement field. Only the verified webhook projection can grant access. Stripe success and portal return parameters are display hints only. New purchases resolve the Product's current default Price, and a changed offer requires confirmation. A subscription that has actually ended can be purchased again at the then-current Price.

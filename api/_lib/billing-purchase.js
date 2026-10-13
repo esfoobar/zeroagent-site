@@ -59,13 +59,15 @@ export async function createCheckout({ stripe, users, purchases, account, enviro
 	if (attempt?.priceId !== offer.priceId && attempt?.sessionId) {
 		const previous = await stripe.checkout.sessions.retrieve(attempt.sessionId);
 		assertLivemode(environment, previous, 'Checkout Session');
+		if (previous.customer !== customer.id) throw new Error('customer_owner_mismatch');
+		if (previous.status === 'complete') return { status: 'pending' };
 		if (previous.status === 'open') await stripe.checkout.sessions.expire(previous.id);
-		attempt = null;
 	}
 	if (attempt?.sessionId && attempt.priceId === offer.priceId) {
 		const previous = await stripe.checkout.sessions.retrieve(attempt.sessionId);
 		assertLivemode(environment, previous, 'Checkout Session');
 		if (previous.customer !== customer.id) throw new Error('customer_owner_mismatch');
+		if (previous.status === 'complete') return { status: 'pending' };
 		if (previous.status === 'open' && previous.expires_at * 1000 > now.getTime()) return { status: 'open', url: previous.url };
 	}
 	const operationId = attempt && !attempt.sessionId && attempt.priceId === offer.priceId ? attempt.operationId : randomUUID();
