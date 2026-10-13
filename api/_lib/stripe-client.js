@@ -93,7 +93,20 @@ export function createStripeClient({ apiKey, apiVersion = null, fetchImpl = glob
 		request,
 		pathSegment,
 		products: { retrieve: (id, options) => get(`/v1/products/${pathSegment(id)}`, options) },
-		subscriptions: { retrieve: (id, options) => get(`/v1/subscriptions/${pathSegment(id)}`, options) },
+		customers: {
+			create: (form, options = {}) => request({ method: 'POST', path: '/v1/customers', form, idempotencyKey: options.idempotencyKey }),
+			retrieve: (id) => get(`/v1/customers/${pathSegment(id)}`),
+		},
+		subscriptions: {
+			retrieve: (id, options) => get(`/v1/subscriptions/${pathSegment(id)}`, options),
+			list: (query) => request({ path: '/v1/subscriptions', query }),
+		},
 		invoices: { retrieve: (id, options) => get(`/v1/invoices/${pathSegment(id)}`, options) },
+		checkout: { sessions: {
+			create: (form, options = {}) => request({ method: 'POST', path: '/v1/checkout/sessions', form, idempotencyKey: options.idempotencyKey }),
+			retrieve: (id) => get(`/v1/checkout/sessions/${pathSegment(id)}`),
+			expire: (id) => request({ method: 'POST', path: `/v1/checkout/sessions/${pathSegment(id)}/expire` }),
+		} },
+		billingPortal: { sessions: { create: (form) => request({ method: 'POST', path: '/v1/billing_portal/sessions', form }) } },
 	};
 }
