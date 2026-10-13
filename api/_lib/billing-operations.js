@@ -3,6 +3,8 @@ import { assertLivemode } from './billing-config.js';
 import { deriveBillingPatch, idOf, patchMatches, premiumItems } from './billing-reconcile.js';
 
 const ALERT_AFTER_SECONDS = 5 * 60;
+const ERROR_CODES = new Set(['stripe_unavailable', 'stripe_rejected', 'lease_held', 'lease_lost', 'processing_error', 'operator_attention', 'attempts_exhausted', 'unmapped_customer', 'no_customer', 'legacy_grant_conflict', 'multiple_subscriptions', 'customer_mismatch', 'mode_mismatch', 'stripe_object_missing', 'account_missing']);
+const safeCode = (value) => ERROR_CODES.has(value) ? value : 'other';
 const ref = (value) => createHash('sha256').update(String(value)).digest('hex').slice(0, 12);
 const age = (date, now) => Math.max(0, Math.floor((now.getTime() - new Date(date).getTime()) / 1000));
 
@@ -15,8 +17,8 @@ export async function auditBilling({ collections, stripe, environment, now = new
 	const events = await collections.events.find({ ...scope, state: { $in: ['received', 'processing', 'failed', 'quarantined'] } }).toArray();
 	for (const event of events) {
 		const seconds = age(event.receivedAt, now);
-		if (event.state === 'quarantined') add('webhook_quarantined', event.eventId, seconds, event.lastError);
-		else if (event.state === 'failed') add('webhook_failed', event.eventId, seconds, event.lastError);
+		if (event.state === 'quarantined') add('webhook_quarantined', event.eventId, seconds, safeCode(event.lastError));
+		else if (event.state === 'failed') add('webhook_failed', event.eventId, seconds, safeCode(event.lastError));
 		else if (seconds >= ALERT_AFTER_SECONDS) add('webhook_lag', event.eventId, seconds, event.state);
 	}
 	const purchases = await collections.purchases.find({}).toArray();
@@ -32,7 +34,7 @@ export async function auditBilling({ collections, stripe, environment, now = new
 			if (session.status === 'complete') {
 				const accountId = Number(purchase._id.split(':').at(-1));
 				const account = Number.isSafeInteger(accountId) ? await collections.users.findOne({ _id: accountId }) : null;
-				if (session.subscription && account?.billing?.subscriptionId !== idOf(session.subscription) && seconds >= ALERT_AFTER_SECONDS) add('checkout_unprojected', purchase._id, seconds);
+				if ((session.subscription ? account?.billing?.subscriptionId !== idOf(session.subscription) : !account?.billing?.subscriptionId) && seconds >= ALERT_AFTER_SECONDS) add('checkout_unprojected', purchase._id, seconds);
 			}
 		} catch { add('checkout_read_failure', purchase._id, seconds); }
 	}

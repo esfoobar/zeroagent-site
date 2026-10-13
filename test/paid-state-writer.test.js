@@ -91,3 +91,11 @@ test('no read path writes: /me and the entitlement modules import no store write
 		assert.ok(!/commitProjection|updateOne|findOneAndUpdate|insertOne/.test(text), file);
 	}
 });
+
+test('operations audit and sandbox proof cannot write paid state or call the commit', () => {
+	for (const file of ['api/_lib/billing-operations.js', 'api/_lib/billing-sandbox.js', 'scripts/billing-audit.mjs', 'scripts/billing-sandbox-proof.mjs']) {
+		const source = readFileSync(file, 'utf8');
+		assert.ok(!/commitProjection|processWebhookEvent|users\.(updateOne|findOneAndUpdate|insertOne|replaceOne|bulkWrite|updateMany)/.test(source), file);
+		assert.equal(operatorBlocks(source).length, 0, file);
+	}
+});
