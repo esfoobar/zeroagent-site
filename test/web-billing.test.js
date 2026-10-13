@@ -9,23 +9,23 @@ const now = new Date('2026-10-13T12:00:00.000Z');
 const environment = { livemode: false, environment: 'sandbox', stripeAccountId: 'acct_test', productId: 'prod_test', portalConfigurationId: 'bpc_test' };
 const tokenHash = createHash('sha256').update('a'.repeat(43)).digest('hex');
 const baseHeaders = { cookie: '__Host-za_session=' + 'a'.repeat(43), origin: 'https://zeroagenthq.com', 'x-csrf-token': csrfTokenFor(tokenHash) };
-function response() { return { headers: {}, setHeader(k,v) { this.headers[k] = v; }, end(v) { this.body = JSON.parse(v); } }; }
+function response() { return { headers: {}, ended: false, setHeader(k,v) { if (this.ended) throw new Error('ERR_HTTP_HEADERS_SENT'); this.headers[k] = v; }, end(v) { this.body = JSON.parse(v); this.ended = true; } }; }
 function fixture() {
  const users = fakeCollection(), catalogStore = fakeCollection(), purchases = fakeCollection();
  const account = { _id: 42, plan: 'free', trialEnds: '2026-10-14T00:00:00.000Z', planUntil: null, billingCustomer: null };
  users.docs.set(42, account);
- const calls = { create: 0, portal: 0, expire: 0 };
- let priceId = 'price_one', productId = 'prod_test', owner = '42', sessionStatus = 'open', subscriptionStatus = null;
+ const calls = { create: 0, portal: 0, expire: 0, checkoutData: null, customerData: null, portalData: null };
+ let priceId = 'price_one', productId = 'prod_test', owner = '42', sessionStatus = 'open', subscriptionStatus = null, sessionExpiresAt = Math.floor(now.getTime()/1000)+1800, customerLivemode = false;
  const stripe = {
   products: { retrieve: async () => ({ id: 'prod_test', active: true, livemode: false, default_price: { id: priceId, active: true, livemode: false, product: productId, unit_amount: null, currency: 'usd', recurring: { interval: 'month' } } }) },
-  customers: { create: async () => ({ id: 'cus_42', livemode: false, metadata: { githubId: '42' } }), retrieve: async () => ({ id: 'cus_42', livemode: false, metadata: { githubId: owner } }) },
+  customers: { create: async (data) => { calls.customerData=data; return { id: 'cus_42', livemode: false, metadata: data.metadata }; }, retrieve: async () => ({ id: 'cus_42', livemode: customerLivemode, metadata: { zeroagent_github_id: owner } }) },
   subscriptions: { list: async () => ({ data: subscriptionStatus ? [{ id: 'sub_1', customer: 'cus_42', status: subscriptionStatus, livemode: false }] : [], has_more: false }) },
-  checkout: { sessions: { create: async (data) => { calls.create++; return { id: 'cs_1', customer: data.customer, status: 'open', livemode: false, expires_at: Math.floor(now.getTime()/1000)+1800, url: 'https://checkout.stripe.com/session' }; }, retrieve: async () => ({ id: 'cs_1', customer: 'cus_42', status: sessionStatus, livemode: false, expires_at: Math.floor(now.getTime()/1000)+1800, url: 'https://checkout.stripe.com/session' }), expire: async () => { calls.expire++; } } },
-  billingPortal: { sessions: { create: async (data) => { calls.portal++; assert.equal(data.configuration, 'bpc_test'); return { url: 'https://billing.stripe.com/session', livemode: false }; } } },
+  checkout: { sessions: { create: async (data) => { calls.create++; calls.checkoutData=data; return { id: 'cs_1', customer: data.customer, status: 'open', livemode: false, expires_at: sessionExpiresAt, url: 'https://checkout.stripe.com/session' }; }, retrieve: async () => ({ id: 'cs_1', customer: 'cus_42', status: sessionStatus, livemode: false, expires_at: sessionExpiresAt, url: 'https://checkout.stripe.com/session' }), expire: async () => { calls.expire++; } } },
+  billingPortal: { sessions: { create: async (data) => { calls.portal++; calls.portalData=data; assert.equal(data.configuration, 'bpc_test'); return { url: 'https://billing.stripe.com/session', livemode: false }; } } },
  };
  const deps = { now, environment, stripe, store: { collections: { users, catalog: catalogStore, purchases } }, getActiveSession: async () => ({ githubId: 42, authTime: now.toISOString() }) };
  async function call(handler, method = 'GET', body, headers = baseHeaders, query) { const res = response(); await handler({ method, body, headers, query }, res, deps); return res; }
- return { call, deps, account, users, purchases, calls, setPrice(v) { priceId=v; }, setProduct(v) { productId=v; }, setOwner(v) {owner=v;}, setSession(v) {sessionStatus=v;}, setSubscription(v) {subscriptionStatus=v;}, pause() { catalogStore.docs.set('catalog:sandbox', { _id: 'catalog:sandbox', salesPaused: true }); } };
+ return { call, deps, account, users, purchases, calls, setPrice(v) { priceId=v; }, setProduct(v) { productId=v; }, setOwner(v) {owner=v;}, setCustomerLivemode(v) {customerLivemode=v;}, setSession(v) {sessionStatus=v;}, setSessionExpiry(v) {sessionExpiresAt=v;}, setSubscription(v) {subscriptionStatus=v;}, pause() { catalogStore.docs.set('catalog:sandbox', { _id: 'catalog:sandbox', salesPaused: true }); } };
 }
 
 test('catalog resolves live offer and honestly reports paused sales', async () => {
@@ -46,7 +46,7 @@ test('duplicate and concurrent checkout requests reuse one session', async () =>
  assert.equal((await f.call(checkout,'POST',{priceId:'price_one'})).body.url,'https://checkout.stripe.com/session'); assert.equal(f.calls.create,1);
 });
 test('ended subscription may buy again; completed checkout waits for webhook', async () => {
- const f=fixture(); f.setSubscription('canceled'); assert.equal((await f.call(checkout,'POST',{priceId:'price_one'})).statusCode,200); f.setSession('complete'); assert.equal((await f.call(checkout,'POST',{priceId:'price_one'})).statusCode,202);
+ const f=fixture(); f.setSubscription('canceled'); assert.equal((await f.call(checkout,'POST',{priceId:'price_one'})).statusCode,200); f.setSession('complete'); f.setSubscription('incomplete'); assert.equal((await f.call(checkout,'POST',{priceId:'price_one'})).statusCode,202);
 });
 test('portal requires recent authentication and owned customer', async () => {
  const f=fixture(); f.account.billingCustomer={ customerId:'cus_42', stripeAccountId:'acct_test', livemode:false }; f.deps.getActiveSession=async()=>({ githubId:42,authTime:'2026-10-13T11:00:00.000Z' }); assert.equal((await f.call(portal,'POST')).body.error,'recent_auth_required');
@@ -75,4 +75,66 @@ test('a crashed creation recovers with its original operation', async () => {
  f.purchases.docs.set(key,{ _id:key, operationId:'operation', priceId:'price_one', customerId:'cus_42', sessionId:null, state:'creating', createdAt:'2026-10-13T11:00:00.000Z' });
  const res=await f.call(checkout,'POST',{priceId:'price_one'});
  assert.equal(res.statusCode,200); assert.equal(f.purchases.docs.get(key).operationId,'operation'); assert.equal(f.calls.create,1);
+});
+
+test('a completed prior Checkout does not block purchase after the subscription ended', async () => {
+ const f=fixture(); f.account.billingCustomer={ customerId:'cus_42', stripeAccountId:'acct_test', livemode:false };
+ const key='acct_test:sandbox:42';
+ f.purchases.docs.set(key,{ _id:key, operationId:'old-operation', priceId:'old-price', customerId:'cus_42', sessionId:'old-session', state:'open', createdAt:'2026-10-01T00:00:00.000Z' });
+ f.setSession('complete'); f.setSubscription('canceled');
+ const res=await f.call(checkout,'POST',{priceId:'price_one'});
+ assert.equal(res.statusCode,200); assert.equal(f.calls.create,1); assert.equal(f.purchases.docs.get(key).priceId,'price_one'); assert.notEqual(f.purchases.docs.get(key).operationId,'old-operation');
+});
+
+test('a crashed creation reclaims a changed Price after the lease', async () => {
+ const f=fixture(); f.account.billingCustomer={ customerId:'cus_42', stripeAccountId:'acct_test', livemode:false };
+ const key='acct_test:sandbox:42';
+ f.purchases.docs.set(key,{ _id:key, operationId:'old-operation', priceId:'old-price', customerId:'cus_42', sessionId:null, state:'creating', createdAt:'2026-10-13T11:00:00.000Z' });
+ const res=await f.call(checkout,'POST',{priceId:'price_one'});
+ assert.equal(res.statusCode,200); assert.equal(f.calls.create,1); assert.equal(f.purchases.docs.get(key).priceId,'price_one'); assert.notEqual(f.purchases.docs.get(key).operationId,'old-operation');
+});
+
+test('status reflects active, completed, expired and open sessions without writes', async () => {
+ const f=fixture(); const key='acct_test:sandbox:42';
+ f.purchases.docs.set(key,{ _id:key, operationId:'op', priceId:'price_one', customerId:'cus_42', sessionId:'cs_1', state:'open', expiresAt:'2026-10-13T12:30:00.000Z' });
+ const before=JSON.stringify([...f.purchases.docs.values()]);
+ assert.equal((await f.call(status)).body.checkoutState,'checkout_pending');
+ f.setSession('complete'); assert.equal((await f.call(status)).body.checkoutState,'confirming_payment');
+ f.account.billing={ status:'active', paidThrough:'2026-11-13T00:00:00.000Z' }; assert.equal((await f.call(status)).body.checkoutState,null);
+ delete f.account.billing; f.setSession('open'); f.setSessionExpiry(Math.floor(now.getTime()/1000)-1); assert.equal((await f.call(status)).body.checkoutState,null);
+ assert.equal(JSON.stringify([...f.purchases.docs.values()]),before);
+});
+
+test('Checkout and portal use account metadata and fixed return paths', async () => {
+ const f=fixture(); assert.equal((await f.call(checkout,'POST',{priceId:'price_one'})).statusCode,200);
+ const metadata={ zeroagent_github_id:'42', zeroagent_account_id:'acct_gh42' };
+ assert.deepEqual(f.calls.customerData.metadata,metadata);
+ assert.equal(f.calls.checkoutData.client_reference_id,'acct_gh42');
+ assert.deepEqual(f.calls.checkoutData.metadata,metadata);
+ assert.deepEqual(f.calls.checkoutData.subscription_data.metadata,metadata);
+ assert.equal(f.calls.checkoutData.success_url,'https://zeroagenthq.com/account/plan?checkout=returned');
+ assert.equal(f.calls.checkoutData.cancel_url,'https://zeroagenthq.com/account/plan');
+ assert.equal((await f.call(portal,'POST')).statusCode,200);
+ assert.equal(f.calls.portalData.return_url,'https://zeroagenthq.com/account/plan');
+});
+
+test('a customer mapping from another environment is replaced, while a matching mapping is kept', async () => {
+ const f=fixture(); f.account.billingCustomer={ customerId:'old-customer', stripeAccountId:'other-account', livemode:true };
+ assert.equal((await f.call(checkout,'POST',{priceId:'price_one'})).statusCode,200);
+ assert.deepEqual(f.account.billingCustomer,{ customerId:'cus_42', stripeAccountId:'acct_test', livemode:false });
+ const g=fixture(); g.account.billingCustomer={ customerId:'cus_42', stripeAccountId:'acct_test', livemode:false };
+ assert.equal((await g.call(checkout,'POST',{priceId:'price_one'})).statusCode,200);
+ assert.equal(g.calls.customerData,null);
+});
+
+test('security failures log only name and code, while the response stays generic', async () => {
+ const f=fixture(); f.account.billingCustomer={ customerId:'cus_42', stripeAccountId:'acct_test', livemode:false }; f.setOwner('someone-else');
+ const messages=[]; const original=console.error; console.error=(...parts)=>messages.push(parts);
+ try { const res=await f.call(checkout,'POST',{priceId:'price_one'}); assert.equal(res.statusCode,503); assert.deepEqual(res.body,{ error:'billing_unavailable' }); }
+ finally { console.error=original; }
+ assert.deepEqual(messages,[['billing route failure','BillingIntegrityError','customer_owner_mismatch']]);
+ const g=fixture(); g.account.billingCustomer={ customerId:'cus_42', stripeAccountId:'acct_test', livemode:false }; g.setCustomerLivemode(true);
+ const modeMessages=[]; console.error=(...parts)=>modeMessages.push(parts);
+ try { assert.equal((await g.call(portal,'POST')).statusCode,503); } finally { console.error=original; }
+ assert.equal(modeMessages[0][1],'BillingModeMismatchError'); assert.equal(modeMessages[0].length,3);
 });

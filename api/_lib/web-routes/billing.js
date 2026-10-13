@@ -4,7 +4,7 @@ import { getCurrentOffer, resolveCurrentSalePrice, getCatalogStateWithCollection
 import { projectEntitlement } from '../billing-projection.js';
 import { getBillingStore } from '../billing-store.js';
 import { createStripeClient } from '../stripe-client.js';
-import { createCheckout, ownedCustomer, customerIdFor } from '../billing-purchase.js';
+import { BillingIntegrityError, createCheckout, ownedCustomer, customerIdFor } from '../billing-purchase.js';
 
 async function context(deps) {
 	const environment = deps.environment || loadBillingEnvironment();
@@ -13,8 +13,9 @@ async function context(deps) {
 	return { environment, store, stripe };
 }
 
-function failure(res, error = 'billing_unavailable') {
-	sendJson(res, 503, { error });
+function failure(res, error = null) {
+	if (error) console.error('billing route failure', error.name || 'Error', error.code || 'unknown');
+	sendJson(res, 503, { error: 'billing_unavailable' });
 }
 
 export async function catalog(req, res, deps = {}) {
@@ -22,10 +23,8 @@ export async function catalog(req, res, deps = {}) {
 	try {
 		const { environment, store, stripe } = await context(deps);
 		const offer = await getCurrentOffer({ stripe, environment, catalog: store.collections.catalog });
-		res.setHeader('Cache-Control', 'public, max-age=60');
-		sendJson(res, 200, offer);
-		res.setHeader('Cache-Control', 'public, max-age=60');
-	} catch { failure(res); }
+		sendJson(res, 200, offer, { cacheControl: 'public, max-age=60' });
+	} catch (error) { failure(res, error); }
 }
 
 async function authenticated(req, res, deps, mutation = false, recent = false) {
@@ -47,18 +46,25 @@ export async function status(req, res, deps = {}) {
 	const auth = await authenticated(req, res, deps);
 	if (!auth) return;
 	try {
-		const { environment, store } = await context(deps);
+		const { environment, store, stripe } = await context(deps);
 		const account = await store.collections.users.findOne({ _id: auth.session.githubId });
 		if (!account) return sendJson(res, 404, { error: 'account_not_found' });
 		const entitlement = projectEntitlement(account, deps.now || new Date());
 		const key = `${environment.stripeAccountId}:${environment.environment}:${account._id}`;
 		const attempt = await store.collections.purchases.findOne({ _id: key });
 		let checkoutState = null;
-		if (attempt && attempt.state === 'creating') checkoutState = 'checkout_pending';
-		else if (attempt && attempt.state === 'open' && new Date(attempt.expiresAt).getTime() > (deps.now || new Date()).getTime()) checkoutState = 'checkout_pending';
-		else if (attempt && attempt.state === 'open' && entitlement.billingStatus === 'none') checkoutState = 'confirming_payment';
+		if (!['active', 'cancel_scheduled', 'past_due'].includes(entitlement.billingStatus) && attempt) {
+			if (attempt.state === 'creating' && (deps.now || new Date()).getTime() - new Date(attempt.createdAt).getTime() < 60000) checkoutState = 'checkout_pending';
+			else if (attempt.sessionId) {
+				const session = await stripe.checkout.sessions.retrieve(attempt.sessionId);
+				assertLivemode(environment, session, 'Checkout Session');
+				if (session.customer !== attempt.customerId) throw new BillingIntegrityError('checkout_customer_mismatch');
+				if (session.status === 'complete' && entitlement.billingStatus !== 'ended') checkoutState = 'confirming_payment';
+				else if (session.status === 'open' && session.expires_at * 1000 > (deps.now || new Date()).getTime()) checkoutState = 'checkout_pending';
+			}
+		}
 		sendJson(res, 200, { account: `acct_gh${account._id}`, ...entitlement, checkoutState });
-	} catch { failure(res); }
+	} catch (error) { failure(res, error); }
 }
 
 export async function checkout(req, res, deps = {}) {
@@ -81,7 +87,7 @@ export async function checkout(req, res, deps = {}) {
 		if (result.status === 'already_subscribed') return sendJson(res, 409, { error: 'already_subscribed' });
 		if (result.status === 'pending') return sendJson(res, 202, { status: 'checkout_pending' });
 		sendJson(res, 200, { url: result.url });
-	} catch { failure(res); }
+	} catch (error) { failure(res, error); }
 }
 
 export async function portal(req, res, deps = {}) {
@@ -96,9 +102,9 @@ export async function portal(req, res, deps = {}) {
 		const account = { ...accountDoc, githubId: accountDoc._id };
 		const customer = await ownedCustomer({ stripe, account, environment });
 		if (!customer || customerIdFor(account, environment) !== customer.id) return sendJson(res, 404, { error: 'customer_not_found' });
-		const session = await stripe.billingPortal.sessions.create({ customer: customer.id, configuration: environment.portalConfigurationId, return_url: `${baseUrl()}/billing?portal=return` });
+		const session = await stripe.billingPortal.sessions.create({ customer: customer.id, configuration: environment.portalConfigurationId, return_url: `${baseUrl()}/account/plan` });
 		assertLivemode(environment, session, 'Portal Session');
 		if (!session.url) throw new Error('missing portal URL');
 		sendJson(res, 200, { url: session.url });
-	} catch { failure(res); }
+	} catch (error) { failure(res, error); }
 }
