@@ -234,7 +234,7 @@ test('vercel.json does not touch the catalog route or its Cache-Control', async 
 });
 
 test('unconfigured billing answers a cacheable unavailable offer, logs nothing, and Checkout still refuses', async () => {
- const saved={ ...process.env }; for (const k of Object.keys(process.env)) if (k.startsWith('STRIPE_')) delete process.env[k];
+ const saved={ ...process.env }; for (const k of Object.values((await import('../api/_lib/billing-config.js')).BILLING_ENV_VARS)) delete process.env[k];
  const messages=[]; const original=console.error; console.error=(...p)=>messages.push(p);
  try {
   const f=fixture(); delete f.deps.environment; delete f.deps.stripe;

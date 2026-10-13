@@ -13,6 +13,7 @@ const age = (date, now) => Math.max(0, Math.floor((now.getTime() - new Date(date
 // object, account id, session URL, customer data or exception text escapes.
 export async function auditBilling({ collections, stripe, environment, referenceKey, now = new Date(), maxStripeReads = MAX_AUDIT_STRIPE_READS }) {
 	if (!Number.isInteger(maxStripeReads) || maxStripeReads < 0) throw new Error('invalid_stripe_read_limit');
+	billingReference('', referenceKey);
 	let stripeReads = 0;
 	let truncated = false;
 	let skippedPurchases = 0;
@@ -65,8 +66,8 @@ export async function auditBilling({ collections, stripe, environment, reference
 			const invoices = [];
 			if (subscription.latest_invoice) {
 				if (typeof subscription.latest_invoice === 'string' && stripeReads >= maxStripeReads) { truncated = true; break; }
-				const invoice = typeof subscription.latest_invoice === 'string' ? await stripe.invoices.retrieve(subscription.latest_invoice) : subscription.latest_invoice;
 				if (typeof subscription.latest_invoice === 'string') stripeReads++;
+				const invoice = typeof subscription.latest_invoice === 'string' ? await stripe.invoices.retrieve(subscription.latest_invoice) : subscription.latest_invoice;
 				assertLivemode(environment, invoice, 'Invoice');
 				invoices.push(invoice);
 			}

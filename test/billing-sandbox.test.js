@@ -73,3 +73,28 @@ test('staging boundary verifies a distinct database and reaches only staging', a
 	await assert.rejects(() => verifySandboxScenario({ scenario: 'staging-boundary', environment, args: { ...args, database: 'production_db' }, ...deps, fetchImpl }), /database_not_isolated/);
 	await assert.rejects(() => verifySandboxScenario({ scenario: 'staging-boundary', environment, args: { ...args, stagingUrl: 'https://zeroagenthq.com' }, ...deps, fetchImpl }), /production_host_refused/);
 });
+
+test('restricted-key proof uses the real client methods and needs balance to return 403', async () => {
+	const { createStripeClient } = await import('../api/_lib/stripe-client.js');
+	const requests = [];
+	const fetchImpl = async (url) => {
+		const path = new URL(url).pathname;
+		requests.push(path);
+		if (path === '/v1/products/prod_test') return new Response(JSON.stringify({ id: 'prod_test', livemode: false, default_price: 'price_new' }), { status: 200 });
+		if (path === '/v1/subscriptions') return new Response(JSON.stringify({ data: [] }), { status: 200 });
+		return new Response(JSON.stringify({ error: { type: 'invalid_request_error', code: 'permission_denied' } }), { status: 403 });
+	};
+	const stripe = createStripeClient({ apiKey: 'rk_test_fake', fetchImpl });
+	const result = await verifySandboxScenario({ scenario: 'restricted-key', stripe, environment, args: { apiKey: 'rk_test_fake' }, collections: {} });
+	assert.equal(result.scenario, 'restricted-key');
+	assert.deepEqual(requests, ['/v1/products/prod_test', '/v1/subscriptions', '/v1/balance']);
+	const permissive = createStripeClient({ apiKey: 'rk_test_fake', fetchImpl: async (url) => new Response(JSON.stringify(new URL(url).pathname === '/v1/products/prod_test' ? { id: 'prod_test', livemode: false } : { data: [], available: [] }), { status: 200 }) });
+	await assert.rejects(() => verifySandboxScenario({ scenario: 'restricted-key', stripe: permissive, environment, args: { apiKey: 'rk_test_fake' }, collections: {} }), /forbidden_read_not_denied/);
+});
+
+test('staging boundary rejects every production subdomain', async () => {
+	const deps = fixture();
+	for (const stagingUrl of ['https://zeroagenthq.com', 'https://api.zeroagenthq.com', 'https://deep.api.zeroagenthq.com']) {
+		await assert.rejects(() => verifySandboxScenario({ scenario: 'staging-boundary', environment, args: { stagingUrl, database: 'sandbox_db', productionDb: 'production_db' }, ...deps, fetchImpl: async () => { throw Error('network should not be used'); } }), /production_host_refused/);
+	}
+});

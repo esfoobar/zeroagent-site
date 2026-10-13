@@ -5,6 +5,7 @@ import { billingReference } from './billing-reference.js';
 // who requested it. Stripe must still resend the event through the verified
 // webhook to reach the sole paid-state writer.
 export async function prepareEventReplay({ collections, withTransaction }, { environment, eventId, referenceKey, actor, reason, now = new Date() }) {
+	billingReference('', referenceKey);
 	if (!/^(?:evt_[A-Za-z0-9_]+|[a-f0-9]{12})$/.test(eventId || '')) throw new Error('event_id_or_reference_required');
 	if (typeof actor !== 'string' || !actor.trim()) throw new Error('actor_required');
 	if (typeof reason !== 'string' || !reason.trim()) throw new Error('reason_required');
