@@ -31,8 +31,14 @@
 		return interval ? amount + ' ' + interval : amount;
 	}
 
+	// The status call is per visitor and never cached. The catalog is the
+	// same for everyone and CDN-cacheable for 60 seconds, so it is fetched
+	// with default caching and without credentials.
+	var PRIVATE = { credentials: 'same-origin', cache: 'no-store' };
+	var PUBLIC = { credentials: 'omit' };
+
 	function json(url, init) {
-		return root.fetch(url, init || { credentials: 'same-origin', cache: 'no-store' }).then(function (res) {
+		return root.fetch(url, init).then(function (res) {
 			if (!res.ok) throw new Error('http_' + res.status);
 			return res.json();
 		});
@@ -41,12 +47,12 @@
 	// An existing subscriber sees their own price, everyone else the
 	// catalog's current offer. Either failing leaves the fallback in place.
 	function load() {
-		var own = json('/api/billing/status').then(function (s) {
+		var own = json('/api/billing/status', PRIVATE).then(function (s) {
 			return s && s.subscription ? priceText(s.subscription) : null;
 		}, function () { return null; });
 		return own.then(function (text) {
 			if (text) return text;
-			return json('/api/billing/catalog').then(function (offer) {
+			return json('/api/billing/catalog', PUBLIC).then(function (offer) {
 				return offer && offer.status === 'available' ? priceText(offer) : null;
 			}, function () { return null; });
 		});

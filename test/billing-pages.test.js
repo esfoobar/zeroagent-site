@@ -230,8 +230,8 @@ function copyRun(routes) {
 			querySelectorAll: () => nodes,
 			addEventListener() {},
 		},
-		fetch: (url) => {
-			calls.push(url);
+		fetch: (url, init) => {
+			calls.push({ url, init });
 			const r = routes[url];
 			return r ? Promise.resolve({ ok: r.ok, json: () => Promise.resolve(r.body) }) : Promise.reject(new Error('offline'));
 		},
@@ -328,4 +328,29 @@ test('the new pages stay out of the sitemap and robots.txt like /account', async
 test('the billing scripts send no analytics event and keep the CSRF token in memory', () => {
 	assert.doesNotMatch(controllerSource, /gtag|dataLayer|localStorage|sessionStorage|document\.cookie/);
 	assert.doesNotMatch(viewSource + pricingSource, /gtag|dataLayer|localStorage|sessionStorage|document\.cookie/);
+});
+
+test('the homepage script fetches the catalog cacheable and credential free, and status uncached', async () => {
+	const t = copyRun({
+		'/api/billing/status': { ok: false, body: {} },
+		'/api/billing/catalog': { ok: true, body: offerOf(700) },
+	});
+	await t.flush();
+	const catalog = t.calls.find((c) => c.url === '/api/billing/catalog');
+	const status = t.calls.find((c) => c.url === '/api/billing/status');
+	assert.ok(catalog && status);
+	assert.equal(catalog.init.cache, undefined, 'default caching');
+	assert.equal(catalog.init.credentials, 'omit');
+	assert.equal(status.init.cache, 'no-store');
+	assert.equal(status.init.credentials, 'same-origin');
+});
+
+test('an unconfigured catalog answer is the no-number fallback in copy and pages', async () => {
+	const body = { status: 'unavailable', reason: 'not_configured' };
+	const t = copyRun({ '/api/billing/status': { ok: false, body: {} }, '/api/billing/catalog': { ok: true, body } });
+	await t.flush();
+	assert.equal(t.nodes[0].textContent, 'a monthly subscription');
+	const v = View.viewFor(base, body, { ...CTX, page: 'plan' });
+	assert.deepEqual(ids(v), []);
+	assert.doesNotMatch(text(v), /\$|\d+ a month/);
 });

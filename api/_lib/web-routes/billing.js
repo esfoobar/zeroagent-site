@@ -1,5 +1,5 @@
 import { requireBrowserSession, requireCsrf, requireRecentAuth, sendJson, baseUrl } from '../web-auth.js';
-import { BILLING_ENV_VARS, loadBillingEnvironment, assertLivemode } from '../billing-config.js';
+import { BILLING_ENV_VARS, BillingConfigError, loadBillingEnvironment, assertLivemode } from '../billing-config.js';
 import { getCurrentOffer, resolveCurrentSalePrice, getCatalogStateWithCollection } from '../billing-catalog.js';
 import { projectEntitlement } from '../billing-projection.js';
 import { getBillingStore } from '../billing-store.js';
@@ -25,12 +25,27 @@ function failure(res, error = null) {
 	sendJson(res, 503, { error: 'billing_unavailable' });
 }
 
+// The public offer is CDN-cacheable for the ZA-903 sixty second freshness
+// bound, so a traffic spike is one function call a minute, not one per view.
+// Only a deliberate answer is cached: a real Stripe or database failure stays
+// a 503 with no-store.
+const CATALOG_CACHE = 'public, max-age=60, s-maxage=60, stale-while-revalidate=300';
+
 export async function catalog(req, res, deps = {}) {
 	if (req.method !== 'GET') return sendJson(res, 405, { error: 'method_not_allowed' });
+	let environment;
 	try {
-		const { environment, store, stripe } = await context(deps);
+		environment = deps.environment || loadBillingEnvironment();
+	} catch (error) {
+		// Billing is not configured on this deployment: an honest, cacheable
+		// "no offer", not a failure to log once per visitor.
+		if (error instanceof BillingConfigError) return sendJson(res, 200, { status: 'unavailable', reason: 'not_configured' }, { cacheControl: CATALOG_CACHE });
+		return failure(res, error);
+	}
+	try {
+		const { store, stripe } = await context({ ...deps, environment });
 		const offer = await getCurrentOffer({ stripe, environment, catalog: store.collections.catalog });
-		sendJson(res, 200, offer, { cacheControl: 'public, max-age=60' });
+		sendJson(res, 200, offer, { cacheControl: CATALOG_CACHE });
 	} catch (error) { failure(res, error); }
 }
 

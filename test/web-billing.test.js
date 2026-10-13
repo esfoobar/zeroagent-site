@@ -30,7 +30,7 @@ function fixture() {
 }
 
 test('catalog resolves live offer and honestly reports paused sales', async () => {
- const f=fixture(); const offer=await f.call(catalog); assert.equal(offer.body.priceId,'price_one'); assert.equal(offer.headers['Cache-Control'],'public, max-age=60');
+ const f=fixture(); const offer=await f.call(catalog); assert.equal(offer.body.priceId,'price_one'); assert.equal(offer.headers['Cache-Control'],'public, max-age=60, s-maxage=60, stale-while-revalidate=300');
  f.pause(); const paused=await f.call(catalog); assert.equal(paused.body.status,'paused');
 });
 test('checkout re-resolves price and requires reconfirmation', async () => {
@@ -218,4 +218,49 @@ test('a reversed cancellation or payment-method change is a status of the same s
  const scheduled=await f.call(status); assert.equal(scheduled.body.billingStatus,'cancel_scheduled'); assert.equal(scheduled.body.subscription.unitAmount,500);
  f.account.billing.cancelAtPeriodEnd=false;
  const resumed=await f.call(status); assert.equal(resumed.body.billingStatus,'active'); assert.equal(resumed.body.subscription.unitAmount,500);
+});
+
+test('catalog is CDN cacheable for 60 seconds with stale-while-revalidate', async () => {
+ const f=fixture(); const res=await f.call(catalog);
+ assert.equal(res.headers['Cache-Control'],'public, max-age=60, s-maxage=60, stale-while-revalidate=300');
+ f.pause(); assert.equal((await f.call(catalog)).headers['Cache-Control'],'public, max-age=60, s-maxage=60, stale-while-revalidate=300');
+});
+
+test('vercel.json does not touch the catalog route or its Cache-Control', async () => {
+ const config=JSON.parse(await (await import('node:fs/promises')).readFile(new URL('../vercel.json', import.meta.url),'utf8'));
+ const rewrite=config.rewrites.find((r) => r.source==='/api/billing/catalog');
+ assert.equal(rewrite.destination,'/api/web?__route=billing/catalog');
+ for (const h of config.headers) for (const header of h.headers) assert.notEqual(header.key.toLowerCase(),'cache-control');
+});
+
+test('unconfigured billing answers a cacheable unavailable offer, logs nothing, and Checkout still refuses', async () => {
+ const saved={ ...process.env }; for (const k of Object.keys(process.env)) if (k.startsWith('STRIPE_')) delete process.env[k];
+ const messages=[]; const original=console.error; console.error=(...p)=>messages.push(p);
+ try {
+  const f=fixture(); delete f.deps.environment; delete f.deps.stripe;
+  const res=await f.call(catalog);
+  assert.equal(res.statusCode,200); assert.deepEqual(res.body,{ status:'unavailable', reason:'not_configured' });
+  assert.equal(res.headers['Cache-Control'],'public, max-age=60, s-maxage=60, stale-while-revalidate=300');
+  const co=await f.call(checkout,'POST',{ priceId:'price_one' });
+  assert.equal(co.statusCode,503);
+ } finally { console.error=original; Object.assign(process.env,saved); }
+ assert.equal(messages.filter((m)=>m[0]==='billing route failure' && m[1]!==undefined).length,1, 'only the Checkout refusal logs');
+});
+
+test('a real Stripe failure stays a 503 and is not cacheable', async () => {
+ const f=fixture(); f.deps.stripe.products.retrieve=async()=>{ throw new StripeApiError({ status:500, code:'api_error', retriable:true }); };
+ const original=console.error; console.error=()=>{};
+ try { const res=await f.call(catalog); assert.equal(res.statusCode,503); assert.equal(res.headers['Cache-Control'],'private, no-store'); } finally { console.error=original; }
+});
+
+test('an anonymous status call is a 401 before any database or Stripe work', async () => {
+ const f=fixture(); const touched=[];
+ const trap=(name)=>new Proxy({}, { get: (_, k) => { touched.push(`${name}.${String(k)}`); throw new Error('touched'); } });
+ f.deps.store={ collections: { users: trap('users'), catalog: trap('catalog'), purchases: trap('purchases') } };
+ f.deps.stripe=trap('stripe');
+ f.deps.getActiveSession=async()=>{ touched.push('getActiveSession'); return null; };
+ for (const headers of [{}, { cookie:'other=1' }, { cookie:'__Host-za_session=not-a-token' }]) {
+  const res=await f.call(status,'GET',null,headers); assert.equal(res.statusCode,401);
+ }
+ assert.deepEqual(touched,[]);
 });
