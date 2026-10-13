@@ -17,11 +17,13 @@
 
 import { verifyHs256 } from '../_lib/jwt.js';
 import { getUser as defaultGetUser } from '../_lib/users-store.js';
-import { entitlementFor } from '../_lib/entitlement.js';
+import { projectEntitlement } from '../_lib/billing-projection.js';
 
 function sendJson(res, status, payload) {
 	res.statusCode = status;
 	res.setHeader('Content-Type', 'application/json; charset=utf-8');
+	// no-store is the contract's rule for /me; `private` only adds that no
+	// shared cache may keep it either.
 	res.setHeader('Cache-Control', 'private, no-store');
 	res.end(JSON.stringify(payload));
 }
@@ -70,5 +72,17 @@ export default async function handler(req, res, deps = {}) {
 		}
 	}
 
-	sendJson(res, 200, entitlementFor(user));
+	// ZA-902: the contract's projection. The four fields every shipped client
+	// reads keep their stored values and meaning (plan, trialEnds and
+	// planUntil as stored, relayAllowed from the grounds that hold now); the
+	// six fields after them are additive. An account with no billing record
+	// answers relayAllowed exactly as entitlement.js always did
+	// (test/app-me-compat.test.js proves it per class).
+	const entitlement = projectEntitlement(user, new Date());
+	sendJson(res, 200, {
+		...entitlement,
+		plan: user.plan,
+		trialEnds: user.trialEnds ?? null,
+		planUntil: user.planUntil ?? null,
+	});
 }

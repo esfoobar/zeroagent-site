@@ -203,17 +203,17 @@ export async function processWebhookEvent({
 		);
 		return ok(`${derived.from}->${derived.to}`);
 	} catch (err) {
-		if (err instanceof LeaseLostError) return fail('lease_lost');
+		if (err instanceof LeaseLostError) return await fail('lease_lost');
 		if (err instanceof EventNotOwnedError) return retry('event_not_owned');
 		// Fail closed: a legacy grant is never auto-acknowledged.
-		if (err instanceof LegacyGrantConflictError) return quarantine('legacy_grant_conflict');
-		if (err instanceof AccountNotFoundError) return quarantine('account_missing');
-		if (err instanceof BillingModeMismatchError) return quarantine('mode_mismatch');
+		if (err instanceof LegacyGrantConflictError) return await quarantine('legacy_grant_conflict');
+		if (err instanceof AccountNotFoundError) return await quarantine('account_missing');
+		if (err instanceof BillingModeMismatchError) return await quarantine('mode_mismatch');
 		if (err instanceof StripeApiError) {
-			if (err.status === 404 && err.code === 'resource_missing') return quarantine('stripe_object_missing');
-			return fail(err.retriable ? 'stripe_unavailable' : 'stripe_rejected');
+			if (err.status === 404 && err.code === 'resource_missing') return await quarantine('stripe_object_missing');
+			return await fail(err.retriable ? 'stripe_unavailable' : 'stripe_rejected');
 		}
-		return fail('processing_error');
+		return await fail('processing_error');
 	} finally {
 		if (lease) {
 			try {
