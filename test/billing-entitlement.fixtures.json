@@ -1,0 +1,1632 @@
+{
+  "_vendored": "Vendored copy of docs/billing-entitlement.fixtures.json from esfoobar/zeroagent at commit 54cc57d (ZA-899). Do not edit here; refresh from the source commit when the contract changes.",
+  "format": 1,
+  "name": "billing-entitlement",
+  "description": "Shared test input for the entitlement contract in docs/BILLING-ENTITLEMENT.md. Every case is a stored account (the users projection) plus instants to ask at and the exact /me answer and relay admission expected. The site, the relay, the desktop app and the iPhone app each load this file and run their own implementation against it. All ids and logins are synthetic.",
+  "rules": {
+    "instants": "UTC ISO 8601 with milliseconds and a Z suffix, in the file and on the wire",
+    "deadlineExclusive": "Access holds while now < deadline; at the deadline instant it is already over",
+    "accessUntil": "latest deadline among the grounds that hold now; null with relayAllowed true means no known end; null with relayAllowed false means no access",
+    "relay": "admit, or plan_required (HTTP 402 at connect, error frame then close 1008 mid-session); unauthorized (401) is a different answer"
+  },
+  "parameters": {
+    "paymentGraceSeconds": {
+      "value": 259200,
+      "decision": "failed_renewal_grace",
+      "status": "open, recommended default"
+    },
+    "renewalSettlementSeconds": {
+      "value": 21600,
+      "status": "proposed by this contract, not one of the seven open decisions; 0 is the strict reading; to be confirmed against a sandbox test clock before enforcement"
+    },
+    "relayLookupCacheSeconds": {
+      "value": 300,
+      "status": "recommended in the plan, never beyond accessUntil"
+    }
+  },
+  "currentSalePrice": {
+    "note": "Prices are Stripe Price ids read at runtime. These ids are placeholders; no amount appears anywhere in this file.",
+    "ids": [
+      "price_synthetic_a",
+      "price_synthetic_b",
+      "price_synthetic_c"
+    ]
+  },
+  "transitions": [
+    {
+      "id": "T01",
+      "name": "account_created",
+      "from": "no account",
+      "to": "none (trial running)",
+      "writer": "sign-in upsert",
+      "note": "trialEnds set once, never rewritten"
+    },
+    {
+      "id": "T02",
+      "name": "trial_expires",
+      "from": "none (trial running)",
+      "to": "none (trial over)",
+      "writer": "time only, no write"
+    },
+    {
+      "id": "T03",
+      "name": "first_payment_settled",
+      "from": "none",
+      "to": "active",
+      "writer": "webhook: invoice.paid"
+    },
+    {
+      "id": "T04",
+      "name": "renewal_paid",
+      "from": "active",
+      "to": "active",
+      "writer": "webhook: invoice.paid"
+    },
+    {
+      "id": "T05",
+      "name": "cancel_scheduled",
+      "from": "active",
+      "to": "cancel_scheduled",
+      "writer": "webhook: customer.subscription.updated"
+    },
+    {
+      "id": "T06",
+      "name": "cancel_reversed",
+      "from": "cancel_scheduled",
+      "to": "active",
+      "writer": "webhook: customer.subscription.updated"
+    },
+    {
+      "id": "T07",
+      "name": "ended_at_period_end",
+      "from": "cancel_scheduled",
+      "to": "ended",
+      "writer": "webhook: customer.subscription.deleted"
+    },
+    {
+      "id": "T08",
+      "name": "renewal_failed",
+      "from": "active",
+      "to": "past_due",
+      "writer": "webhook: invoice.payment_failed"
+    },
+    {
+      "id": "T09",
+      "name": "payment_recovered",
+      "from": "past_due",
+      "to": "active",
+      "writer": "webhook: invoice.paid"
+    },
+    {
+      "id": "T10",
+      "name": "grace_exhausted",
+      "from": "past_due",
+      "to": "past_due (denied)",
+      "writer": "time only, no write"
+    },
+    {
+      "id": "T10a",
+      "name": "settlement_window_exhausted",
+      "from": "active (renewal unrecorded)",
+      "to": "active (denied)",
+      "writer": "time only, no write"
+    },
+    {
+      "id": "T11",
+      "name": "terminated_after_failure",
+      "from": "past_due",
+      "to": "ended",
+      "writer": "webhook: customer.subscription.deleted"
+    },
+    {
+      "id": "T12",
+      "name": "immediate_termination",
+      "from": "active | cancel_scheduled | past_due",
+      "to": "ended",
+      "writer": "webhook: customer.subscription.deleted"
+    },
+    {
+      "id": "T13",
+      "name": "resubscribed",
+      "from": "ended",
+      "to": "active",
+      "writer": "webhook: invoice.paid on a new subscription"
+    },
+    {
+      "id": "T14",
+      "name": "initial_payment_failed",
+      "from": "none",
+      "to": "none",
+      "writer": "webhook: invoice.payment_failed",
+      "note": "nothing granted, no grace"
+    },
+    {
+      "id": "T15",
+      "name": "legacy_grant_marked",
+      "from": "legacy grant (unmarked)",
+      "to": "legacy_grant (explicit end)",
+      "writer": "migration step"
+    },
+    {
+      "id": "T15a",
+      "name": "legacy_grant_unmarked_read",
+      "from": "legacy grant (unmarked)",
+      "to": "legacy_grant (unmarked)",
+      "writer": "none; read rule equals today's"
+    },
+    {
+      "id": "T16",
+      "name": "legacy_grant_ends",
+      "from": "legacy_grant (explicit end)",
+      "to": "none",
+      "writer": "time only, no write"
+    },
+    {
+      "id": "T17",
+      "name": "purchase_during_trial",
+      "from": "none (trial running)",
+      "to": "active",
+      "writer": "webhook: invoice.paid"
+    }
+  ],
+  "cases": [
+    {
+      "id": "trial_boundary",
+      "title": "Existing card-free trial: last second and first second after",
+      "covers": [
+        "T01",
+        "T02"
+      ],
+      "dependsOn": [],
+      "account": {
+        "id": 9000001,
+        "login": "synthetic-user-01",
+        "plan": "free",
+        "planUntil": null,
+        "trialEnds": "2026-11-01T00:00:00.000Z",
+        "entitlementSource": "none",
+        "billing": null,
+        "legacyGrant": null,
+        "pairedDevices": [],
+        "createdAt": "2026-10-02T00:00:00.000Z"
+      },
+      "checks": [
+        {
+          "at": "2026-10-31T23:59:59.000Z",
+          "note": "last whole second inside the trial",
+          "expect": {
+            "meStatus": 200,
+            "plan": "free",
+            "planUntil": null,
+            "relayAllowed": true,
+            "billingStatus": "none",
+            "accessUntil": "2026-11-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-10-31T23:59:59.999Z",
+          "note": "last millisecond inside the trial",
+          "expect": {
+            "meStatus": 200,
+            "plan": "free",
+            "planUntil": null,
+            "relayAllowed": true,
+            "billingStatus": "none",
+            "accessUntil": "2026-11-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-11-01T00:00:00.000Z",
+          "note": "the deadline instant itself is already outside",
+          "expect": {
+            "meStatus": 200,
+            "plan": "free",
+            "planUntil": null,
+            "relayAllowed": false,
+            "billingStatus": "none",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "plan_required"
+          }
+        },
+        {
+          "at": "2026-11-01T00:00:01.000Z",
+          "note": "first whole second after",
+          "expect": {
+            "meStatus": 200,
+            "plan": "free",
+            "planUntil": null,
+            "relayAllowed": false,
+            "billingStatus": "none",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "plan_required"
+          }
+        }
+      ]
+    },
+    {
+      "id": "paid_active_auto_renew",
+      "title": "Paid period end, renewal not yet recorded",
+      "covers": [
+        "T03",
+        "T10a"
+      ],
+      "dependsOn": [],
+      "account": {
+        "id": 9000002,
+        "login": "synthetic-user-02",
+        "plan": "premium",
+        "planUntil": "2026-12-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "active",
+          "currentPeriodStart": "2026-11-01T00:00:00.000Z",
+          "currentPeriodEnd": "2026-12-01T00:00:00.000Z",
+          "paidThrough": "2026-12-01T00:00:00.000Z",
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": null,
+          "paymentGraceUntil": null,
+          "lastPaidInvoiceId": "inv_synthetic_0001",
+          "revision": 1
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-11-30T23:59:59.000Z",
+          "note": "last second of the paid interval",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2026-12-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-12-01T00:00:00.000Z",
+          "note": "renewal invoice not yet paid: settlement window opens",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2026-12-01T06:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-12-01T01:00:01.000Z",
+          "note": "one hour and one second after paid-through: the renewal invoice is normally still in its draft period or just finalized, so an ordinary renewal must not be denied here",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2026-12-01T06:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-12-01T05:59:59.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2026-12-01T06:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-12-01T06:00:00.000Z",
+          "note": "settlement window over, still no paid interval",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": false,
+            "billingStatus": "active",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "plan_required"
+          }
+        }
+      ]
+    },
+    {
+      "id": "paid_renewed",
+      "title": "Renewal paid: paid-through advances to the paid interval end",
+      "covers": [
+        "T04"
+      ],
+      "dependsOn": [],
+      "from": "paid_active_auto_renew",
+      "event": {
+        "type": "invoice.paid",
+        "invoiceId": "inv_synthetic_0002"
+      },
+      "invariants": {
+        "subscriptionId": "same",
+        "priceId": "same"
+      },
+      "account": {
+        "id": 9000002,
+        "login": "synthetic-user-02",
+        "plan": "premium",
+        "planUntil": "2027-01-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "active",
+          "currentPeriodStart": "2026-12-01T00:00:00.000Z",
+          "currentPeriodEnd": "2027-01-01T00:00:00.000Z",
+          "paidThrough": "2027-01-01T00:00:00.000Z",
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": null,
+          "paymentGraceUntil": null,
+          "lastPaidInvoiceId": "inv_synthetic_0002",
+          "revision": 2
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-12-01T00:00:00.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2027-01-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2027-01-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-12-01T06:00:00.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2027-01-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2027-01-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scheduled_cancel",
+      "title": "Cancellation scheduled for period end: access holds to the paid-through date",
+      "covers": [
+        "T05"
+      ],
+      "dependsOn": [],
+      "from": "paid_active_auto_renew",
+      "event": {
+        "type": "customer.subscription.updated",
+        "cancelAtPeriodEnd": true
+      },
+      "invariants": {
+        "subscriptionId": "same",
+        "priceId": "same"
+      },
+      "account": {
+        "id": 9000002,
+        "login": "synthetic-user-02",
+        "plan": "premium",
+        "planUntil": "2026-12-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "active",
+          "currentPeriodStart": "2026-11-01T00:00:00.000Z",
+          "currentPeriodEnd": "2026-12-01T00:00:00.000Z",
+          "paidThrough": "2026-12-01T00:00:00.000Z",
+          "cancelAtPeriodEnd": true,
+          "cancelAt": "2026-12-01T00:00:00.000Z",
+          "endedAt": null,
+          "paymentGraceUntil": null,
+          "lastPaidInvoiceId": "inv_synthetic_0001",
+          "revision": 2
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-11-30T23:59:59.000Z",
+          "note": "last second of paid access",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "cancel_scheduled",
+            "accessUntil": "2026-12-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": true,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-12-01T00:00:00.000Z",
+          "note": "no settlement window: no renewal is expected; denied even before the deleted webhook lands",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": false,
+            "billingStatus": "cancel_scheduled",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": true,
+            "relay": "plan_required"
+          }
+        }
+      ]
+    },
+    {
+      "id": "cancel_reversed",
+      "title": "Scheduled cancellation reversed before the period ends: same subscription, same Price",
+      "covers": [
+        "T06"
+      ],
+      "dependsOn": [],
+      "from": "scheduled_cancel",
+      "event": {
+        "type": "customer.subscription.updated",
+        "cancelAtPeriodEnd": false
+      },
+      "invariants": {
+        "subscriptionId": "same",
+        "priceId": "same"
+      },
+      "context": {
+        "currentSalePriceId": "price_synthetic_b"
+      },
+      "account": {
+        "id": 9000002,
+        "login": "synthetic-user-02",
+        "plan": "premium",
+        "planUntil": "2026-12-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "active",
+          "currentPeriodStart": "2026-11-01T00:00:00.000Z",
+          "currentPeriodEnd": "2026-12-01T00:00:00.000Z",
+          "paidThrough": "2026-12-01T00:00:00.000Z",
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": null,
+          "paymentGraceUntil": null,
+          "lastPaidInvoiceId": "inv_synthetic_0001",
+          "revision": 3
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-11-30T23:59:59.000Z",
+          "note": "price_synthetic_a is retained although the current sale Price differs",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2026-12-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ended_after_scheduled_cancel",
+      "title": "Subscription ends at the paid-through date; historical date preserved",
+      "covers": [
+        "T07"
+      ],
+      "dependsOn": [],
+      "from": "scheduled_cancel",
+      "event": {
+        "type": "customer.subscription.deleted"
+      },
+      "invariants": {
+        "subscriptionId": "same",
+        "priceId": "same"
+      },
+      "account": {
+        "id": 9000002,
+        "login": "synthetic-user-02",
+        "plan": "free",
+        "planUntil": "2026-12-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "ended",
+          "currentPeriodStart": "2026-11-01T00:00:00.000Z",
+          "currentPeriodEnd": "2026-12-01T00:00:00.000Z",
+          "paidThrough": "2026-12-01T00:00:00.000Z",
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": "2026-12-01T00:00:00.000Z",
+          "paymentGraceUntil": null,
+          "lastPaidInvoiceId": "inv_synthetic_0001",
+          "revision": 3
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-11-30T23:59:59.000Z",
+          "note": "an ended record still honors the interval already paid",
+          "expect": {
+            "meStatus": 200,
+            "plan": "free",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "ended",
+            "accessUntil": "2026-12-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-12-01T00:00:00.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "free",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": false,
+            "billingStatus": "ended",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "plan_required"
+          }
+        },
+        {
+          "at": "2026-12-01T00:00:01.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "free",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": false,
+            "billingStatus": "ended",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "plan_required"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ended_then_resubscribed",
+      "title": "Ended, then subscribes again: new subscription at the then-current Price",
+      "covers": [
+        "T13"
+      ],
+      "dependsOn": [],
+      "from": "ended_after_scheduled_cancel",
+      "event": {
+        "type": "invoice.paid",
+        "subscriptionId": "sub_synthetic_0002",
+        "invoiceId": "inv_synthetic_0003"
+      },
+      "invariants": {
+        "subscriptionId": "new",
+        "priceId": "currentSale"
+      },
+      "context": {
+        "currentSalePriceId": "price_synthetic_b"
+      },
+      "account": {
+        "id": 9000002,
+        "login": "synthetic-user-02",
+        "plan": "premium",
+        "planUntil": "2027-03-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0002",
+          "priceId": "price_synthetic_b",
+          "status": "active",
+          "currentPeriodStart": "2027-02-01T00:00:00.000Z",
+          "currentPeriodEnd": "2027-03-01T00:00:00.000Z",
+          "paidThrough": "2027-03-01T00:00:00.000Z",
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": null,
+          "paymentGraceUntil": null,
+          "lastPaidInvoiceId": "inv_synthetic_0003",
+          "revision": 4
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2027-02-15T00:00:00.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2027-03-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2027-03-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        }
+      ],
+      "lateEvents": [
+        {
+          "type": "customer.subscription.updated",
+          "subscriptionId": "sub_synthetic_0001",
+          "effect": "ignored",
+          "reason": "bound to a subscription that is no longer the account's current one"
+        }
+      ]
+    },
+    {
+      "id": "price_decrease_keeps_original",
+      "title": "Current sale Price lowered: existing subscription keeps its original Price and entitlement",
+      "covers": [
+        "T04"
+      ],
+      "dependsOn": [],
+      "from": "paid_renewed",
+      "event": {
+        "type": "catalog.default_price_changed",
+        "to": "price_synthetic_c"
+      },
+      "invariants": {
+        "subscriptionId": "same",
+        "priceId": "same"
+      },
+      "context": {
+        "currentSalePriceId": "price_synthetic_c",
+        "direction": "decrease"
+      },
+      "account": {
+        "id": 9000002,
+        "login": "synthetic-user-02",
+        "plan": "premium",
+        "planUntil": "2027-01-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "active",
+          "currentPeriodStart": "2026-12-01T00:00:00.000Z",
+          "currentPeriodEnd": "2027-01-01T00:00:00.000Z",
+          "paidThrough": "2027-01-01T00:00:00.000Z",
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": null,
+          "paymentGraceUntil": null,
+          "lastPaidInvoiceId": "inv_synthetic_0002",
+          "revision": 2
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-12-01T06:00:00.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2027-01-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2027-01-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        }
+      ]
+    },
+    {
+      "id": "failed_renewal_in_grace",
+      "title": "Renewal failed after an earlier paid period: bounded payment grace anchored to the paid-through end",
+      "covers": [
+        "T08",
+        "T10"
+      ],
+      "dependsOn": [
+        "failed_renewal_grace"
+      ],
+      "from": "paid_active_auto_renew",
+      "event": {
+        "type": "invoice.payment_failed",
+        "invoiceId": "inv_synthetic_0002"
+      },
+      "invariants": {
+        "subscriptionId": "same",
+        "priceId": "same"
+      },
+      "derive": {
+        "billing.paymentGraceUntil": "billing.paidThrough + parameters.paymentGraceSeconds"
+      },
+      "account": {
+        "id": 9000002,
+        "login": "synthetic-user-02",
+        "plan": "premium",
+        "planUntil": "2026-12-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "past_due",
+          "currentPeriodStart": "2026-11-01T00:00:00.000Z",
+          "currentPeriodEnd": "2026-12-01T00:00:00.000Z",
+          "paidThrough": "2026-12-01T00:00:00.000Z",
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": null,
+          "paymentGraceUntil": "2026-12-04T00:00:00.000Z",
+          "lastPaidInvoiceId": "inv_synthetic_0001",
+          "revision": 2
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-12-01T00:00:01.000Z",
+          "note": "paid interval is over, grace holds",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "past_due",
+            "accessUntil": "2026-12-04T00:00:00.000Z",
+            "paymentGraceUntil": "2026-12-04T00:00:00.000Z",
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-12-03T23:59:59.000Z",
+          "note": "last second of grace",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "past_due",
+            "accessUntil": "2026-12-04T00:00:00.000Z",
+            "paymentGraceUntil": "2026-12-04T00:00:00.000Z",
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-12-04T00:00:00.000Z",
+          "note": "grace over: denied although Stripe may still report past_due",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": false,
+            "billingStatus": "past_due",
+            "accessUntil": null,
+            "paymentGraceUntil": "2026-12-04T00:00:00.000Z",
+            "cancelAtPeriodEnd": false,
+            "relay": "plan_required"
+          }
+        }
+      ]
+    },
+    {
+      "id": "failed_renewal_recovered",
+      "title": "Payment recovered inside grace",
+      "covers": [
+        "T09"
+      ],
+      "dependsOn": [
+        "failed_renewal_grace"
+      ],
+      "from": "failed_renewal_in_grace",
+      "event": {
+        "type": "invoice.paid",
+        "invoiceId": "inv_synthetic_0002"
+      },
+      "invariants": {
+        "subscriptionId": "same",
+        "priceId": "same"
+      },
+      "account": {
+        "id": 9000002,
+        "login": "synthetic-user-02",
+        "plan": "premium",
+        "planUntil": "2027-01-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "active",
+          "currentPeriodStart": "2026-12-01T00:00:00.000Z",
+          "currentPeriodEnd": "2027-01-01T00:00:00.000Z",
+          "paidThrough": "2027-01-01T00:00:00.000Z",
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": null,
+          "paymentGraceUntil": null,
+          "lastPaidInvoiceId": "inv_synthetic_0002",
+          "revision": 3
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-12-03T23:59:59.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2027-01-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2027-01-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        }
+      ]
+    },
+    {
+      "id": "failed_renewal_terminated",
+      "title": "Retries exhausted: subscription ends, access ends at grace end or earlier",
+      "covers": [
+        "T11"
+      ],
+      "dependsOn": [
+        "failed_renewal_grace"
+      ],
+      "from": "failed_renewal_in_grace",
+      "event": {
+        "type": "customer.subscription.deleted"
+      },
+      "invariants": {
+        "subscriptionId": "same",
+        "priceId": "same"
+      },
+      "account": {
+        "id": 9000002,
+        "login": "synthetic-user-02",
+        "plan": "free",
+        "planUntil": "2026-12-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "ended",
+          "currentPeriodStart": "2026-11-01T00:00:00.000Z",
+          "currentPeriodEnd": "2026-12-01T00:00:00.000Z",
+          "paidThrough": "2026-12-01T00:00:00.000Z",
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": "2026-12-04T00:00:00.000Z",
+          "paymentGraceUntil": "2026-12-04T00:00:00.000Z",
+          "lastPaidInvoiceId": "inv_synthetic_0001",
+          "revision": 3
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-12-01T00:00:01.000Z",
+          "note": "an ended record never grants grace; paid interval is over",
+          "expect": {
+            "meStatus": 200,
+            "plan": "free",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": false,
+            "billingStatus": "ended",
+            "accessUntil": null,
+            "paymentGraceUntil": "2026-12-04T00:00:00.000Z",
+            "cancelAtPeriodEnd": false,
+            "relay": "plan_required"
+          }
+        }
+      ]
+    },
+    {
+      "id": "initial_payment_failed",
+      "title": "First payment failed: nothing is granted",
+      "covers": [
+        "T14"
+      ],
+      "dependsOn": [
+        "failed_renewal_grace"
+      ],
+      "account": {
+        "id": 9000005,
+        "login": "synthetic-user-05",
+        "plan": "free",
+        "planUntil": null,
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "none",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "incomplete",
+          "currentPeriodStart": null,
+          "currentPeriodEnd": null,
+          "paidThrough": null,
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": null,
+          "paymentGraceUntil": null,
+          "lastPaidInvoiceId": null,
+          "revision": 1
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-12-01T00:00:00.000Z",
+          "note": "no earlier paid period, so no grace",
+          "expect": {
+            "meStatus": 200,
+            "plan": "free",
+            "planUntil": null,
+            "relayAllowed": false,
+            "billingStatus": "none",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "plan_required"
+          }
+        }
+      ]
+    },
+    {
+      "id": "immediate_termination",
+      "title": "Administrative immediate cancellation: access ends at the termination time",
+      "covers": [
+        "T12"
+      ],
+      "dependsOn": [
+        "refunds"
+      ],
+      "from": "paid_active_auto_renew",
+      "event": {
+        "type": "customer.subscription.deleted",
+        "reason": "immediate_cancellation"
+      },
+      "invariants": {
+        "subscriptionId": "same",
+        "priceId": "same"
+      },
+      "account": {
+        "id": 9000002,
+        "login": "synthetic-user-02",
+        "plan": "free",
+        "planUntil": "2026-12-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "ended",
+          "currentPeriodStart": "2026-11-01T00:00:00.000Z",
+          "currentPeriodEnd": "2026-12-01T00:00:00.000Z",
+          "paidThrough": "2026-12-01T00:00:00.000Z",
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": "2026-11-15T12:00:00.000Z",
+          "paymentGraceUntil": null,
+          "lastPaidInvoiceId": "inv_synthetic_0001",
+          "revision": 2
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-11-15T11:59:59.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "free",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "ended",
+            "accessUntil": "2026-11-15T12:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-11-15T12:00:00.000Z",
+          "note": "paidThrough is later, termination time wins",
+          "expect": {
+            "meStatus": 200,
+            "plan": "free",
+            "planUntil": "2026-12-01T00:00:00.000Z",
+            "relayAllowed": false,
+            "billingStatus": "ended",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "plan_required"
+          }
+        }
+      ]
+    },
+    {
+      "id": "purchase_during_trial",
+      "title": "Subscribing during the existing trial (recommended policy): trial neither restarted nor extended",
+      "covers": [
+        "T03",
+        "T17"
+      ],
+      "dependsOn": [
+        "buying_during_trial"
+      ],
+      "account": {
+        "id": 9000007,
+        "login": "synthetic-user-07",
+        "plan": "premium",
+        "planUntil": "2026-11-10T00:00:00.000Z",
+        "trialEnds": "2026-11-01T00:00:00.000Z",
+        "entitlementSource": "stripe",
+        "billing": {
+          "provider": "stripe",
+          "subscriptionId": "sub_synthetic_0001",
+          "priceId": "price_synthetic_a",
+          "status": "active",
+          "currentPeriodStart": "2026-10-10T00:00:00.000Z",
+          "currentPeriodEnd": "2026-11-10T00:00:00.000Z",
+          "paidThrough": "2026-11-10T00:00:00.000Z",
+          "cancelAtPeriodEnd": false,
+          "cancelAt": null,
+          "endedAt": null,
+          "paymentGraceUntil": null,
+          "lastPaidInvoiceId": "inv_synthetic_0001",
+          "revision": 1
+        },
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-10-31T23:59:59.000Z",
+          "note": "access is the later of trial end and paid-through",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-11-10T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2026-11-10T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-11-01T00:00:00.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2026-11-10T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "active",
+            "accessUntil": "2026-11-10T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        }
+      ]
+    },
+    {
+      "id": "legacy_unmarked_open",
+      "title": "Existing granted plan, no date, not yet marked: behaves exactly as today",
+      "covers": [
+        "T15a"
+      ],
+      "dependsOn": [],
+      "account": {
+        "id": 9000008,
+        "login": "synthetic-user-08",
+        "plan": "premium",
+        "planUntil": null,
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": null,
+        "billing": null,
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-12-01T00:00:00.000Z",
+          "note": "null accessUntil with relayAllowed true means no known end",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": null,
+            "relayAllowed": true,
+            "billingStatus": "legacy_grant",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        }
+      ]
+    },
+    {
+      "id": "legacy_unmarked_platinum_dated_lapsed",
+      "title": "Existing granted Platinum whose planUntil is already past, not yet marked: unchanged until an owner disposition",
+      "covers": [
+        "T15a"
+      ],
+      "dependsOn": [],
+      "account": {
+        "id": 9000009,
+        "login": "synthetic-user-09",
+        "plan": "platinum",
+        "planUntil": "2026-06-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": null,
+        "billing": null,
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2026-12-01T00:00:00.000Z",
+          "note": "today's rule ignores planUntil; migration lists this account for explicit disposition",
+          "expect": {
+            "meStatus": 200,
+            "plan": "platinum",
+            "planUntil": "2026-06-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "legacy_grant",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        }
+      ]
+    },
+    {
+      "id": "legacy_marked_open",
+      "title": "Marked legacy grant with an explicit open end",
+      "covers": [
+        "T15"
+      ],
+      "dependsOn": [],
+      "account": {
+        "id": 9000008,
+        "login": "synthetic-user-08",
+        "plan": "premium",
+        "planUntil": null,
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "legacy_grant",
+        "billing": null,
+        "legacyGrant": {
+          "until": null,
+          "openEnded": true
+        },
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2027-01-01T00:00:00.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": null,
+            "relayAllowed": true,
+            "billingStatus": "legacy_grant",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        }
+      ]
+    },
+    {
+      "id": "legacy_marked_dated",
+      "title": "Marked legacy grant with an end date",
+      "covers": [
+        "T15",
+        "T16"
+      ],
+      "dependsOn": [],
+      "account": {
+        "id": 9000010,
+        "login": "synthetic-user-10",
+        "plan": "premium",
+        "planUntil": "2027-03-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": "legacy_grant",
+        "billing": null,
+        "legacyGrant": {
+          "until": "2027-03-01T00:00:00.000Z",
+          "openEnded": false
+        },
+        "pairedDevices": []
+      },
+      "checks": [
+        {
+          "at": "2027-02-28T23:59:59.000Z",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2027-03-01T00:00:00.000Z",
+            "relayAllowed": true,
+            "billingStatus": "legacy_grant",
+            "accessUntil": "2027-03-01T00:00:00.000Z",
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2027-03-01T00:00:00.000Z",
+          "note": "grant over; the stored plan label is not rewritten by a read",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": "2027-03-01T00:00:00.000Z",
+            "relayAllowed": false,
+            "billingStatus": "none",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "plan_required"
+          }
+        }
+      ]
+    },
+    {
+      "id": "paired_devices_preserved",
+      "title": "Paired devices keep their own answers; a revoked device is 401, never plan_required",
+      "covers": [
+        "T15a"
+      ],
+      "dependsOn": [],
+      "account": {
+        "id": 9000011,
+        "login": "synthetic-user-11",
+        "plan": "premium",
+        "planUntil": null,
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": null,
+        "billing": null,
+        "legacyGrant": null,
+        "pairedDevices": [
+          {
+            "deviceId": "dev_synthetic_live",
+            "name": "Synthetic phone",
+            "createdAt": "2026-10-02T00:00:00.000Z",
+            "revokedAt": null
+          },
+          {
+            "deviceId": "dev_synthetic_revoked",
+            "name": "Synthetic tablet",
+            "createdAt": "2026-10-02T00:00:00.000Z",
+            "revokedAt": "2026-10-05T00:00:00.000Z"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "at": "2026-12-01T00:00:00.000Z",
+          "device": "dev_synthetic_live",
+          "expect": {
+            "meStatus": 200,
+            "plan": "premium",
+            "planUntil": null,
+            "relayAllowed": true,
+            "billingStatus": "legacy_grant",
+            "accessUntil": null,
+            "paymentGraceUntil": null,
+            "cancelAtPeriodEnd": false,
+            "relay": "admit"
+          }
+        },
+        {
+          "at": "2026-12-01T00:00:00.000Z",
+          "device": "dev_synthetic_revoked",
+          "expect": {
+            "meStatus": 401,
+            "error": "unauthorized",
+            "relay": "unauthorized"
+          }
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "id": "existing_trial",
+      "title": "Existing card-free trial",
+      "before": "trial_boundary",
+      "after": {
+        "id": 9000001,
+        "login": "synthetic-user-01",
+        "plan": "free",
+        "planUntil": null,
+        "trialEnds": "2026-11-01T00:00:00.000Z",
+        "entitlementSource": "none",
+        "billing": null,
+        "legacyGrant": null,
+        "pairedDevices": [],
+        "createdAt": "2026-10-02T00:00:00.000Z"
+      },
+      "mustEqual": [
+        "id",
+        "login",
+        "plan",
+        "planUntil",
+        "trialEnds",
+        "createdAt",
+        "pairedDevices"
+      ],
+      "sameAnswerAt": [
+        "2026-10-31T23:59:59.000Z",
+        "2026-11-01T00:00:00.000Z"
+      ]
+    },
+    {
+      "id": "existing_granted_open",
+      "title": "Existing premium grant, no date",
+      "before": "legacy_unmarked_open",
+      "after": "legacy_marked_open",
+      "mustEqual": [
+        "id",
+        "plan",
+        "planUntil",
+        "trialEnds",
+        "pairedDevices"
+      ],
+      "sameAnswerAt": [
+        "2026-12-01T00:00:00.000Z",
+        "2027-01-01T00:00:00.000Z"
+      ]
+    },
+    {
+      "id": "existing_granted_dated",
+      "title": "Existing premium grant with a future date: the date on record becomes the explicit end",
+      "before": {
+        "id": 9000010,
+        "login": "synthetic-user-10",
+        "plan": "premium",
+        "planUntil": "2027-03-01T00:00:00.000Z",
+        "trialEnds": "2026-10-01T00:00:00.000Z",
+        "entitlementSource": null,
+        "billing": null,
+        "legacyGrant": null,
+        "pairedDevices": []
+      },
+      "after": "legacy_marked_dated",
+      "mustEqual": [
+        "id",
+        "plan",
+        "planUntil",
+        "trialEnds",
+        "pairedDevices"
+      ],
+      "sameAnswerAt": [
+        "2026-12-01T00:00:00.000Z",
+        "2027-02-28T23:59:59.000Z"
+      ],
+      "divergesAtOrAfter": "2027-03-01T00:00:00.000Z",
+      "divergenceNote": "today's rule ignores planUntil; the inventory step confirms each such grant before marking"
+    },
+    {
+      "id": "existing_granted_lapsed",
+      "title": "Existing grant whose date already passed",
+      "before": "legacy_unmarked_platinum_dated_lapsed",
+      "after": "legacy_unmarked_platinum_dated_lapsed",
+      "mustEqual": [
+        "id",
+        "plan",
+        "planUntil",
+        "trialEnds",
+        "pairedDevices"
+      ],
+      "sameAnswerAt": [
+        "2026-12-01T00:00:00.000Z"
+      ],
+      "dispositionRequired": true
+    },
+    {
+      "id": "paired_devices",
+      "title": "Paired devices",
+      "before": "paired_devices_preserved",
+      "after": "paired_devices_preserved",
+      "mustEqual": [
+        "id",
+        "plan",
+        "planUntil",
+        "trialEnds",
+        "pairedDevices"
+      ],
+      "sameAnswerAt": [
+        "2026-12-01T00:00:00.000Z"
+      ]
+    }
+  ],
+  "openDecisions": [
+    {
+      "id": "annual_plan",
+      "name": "Annual plan",
+      "parameter": "billing.offeredIntervals",
+      "value": [
+        "month"
+      ],
+      "recommended": "monthly only at launch, no annual Price, no invented discount",
+      "changesDocs": [
+        "docs/BILLING-ENTITLEMENT.md: Stripe objects and price policy",
+        "docs/ACCOUNT.md: /me fields (no change, dates already come from the paid interval)"
+      ],
+      "changesFixtures": [
+        "add one case, paid_annual_period, with a twelve month interval; no existing case changes"
+      ]
+    },
+    {
+      "id": "currency",
+      "name": "Currency",
+      "parameter": "billing.currency",
+      "value": "usd",
+      "recommended": "USD only, automatic currency conversion off",
+      "changesDocs": [
+        "docs/BILLING-ENTITLEMENT.md: Stripe objects and price policy"
+      ],
+      "changesFixtures": []
+    },
+    {
+      "id": "buying_during_trial",
+      "name": "Buying during the trial",
+      "parameter": "trialPurchasePolicy",
+      "value": "immediate_billing_trial_not_extended",
+      "recommended": "offer immediate purchase, billing starts now, the remaining trial is neither restarted nor extended; alternative: preserve the remainder as a Stripe trial_end",
+      "changesDocs": [
+        "docs/BILLING-ENTITLEMENT.md: Timing, accessUntil",
+        "docs/DATABASE.md: billing projection (alternative adds a scheduled-conversion status)"
+      ],
+      "changesFixtures": [
+        "purchase_during_trial (expectation and, for the alternative, a new scheduled-conversion status)"
+      ]
+    },
+    {
+      "id": "failed_renewal_grace",
+      "name": "Failed-renewal grace",
+      "parameter": "paymentGraceSeconds",
+      "value": 259200,
+      "recommended": "3 days, only after an earlier successfully paid period, anchored to that period's end, never to a retry",
+      "changesDocs": [
+        "docs/BILLING-ENTITLEMENT.md: Timing, payment grace",
+        "docs/DATABASE.md: paymentGraceUntil"
+      ],
+      "changesFixtures": [
+        "failed_renewal_in_grace",
+        "failed_renewal_recovered",
+        "failed_renewal_terminated",
+        "initial_payment_failed",
+        "parameters.paymentGraceSeconds"
+      ]
+    },
+    {
+      "id": "refunds",
+      "name": "Refunds",
+      "parameter": "refundPolicy",
+      "value": "support_only_no_automatic_revocation",
+      "recommended": "no automatic prorated refund; a refund alone changes nothing; an approved immediate termination cancels the subscription, which produces the entitlement webhook",
+      "changesDocs": [
+        "docs/BILLING-ENTITLEMENT.md: Transitions (T12)"
+      ],
+      "changesFixtures": [
+        "immediate_termination",
+        "and, if refunds were to revoke automatically, a new transition and case for the refund event"
+      ]
+    },
+    {
+      "id": "iphone_purchase_link",
+      "name": "iPhone purchase link",
+      "parameter": "iosPurchaseLink",
+      "value": "none",
+      "recommended": "free companion, no purchase or billing navigation, neutral Refresh account status action",
+      "changesDocs": [
+        "docs/ACCOUNTS-ON-THE-PHONE.md: plan and entitlement section (client behavior only)"
+      ],
+      "changesFixtures": []
+    },
+    {
+      "id": "tax_and_merchant_country",
+      "name": "Tax and merchant country",
+      "parameter": "billing.taxBehavior and billing.sellingCountries",
+      "value": "unset",
+      "recommended": "Stripe as processor; tax configured only against established registrations; no silent worldwide launch",
+      "changesDocs": [
+        "docs/BILLING-ENTITLEMENT.md: Stripe objects and price policy"
+      ],
+      "changesFixtures": []
+    }
+  ]
+}

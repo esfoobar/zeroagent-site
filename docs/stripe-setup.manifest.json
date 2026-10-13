@@ -1,0 +1,71 @@
+{
+  "format": 1,
+  "ticket": "ZA-901",
+  "description": "Stripe objects, event destination and variable names ZeroAgent billing expects in each environment. Names and shapes only: no amount, no Price id, no key, no secret and no object id of any kind is recorded here.",
+  "separation": {
+    "rule": "Sandbox and live are separate Stripe environments with separate keys, signing secrets, Product ids, portal configurations, databases and event destinations. A deployment is configured for exactly one. An event or object whose livemode differs from STRIPE_EXPECT_LIVE_MODE is refused.",
+    "sandboxDeployments": "Vercel Preview and staging, with a dedicated staging database",
+    "liveDeployments": "Vercel Production only"
+  },
+  "objects": {
+    "product": {
+      "name": "ZeroAgent Premium",
+      "count": 1,
+      "idVariable": "STRIPE_PREMIUM_PRODUCT_ID",
+      "notes": "Never replaced for a price change. Stays active."
+    },
+    "price": {
+      "kind": "recurring",
+      "interval": "month",
+      "quantity": 1,
+      "currentSale": "The Product's default_price, resolved at request time. Its amount is entered only in Stripe, at creation, by the owner's approval.",
+      "idVariable": null,
+      "notes": "No Price id is configured anywhere. A price change adds a Price to the same Product, sets it as default_price, and archives the previous one (docs/STRIPE-SETUP.md)."
+    },
+    "portalConfiguration": {
+      "idVariable": "STRIPE_PORTAL_CONFIGURATION_ID",
+      "allow": ["payment_method_update", "invoice_history", "cancel_at_period_end"],
+      "disable": ["subscription_update", "plan_switching", "quantity_update", "scheduled_price_changes", "retention_offers", "promotion_codes"]
+    },
+    "webhookDestination": {
+      "signingSecretVariable": "STRIPE_WEBHOOK_SECRET",
+      "path": "/api/stripe/webhook",
+      "origins": {
+        "live": "https://zeroagenthq.com",
+        "sandbox": "a stable staging origin, chosen when the sandbox is provisioned"
+      },
+      "mustNot": ["redirect", "sit behind preview protection"],
+      "events": [
+        "checkout.session.completed",
+        "checkout.session.expired",
+        "checkout.session.async_payment_succeeded",
+        "checkout.session.async_payment_failed",
+        "customer.subscription.created",
+        "customer.subscription.updated",
+        "customer.subscription.deleted",
+        "customer.subscription.paused",
+        "customer.subscription.resumed",
+        "invoice.paid",
+        "invoice.payment_failed",
+        "invoice.payment_action_required",
+        "invoice.finalization_failed",
+        "invoice.voided",
+        "invoice.marked_uncollectible"
+      ]
+    }
+  },
+  "variables": {
+    "STRIPE_API_KEY": { "secret": true, "meaning": "Restricted runtime key of this environment's mode (customers, Checkout and portal sessions, subscription and invoice reads)" },
+    "STRIPE_WEBHOOK_SECRET": { "secret": true, "meaning": "Signing secret of this environment's event destination" },
+    "STRIPE_PREMIUM_PRODUCT_ID": { "secret": false, "meaning": "Id of this environment's Premium Product" },
+    "STRIPE_PORTAL_CONFIGURATION_ID": { "secret": false, "meaning": "Id of this environment's portal configuration" },
+    "STRIPE_ACCOUNT_ID": { "secret": false, "meaning": "Id of the ZeroAgent Stripe account; scopes the event inbox and unique indexes" },
+    "STRIPE_EXPECT_LIVE_MODE": { "secret": false, "meaning": "\"true\" in live, \"false\" in sandbox; never defaulted" },
+    "BILLING_BASE_URL": { "secret": false, "meaning": "Origin only; exact Origin match for mutating routes. Optional, defaults to https://zeroagenthq.com" }
+  },
+  "runtimeCatalog": {
+    "collection": "billingCatalog",
+    "salesPausedField": "salesPaused",
+    "audit": "billingAudit, append-only: actor, reason, time, previous and new value"
+  }
+}
