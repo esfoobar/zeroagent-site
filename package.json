@@ -5,7 +5,8 @@
     "test": "node --test",
     "billing:migrate": "node scripts/billing-migrate.mjs",
     "billing:audit": "node scripts/billing-audit.mjs",
-    "billing:sandbox-proof": "node scripts/billing-sandbox-proof.mjs"
+    "billing:sandbox-proof": "node scripts/billing-sandbox-proof.mjs",
+    "billing:prepare-replay": "node scripts/billing-prepare-replay.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.0",

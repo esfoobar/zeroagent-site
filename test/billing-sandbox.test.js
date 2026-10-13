@@ -62,3 +62,14 @@ test('restricted key and live mode guards fail closed', async () => {
 	await assert.rejects(() => verifySandboxScenario({ scenario: 'restricted-key', environment: { ...environment, livemode: true }, args: { apiKey: 'rk_live_fake' }, ...fixture() }), /sandbox_only/);
 	await assert.rejects(() => run('restricted-key', { apiKey: 'sk_test_fake' }), /restricted_test_key_required/);
 });
+
+test('staging boundary verifies a distinct database and reaches only staging', async () => {
+	const deps = fixture();
+	const checked = [];
+	const fetchImpl = async (url) => { checked.push(url.toString()); return { ok: true }; };
+	const args = { stagingUrl: 'https://staging.example.test', database: 'sandbox_db', productionDb: 'production_db' };
+	assert.equal((await verifySandboxScenario({ scenario: 'staging-boundary', environment, args, ...deps, fetchImpl })).scenario, 'staging-boundary');
+	assert.deepEqual(checked, ['https://staging.example.test/api/billing/catalog']);
+	await assert.rejects(() => verifySandboxScenario({ scenario: 'staging-boundary', environment, args: { ...args, database: 'production_db' }, ...deps, fetchImpl }), /database_not_isolated/);
+	await assert.rejects(() => verifySandboxScenario({ scenario: 'staging-boundary', environment, args: { ...args, stagingUrl: 'https://zeroagenthq.com' }, ...deps, fetchImpl }), /production_host_refused/);
+});

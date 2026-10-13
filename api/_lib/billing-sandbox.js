@@ -7,7 +7,7 @@ const current = (product) => idOf(product.default_price);
 
 // Each proof reads actual Stripe objects after the operator's sandbox action.
 // The account projection is read as well when a customer is supplied.
-export async function verifySandboxScenario({ scenario, stripe, environment, args, collections }) {
+export async function verifySandboxScenario({ scenario, stripe, environment, args, collections, fetchImpl = globalThis.fetch }) {
 	check(environment.livemode === false && environment.environment === 'sandbox', 'sandbox_only');
 	const product = await stripe.products.retrieve(environment.productId, { expand: ['default_price'] });
 	assertLivemode(environment, product, 'Product');
@@ -110,7 +110,7 @@ export async function verifySandboxScenario({ scenario, stripe, environment, arg
 			check(args.stagingUrl && new URL(args.stagingUrl).protocol === 'https:', 'staging_url_required');
 			check(new URL(args.stagingUrl).hostname !== 'zeroagenthq.com', 'production_host_refused');
 			check(args.productionDb && args.database !== args.productionDb, 'database_not_isolated');
-			const response = await fetch(new URL('/api/billing/catalog', args.stagingUrl));
+			const response = await fetchImpl(new URL('/api/billing/catalog', args.stagingUrl));
 			check(response.ok, 'staging_catalog_unavailable');
 			return { scenario, verified: ['sandbox_key_and_product', 'separate_database_name', 'staging_catalog'] };
 		}
