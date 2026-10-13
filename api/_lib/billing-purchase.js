@@ -71,15 +71,29 @@ export async function createCheckout({ stripe, users, purchases, account, enviro
 		if (previous.status === 'open' && previous.expires_at * 1000 > now.getTime()) return { status: 'open', url: previous.url };
 	}
 	const operationId = attempt && !attempt.sessionId && attempt.priceId === offer.priceId ? attempt.operationId : randomUUID();
+	let claimedCreation = false;
 	if (!attempt) {
-		try { await purchases.insertOne({ _id: key, operationId, priceId: offer.priceId, customerId: customer.id, sessionId: null, state: 'creating', createdAt: now.toISOString() }); }
-		catch (error) { if (error.code !== 11000 && !/duplicate/i.test(error.message)) throw error; }
+		try {
+			await purchases.insertOne({ _id: key, operationId, priceId: offer.priceId, customerId: customer.id, sessionId: null, state: 'creating', createdAt: now.toISOString() });
+			claimedCreation = true;
+		} catch (error) { if (error.code !== 11000 && !/duplicate/i.test(error.message)) throw error; }
 	} else if (attempt.sessionId) {
 		const claimed = unwrap(await purchases.findOneAndUpdate({ _id: key, operationId: attempt.operationId }, { $set: { operationId, priceId: offer.priceId, customerId: customer.id, sessionId: null, state: 'creating', createdAt: now.toISOString() } }, { returnDocument: 'after' }));
 		if (!claimed) return { status: 'pending' };
+		claimedCreation = true;
 	}
 	attempt = await purchases.findOne({ _id: key });
 	if (attempt.operationId !== operationId || attempt.priceId !== offer.priceId || attempt.customerId !== customer.id) return { status: 'pending' };
+	if (!claimedCreation && !attempt.sessionId) {
+		// Recover a crashed creation after a short lease. The operation id is
+		// unchanged, so Stripe's idempotency key remains unchanged too.
+		if (now.getTime() - new Date(attempt.createdAt).getTime() < 15000) return { status: 'pending' };
+		const recovered = unwrap(await purchases.findOneAndUpdate(
+			{ _id: key, operationId, sessionId: null, createdAt: attempt.createdAt },
+			{ $set: { createdAt: now.toISOString() } }, { returnDocument: 'after' }
+		));
+		if (!recovered) return { status: 'pending' };
+	}
 	// Concurrent calls use the same operation id. Stripe creates at most one session.
 	const session = await stripe.checkout.sessions.create({
 		mode: 'subscription', customer: customer.id, line_items: [{ price: offer.priceId, quantity: 1 }],

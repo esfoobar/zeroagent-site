@@ -68,3 +68,11 @@ test('status is read only and ignores return parameters', async () => {
 test('checkout refuses a Price from another Product', async () => {
  const f=fixture(); f.setProduct('other_product'); const res=await f.call(checkout,'POST',{priceId:'price_one'}); assert.equal(res.statusCode,503); assert.equal(res.body.error,'offer_unavailable'); assert.equal(f.calls.create,0);
 });
+test('a crashed creation recovers with its original operation', async () => {
+ const f=fixture();
+ f.account.billingCustomer={ customerId:'cus_42', stripeAccountId:'acct_test', livemode:false };
+ const key='acct_test:sandbox:42';
+ f.purchases.docs.set(key,{ _id:key, operationId:'operation', priceId:'price_one', customerId:'cus_42', sessionId:null, state:'creating', createdAt:'2026-10-13T11:00:00.000Z' });
+ const res=await f.call(checkout,'POST',{priceId:'price_one'});
+ assert.equal(res.statusCode,200); assert.equal(f.purchases.docs.get(key).operationId,'operation'); assert.equal(f.calls.create,1);
+});
