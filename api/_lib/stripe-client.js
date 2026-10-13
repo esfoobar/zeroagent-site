@@ -93,6 +93,7 @@ export function createStripeClient({ apiKey, apiVersion = null, fetchImpl = glob
 		request,
 		pathSegment,
 		products: { retrieve: (id, options) => get(`/v1/products/${pathSegment(id)}`, options) },
+		prices: { retrieve: (id, options) => get(`/v1/prices/${pathSegment(id)}`, options) },
 		customers: {
 			create: (form, options = {}) => request({ method: 'POST', path: '/v1/customers', form, idempotencyKey: options.idempotencyKey }),
 			retrieve: (id) => get(`/v1/customers/${pathSegment(id)}`),

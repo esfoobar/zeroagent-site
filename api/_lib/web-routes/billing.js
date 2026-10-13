@@ -1,5 +1,5 @@
 import { requireBrowserSession, requireCsrf, requireRecentAuth, sendJson, baseUrl } from '../web-auth.js';
-import { BILLING_ENV_VARS, loadBillingEnvironment, assertLivemode } from '../billing-config.js';
+import { BILLING_ENV_VARS, BillingConfigError, loadBillingEnvironment, assertLivemode } from '../billing-config.js';
 import { getCurrentOffer, resolveCurrentSalePrice, getCatalogStateWithCollection } from '../billing-catalog.js';
 import { projectEntitlement } from '../billing-projection.js';
 import { getBillingStore } from '../billing-store.js';
@@ -25,12 +25,27 @@ function failure(res, error = null) {
 	sendJson(res, 503, { error: 'billing_unavailable' });
 }
 
+// The public offer is CDN-cacheable for the ZA-903 sixty second freshness
+// bound, so a traffic spike is one function call a minute, not one per view.
+// Only a deliberate answer is cached: a real Stripe or database failure stays
+// a 503 with no-store.
+const CATALOG_CACHE = 'public, max-age=60, s-maxage=60, stale-while-revalidate=300';
+
 export async function catalog(req, res, deps = {}) {
 	if (req.method !== 'GET') return sendJson(res, 405, { error: 'method_not_allowed' });
+	let environment;
 	try {
-		const { environment, store, stripe } = await context(deps);
+		environment = deps.environment || loadBillingEnvironment();
+	} catch (error) {
+		// Billing is not configured on this deployment: an honest, cacheable
+		// "no offer", not a failure to log once per visitor.
+		if (error instanceof BillingConfigError) return sendJson(res, 200, { status: 'unavailable', reason: 'not_configured' }, { cacheControl: CATALOG_CACHE });
+		return failure(res, error);
+	}
+	try {
+		const { store, stripe } = await context({ ...deps, environment });
 		const offer = await getCurrentOffer({ stripe, environment, catalog: store.collections.catalog });
-		sendJson(res, 200, offer, { cacheControl: 'public, max-age=60' });
+		sendJson(res, 200, offer, { cacheControl: CATALOG_CACHE });
 	} catch (error) { failure(res, error); }
 }
 
@@ -46,6 +61,36 @@ async function authenticated(req, res, deps, mutation = false, recent = false) {
 		if (!check.ok) { sendJson(res, check.status, { error: check.error }); return null; }
 	}
 	return auth;
+}
+
+// The subscriber's own Price, for display only: what their subscription was
+// bought at, which may be an archived Price and may differ from the current
+// offer. Never falls back to the current offer: an unreadable Price is null
+// and the page states no number. Entitlement never reads this.
+async function subscriberPrice({ stripe, environment, billing }) {
+	const priceId = billing && typeof billing.priceId === 'string' && billing.priceId ? billing.priceId : null;
+	if (!priceId) return null;
+	try {
+		const price = await stripe.prices.retrieve(priceId);
+		assertLivemode(environment, price, 'subscription Price');
+		const product = typeof price.product === 'string' ? price.product : price.product && price.product.id;
+		if (price.id !== priceId || product !== environment.productId) return null;
+		return {
+			unitAmount: Number.isInteger(price.unit_amount) ? price.unit_amount : null,
+			currency: typeof price.currency === 'string' ? price.currency : null,
+			interval: price.recurring ? price.recurring.interval : null,
+		};
+	} catch (error) {
+		logFailure(error);
+		return null;
+	}
+}
+
+function hasCustomer(account, environment) {
+	const mapped = account.billingCustomer;
+	if (mapped && mapped.customerId && mapped.stripeAccountId === environment.stripeAccountId && mapped.livemode === environment.livemode) return true;
+	const billing = account.billing;
+	return Boolean(billing && billing.customerId && (!billing.stripeAccountId || billing.stripeAccountId === environment.stripeAccountId));
 }
 
 export async function status(req, res, deps = {}) {
@@ -77,7 +122,10 @@ export async function status(req, res, deps = {}) {
 				}
 			}
 		}
-		sendJson(res, 200, { account: `acct_gh${account._id}`, ...entitlement, checkoutState });
+		const subscription = ['active', 'cancel_scheduled', 'past_due'].includes(entitlement.billingStatus)
+			? await subscriberPrice({ stripe, environment, billing: account.billing })
+			: null;
+		sendJson(res, 200, { account: `acct_gh${account._id}`, ...entitlement, checkoutState, subscription, hasBillingHistory: hasCustomer(account, environment) });
 	} catch (error) { failure(res, error); }
 }
 
