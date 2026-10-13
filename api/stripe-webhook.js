@@ -150,6 +150,8 @@ export async function handleStripeWebhook(request, deps = {}) {
 			store,
 			stripe,
 			now,
+			sleep: deps.sleep,
+			leaseWaitMs: deps.leaseWaitMs,
 			log: (entry) => console.error('stripe-webhook:', JSON.stringify(entry)),
 			referenceKey: env[BILLING_ENV_VARS.webhookSecret],
 		});
