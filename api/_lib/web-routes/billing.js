@@ -48,6 +48,36 @@ async function authenticated(req, res, deps, mutation = false, recent = false) {
 	return auth;
 }
 
+// The subscriber's own Price, for display only: what their subscription was
+// bought at, which may be an archived Price and may differ from the current
+// offer. Never falls back to the current offer: an unreadable Price is null
+// and the page states no number. Entitlement never reads this.
+async function subscriberPrice({ stripe, environment, billing }) {
+	const priceId = billing && typeof billing.priceId === 'string' && billing.priceId ? billing.priceId : null;
+	if (!priceId) return null;
+	try {
+		const price = await stripe.prices.retrieve(priceId);
+		assertLivemode(environment, price, 'subscription Price');
+		const product = typeof price.product === 'string' ? price.product : price.product && price.product.id;
+		if (price.id !== priceId || product !== environment.productId) return null;
+		return {
+			unitAmount: Number.isInteger(price.unit_amount) ? price.unit_amount : null,
+			currency: typeof price.currency === 'string' ? price.currency : null,
+			interval: price.recurring ? price.recurring.interval : null,
+		};
+	} catch (error) {
+		logFailure(error);
+		return null;
+	}
+}
+
+function hasCustomer(account, environment) {
+	const mapped = account.billingCustomer;
+	if (mapped && mapped.customerId && mapped.stripeAccountId === environment.stripeAccountId && mapped.livemode === environment.livemode) return true;
+	const billing = account.billing;
+	return Boolean(billing && billing.customerId && (!billing.stripeAccountId || billing.stripeAccountId === environment.stripeAccountId));
+}
+
 export async function status(req, res, deps = {}) {
 	if (req.method !== 'GET') return sendJson(res, 405, { error: 'method_not_allowed' });
 	const auth = await authenticated(req, res, deps);
@@ -77,7 +107,10 @@ export async function status(req, res, deps = {}) {
 				}
 			}
 		}
-		sendJson(res, 200, { account: `acct_gh${account._id}`, ...entitlement, checkoutState });
+		const subscription = ['active', 'cancel_scheduled', 'past_due'].includes(entitlement.billingStatus)
+			? await subscriberPrice({ stripe, environment, billing: account.billing })
+			: null;
+		sendJson(res, 200, { account: `acct_gh${account._id}`, ...entitlement, checkoutState, subscription, hasBillingHistory: hasCustomer(account, environment) });
 	} catch (error) { failure(res, error); }
 }
 

@@ -1274,3 +1274,42 @@ video {
 .za-os-selector button { background: transparent; color: inherit; border: 1px solid currentColor; border-radius: 999px; padding: 9px 20px; font: inherit; cursor: pointer; }
 .za-os-selector button[aria-pressed="true"] { background: #e8785c; color: #000; border-color: #e8785c; }
 [hidden] { display: none !important; }
+
+/* Plan and Billing pages (ZA-904)
+   ============================================================ */
+
+.za-account { padding-bottom: 96px; }
+.za-account > * { max-width: var(--measure); }
+
+.za-account-nav {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	margin: 0 0 32px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--line);
+	font-size: 15px;
+}
+
+.za-account-nav a { color: var(--ink-2); text-decoration: none; }
+.za-account-nav a[aria-current="page"] { color: var(--ink); border-bottom: 1px solid var(--ink); }
+.za-account-nav a:hover { color: var(--ink); }
+
+.za-account-signout {
+	margin-left: auto;
+	background: transparent;
+	border: 0;
+	padding: 0;
+	font: inherit;
+	color: var(--ink-3);
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.za-billing h2 { font-size: 22px; letter-spacing: -0.02em; margin: 0 0 12px; color: var(--ink); }
+.za-billing p { margin: 0 0 14px; color: var(--ink-2); line-height: 1.6; }
+.za-billing-error { border: 1px solid var(--line-2); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.za-billing-error p { color: var(--ink); }
+.za-billing-confirm { border: 1px solid var(--line-2); border-radius: 8px; padding: 16px; margin: 8px 0 16px; }
+.za-billing-confirm p { color: var(--ink); }
+.za-billing :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
