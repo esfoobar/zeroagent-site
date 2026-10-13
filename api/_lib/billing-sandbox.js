@@ -1,5 +1,5 @@
 import { assertLivemode } from './billing-config.js';
-import { idOf } from './billing-reconcile.js';
+import { idOf, subscriptionIdOfInvoice } from './billing-reconcile.js';
 
 const check = (condition, code) => { if (!condition) throw new Error(code); };
 const priceOf = (subscription) => subscription.items?.data?.[0]?.price?.id;
@@ -39,7 +39,7 @@ export async function verifySandboxScenario({ scenario, stripe, environment, arg
 			const subscription = await get(args.subscription);
 			check(priceOf(subscription) === oldPrice.id, 'renewal_price_changed');
 			const paid = await invoice(args.invoice);
-			check(paid.status === 'paid' && idOf(paid.subscription) === subscription.id, 'renewal_not_paid');
+			check(paid.status === 'paid' && subscriptionIdOfInvoice(paid) === subscription.id, 'renewal_not_paid');
 			const billing = await projection(subscription);
 			check(billing.lastPaidInvoiceId === paid.id, 'renewal_not_projected');
 			return { scenario, verified: ['archived_price', 'paid_renewal', 'stored_projection'] };
@@ -78,7 +78,7 @@ export async function verifySandboxScenario({ scenario, stripe, environment, arg
 			const subscription = await get(args.subscription);
 			check(idOf(subscription.test_clock) === clock.id, 'subscription_clock_mismatch');
 			const paid = await invoice(args.invoice);
-			check(paid.status === 'paid' && idOf(paid.subscription) === subscription.id, 'renewal_not_paid');
+			check(paid.status === 'paid' && subscriptionIdOfInvoice(paid) === subscription.id, 'renewal_not_paid');
 			const billing = await projection(subscription);
 			check(billing.lastPaidInvoiceId === paid.id && new Date(billing.paidThrough) > new Date(args.previousPaidThrough), 'renewal_not_projected');
 			return { scenario, verified: ['test_clock_ready', 'renewal_paid', 'paid_through_advanced'] };
@@ -87,7 +87,7 @@ export async function verifySandboxScenario({ scenario, stripe, environment, arg
 			const subscription = await get(args.subscription);
 			check(['past_due', 'unpaid'].includes(subscription.status), 'subscription_not_past_due');
 			const failed = await invoice(args.invoice);
-			check(failed.status !== 'paid' && idOf(failed.subscription) === subscription.id, 'invoice_not_failed');
+			check(failed.status !== 'paid' && subscriptionIdOfInvoice(failed) === subscription.id, 'invoice_not_failed');
 			const billing = await projection(subscription);
 			check(billing.status === 'past_due' && billing.paymentGraceUntil, 'failure_not_projected');
 			return { scenario, verified: ['payment_failure', 'stored_grace'] };

@@ -110,3 +110,31 @@ test('the real Stripe client exposes invoice retrieve for lifecycle proofs', asy
 	assert.equal(invoice.id, 'in_test');
 	assert.deepEqual(requests, ['/v1/invoices/in_test']);
 });
+
+// Stripe API 2026-09-30.endive drops `invoice.subscription`; the id lives under
+// `parent.subscription_details.subscription`. Both shapes must satisfy the proofs.
+const invoiceShapes = {
+	legacy: (subscriptionId, status) => ({ id: 'in_test', subscription: subscriptionId, status, livemode: false }),
+	endive: (subscriptionId, status) => ({ id: 'in_test', status, livemode: false, parent: { subscription_details: { subscription: subscriptionId } } }),
+};
+const invoiceScenarios = [
+	{ scenario: 'archived-renewal', status: 'paid', code: /renewal_not_paid/, args: {}, overrides: {} },
+	{ scenario: 'test-clock-renewal', status: 'paid', code: /renewal_not_paid/, args: { previousPaidThrough: '2026-10-01T00:00:00.000Z' }, overrides: {} },
+	{ scenario: 'payment-failure', status: 'open', code: /invoice_not_failed/, args: {}, overrides: { subscription: { status: 'past_due' }, billing: { status: 'past_due', paymentGraceUntil: '2026-11-04T00:00:00.000Z' } } },
+];
+for (const [shape, build] of Object.entries(invoiceShapes)) {
+	for (const { scenario, status, code, args, overrides } of invoiceScenarios) {
+		test(`${scenario} reads the ${shape} invoice shape`, async () => {
+			const matching = fixture(overrides);
+			matching.stripe.invoices.retrieve = async () => build('sub_test', status);
+			const base = { account: '42', subscription: 'sub_test', oldPrice: 'price_old', invoice: 'in_test', clock: 'clock_test', ...args };
+			assert.equal((await verifySandboxScenario({ scenario, environment, args: base, ...matching })).scenario, scenario);
+			const wrong = fixture(overrides);
+			wrong.stripe.invoices.retrieve = async () => build('sub_other', status);
+			await assert.rejects(() => verifySandboxScenario({ scenario, environment, args: base, ...wrong }), code);
+			const missing = fixture(overrides);
+			missing.stripe.invoices.retrieve = async () => ({ id: 'in_test', status, livemode: false });
+			await assert.rejects(() => verifySandboxScenario({ scenario, environment, args: base, ...missing }), code);
+		});
+	}
+}
