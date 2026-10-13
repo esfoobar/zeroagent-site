@@ -10,7 +10,7 @@
 	var INTERVALS = { day: 'a day', week: 'a week', month: 'a month', year: 'a year' };
 
 	// price: { unitAmount (minor units), currency, interval } or an offer.
-	// Returns "$5 a month" style text, or null when it cannot be stated.
+	// Returns text such as "<amount> a month", or null when it cannot be stated.
 	function priceText(price) {
 		if (!price || typeof price.unitAmount !== 'number' || typeof price.currency !== 'string') return null;
 		var amount;

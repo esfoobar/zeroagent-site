@@ -164,3 +164,58 @@ test('mapping-only billing object is not a paid subscription in status or checko
  assert.equal(purchase.statusCode,200); assert.equal(f.calls.customerData,null);
  assert.equal(f.calls.create,1);
 });
+
+function withPrices(f, prices) {
+ f.deps.stripe.prices = { retrieve: async (id) => { if (!prices[id]) throw new StripeApiError({ status: 404, code: 'resource_missing', retriable: false }); return prices[id]; } };
+}
+const own = (id, amount, extra = {}) => ({ id, active: false, livemode: false, product: 'prod_test', unit_amount: amount, currency: 'usd', recurring: { interval: 'month' }, ...extra });
+
+test('status gives a subscriber their own Price, archived or not, and never the current offer', async () => {
+ const f=fixture(); f.account.billing={ status:'active', paidThrough:'2026-11-13T00:00:00.000Z', priceId:'price_old', customerId:'cus_42', stripeAccountId:'acct_test' };
+ withPrices(f, { price_old: own('price_old', 500) });
+ f.setPrice('price_new');
+ const res=await f.call(status);
+ assert.deepEqual(res.body.subscription,{ unitAmount:500, currency:'usd', interval:'month' });
+ assert.equal(res.body.hasBillingHistory,true);
+});
+
+test('status states no subscriber price when it cannot be read or is not Premium', async () => {
+ const f=fixture(); f.account.billing={ status:'active', paidThrough:'2026-11-13T00:00:00.000Z', priceId:'price_old' };
+ const messages=[]; const original=console.error; console.error=(...p)=>messages.push(p);
+ try {
+  withPrices(f, {});
+  assert.equal((await f.call(status)).body.subscription,null);
+  withPrices(f, { price_old: own('price_old', 500, { product:'prod_other' }) });
+  assert.equal((await f.call(status)).body.subscription,null);
+  withPrices(f, { price_old: own('price_old', 500, { livemode:true }) });
+  assert.equal((await f.call(status)).body.subscription,null);
+ } finally { console.error=original; }
+ assert.ok(messages.length>=1);
+ assert.equal((await f.call(status)).statusCode,200);
+});
+
+test('a free or ended account carries no subscription price and no Stripe read', async () => {
+ const f=fixture(); let reads=0; f.deps.stripe.prices={ retrieve: async () => { reads++; return own('x', 100); } };
+ assert.equal((await f.call(status)).body.subscription,null); assert.equal((await f.call(status)).body.hasBillingHistory,false);
+ f.account.billing={ status:'ended', paidThrough:'2026-09-01T00:00:00.000Z', priceId:'price_old', customerId:'cus_42' };
+ const ended=await f.call(status); assert.equal(ended.body.billingStatus,'ended'); assert.equal(ended.body.subscription,null); assert.equal(reads,0);
+ assert.equal(ended.body.hasBillingHistory,true);
+});
+
+test('two tabs share one open Checkout: the second request gets the same URL and no new Session', async () => {
+ const f=fixture();
+ const first=await f.call(checkout,'POST',{ priceId:'price_one' });
+ const key='acct_test:sandbox:42';
+ assert.equal((await f.call(status)).body.checkoutState,'checkout_pending');
+ const second=await f.call(checkout,'POST',{ priceId:'price_one' });
+ assert.equal(first.body.url,second.body.url); assert.equal(f.calls.create,1); assert.equal(f.purchases.docs.size,1); assert.ok(f.purchases.docs.get(key));
+});
+
+test('a reversed cancellation or payment-method change is a status of the same subscription and Price', async () => {
+ const f=fixture(); f.account.billing={ status:'active', cancelAtPeriodEnd:true, paidThrough:'2026-11-13T00:00:00.000Z', priceId:'price_old', customerId:'cus_42', stripeAccountId:'acct_test' };
+ withPrices(f, { price_old: own('price_old', 500) });
+ f.setPrice('price_new');
+ const scheduled=await f.call(status); assert.equal(scheduled.body.billingStatus,'cancel_scheduled'); assert.equal(scheduled.body.subscription.unitAmount,500);
+ f.account.billing.cancelAtPeriodEnd=false;
+ const resumed=await f.call(status); assert.equal(resumed.body.billingStatus,'active'); assert.equal(resumed.body.subscription.unitAmount,500);
+});
