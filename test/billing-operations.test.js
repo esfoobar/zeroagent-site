@@ -29,3 +29,9 @@ test('audit refuses wrong mode and does not write any collection', async () => {
 	const result = await auditBilling({ collections, environment, now, stripe: { checkout: { sessions: { retrieve: async () => ({ livemode: true }) } } } });
 	assert.equal(result.alerts[0].kind, 'checkout_read_failure');
 });
+
+test('webhook failure logs use a short reference, not the event id', async () => {
+	const source = (await import('node:fs')).readFileSync('api/_lib/billing-webhook.js', 'utf8');
+	assert.match(source, /eventRef: sha256Hex\(event\.id\)\.slice\(0, 12\)/);
+	assert.ok(!source.includes('log({ eventId:'));
+});
