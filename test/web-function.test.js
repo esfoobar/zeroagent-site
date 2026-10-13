@@ -57,6 +57,10 @@ test('vercel.json rewrites every public URL to a route in the table', () => {
 		'/api/auth/github/callback',
 		'/api/auth/github/start',
 		'/api/auth/logout',
+		'/api/billing/catalog',
+		'/api/billing/checkout',
+		'/api/billing/portal',
+		'/api/billing/status',
 	]);
 	for (const r of web) {
 		const route = r.destination.split('=')[1];

@@ -33,10 +33,10 @@ export function isSessionToken(value) {
 	return typeof value === 'string' && SESSION_TOKEN_RE.test(value);
 }
 
-export function sendJson(res, status, payload) {
+export function sendJson(res, status, payload, { cacheControl = 'private, no-store' } = {}) {
 	res.statusCode = status;
 	res.setHeader('Content-Type', 'application/json; charset=utf-8');
-	res.setHeader('Cache-Control', 'private, no-store');
+	res.setHeader('Cache-Control', cacheControl);
 	res.end(JSON.stringify(payload));
 }
 
