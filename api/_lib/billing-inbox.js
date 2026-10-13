@@ -185,3 +185,29 @@ export async function quarantineEventWithCollection(collection, { key, owner, re
 	);
 	return updated || null;
 }
+
+// Completes an entry that needs no paid-state write: an event the table
+// acknowledges without acting on (checkout completion, an unsupported
+// type), a replay whose reconciled state equals what is stored, or a late
+// event bound to a subscription that is no longer current. `outcome` is a
+// short code kept for the audit trail. The paid-state commit completes its
+// own entry (billing-commit.js); this one writes nothing but the inbox.
+export async function completeEventWithCollection(collection, { key, owner, outcome, now = new Date() }) {
+	const updated = unwrap(
+		await collection.findOneAndUpdate(
+			{ _id: key, state: 'processing', leaseOwner: owner },
+			{
+				$set: {
+					state: 'completed',
+					leaseOwner: null,
+					leaseExpiresAt: null,
+					lastError: null,
+					outcome: String(outcome || 'completed').slice(0, 64),
+					completedAt: now.toISOString(),
+				},
+			},
+			{ returnDocument: 'after' }
+		)
+	);
+	return updated || null;
+}
