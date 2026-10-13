@@ -9,9 +9,12 @@
  * test/web-session-store.test.js runs the single-use, expiry and revocation
  * rules against a fake in-memory collection.
  *
- * Expired and revoked documents are ignored by every read here. A TTL index
- * on `purgeAt` (expireAfterSeconds: 0) on both collections lets MongoDB
- * delete them; see docs/DATABASE.md in the zeroagent repo.
+ * Expired and revoked documents are ignored by every read here, and the
+ * store creates a TTL index on `purgeAt` (expireAfterSeconds: 0) on both
+ * collections itself, once per cold start, so MongoDB deletes them. The
+ * start route is unauthenticated and writes a document per request, so
+ * the index is not left to a manual database step. A failure to create it
+ * is logged and never fails the request.
  */
 
 import { MongoClient } from 'mongodb';
@@ -32,13 +35,30 @@ function getClientPromise() {
 	return clientPromise;
 }
 
+// Idempotent: createIndex with an identical spec is a no-op on the server.
+export async function ensureIndexesWithCollection(collection) {
+	try {
+		await collection.createIndex({ purgeAt: 1 }, { expireAfterSeconds: 0 });
+		return true;
+	} catch (err) {
+		console.error('web sessions: could not ensure the purgeAt TTL index');
+		return false;
+	}
+}
+
+// One attempt per collection per cold start, shared by concurrent requests.
+const indexed = new Map();
+
 async function getCollection(name) {
 	const dbName = process.env.MONGODB_DB;
 	if (!dbName) {
 		throw new Error('MONGODB_DB is not set');
 	}
 	const client = await getClientPromise();
-	return client.db(dbName).collection(name);
+	const collection = client.db(dbName).collection(name);
+	if (!indexed.has(name)) indexed.set(name, ensureIndexesWithCollection(collection));
+	await indexed.get(name);
+	return collection;
 }
 
 function unwrap(result) {

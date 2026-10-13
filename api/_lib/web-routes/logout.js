@@ -13,8 +13,8 @@ import {
 	requireBrowserSession,
 	requireCsrf,
 	sendJson,
-} from '../_lib/web-auth.js';
-import { revokeSession as defaultRevokeSession } from '../_lib/web-session-store.js';
+} from '../web-auth.js';
+import { revokeSession as defaultRevokeSession } from '../web-session-store.js';
 
 export default async function handler(req, res, deps = {}) {
 	const revokeSession = deps.revokeSession || defaultRevokeSession;

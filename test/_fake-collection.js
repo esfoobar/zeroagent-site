@@ -19,6 +19,10 @@ export function fakeCollection() {
 
 	return {
 		docs,
+		indexes: [],
+		async createIndex(spec, options) {
+			this.indexes.push({ spec, options });
+		},
 		async insertOne(doc) {
 			if (docs.has(doc._id)) throw new Error('duplicate key');
 			docs.set(doc._id, { ...doc });
@@ -32,7 +36,12 @@ export function fakeCollection() {
 			if (doc) Object.assign(doc, update.$set);
 		},
 		async findOneAndUpdate(filter, update, options = {}) {
-			const doc = find(filter);
+			let doc = find(filter);
+			if (!doc && options.upsert) {
+				doc = { _id: filter._id, ...update.$set, ...update.$setOnInsert };
+				docs.set(doc._id, doc);
+				return options.returnDocument === 'after' ? { ...doc } : null;
+			}
 			if (!doc) return null;
 			const before = { ...doc };
 			Object.assign(doc, update.$set);

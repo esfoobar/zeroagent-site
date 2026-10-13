@@ -6,7 +6,7 @@
  * is ever returned.
  */
 
-import { csrfTokenFor, isRecentAuth, requireBrowserSession, sendJson } from '../_lib/web-auth.js';
+import { csrfTokenFor, isRecentAuth, requireBrowserSession, sendJson } from '../web-auth.js';
 
 export default async function handler(req, res, deps = {}) {
 	if (req.method !== 'GET') {

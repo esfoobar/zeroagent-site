@@ -29,6 +29,10 @@ export const DEFAULT_RETURN_PATH = '/account';
 // anything else never reaches the database lookup.
 const SESSION_TOKEN_RE = /^[A-Za-z0-9_-]{43}$/;
 
+export function isSessionToken(value) {
+	return typeof value === 'string' && SESSION_TOKEN_RE.test(value);
+}
+
 export function sendJson(res, status, payload) {
 	res.statusCode = status;
 	res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -137,7 +141,7 @@ export async function requireBrowserSession(req, deps = {}) {
 		return { ok: false, status: 401, error: 'unauthorized' };
 	}
 	const token = parseCookies(req.headers && req.headers.cookie)[SESSION_COOKIE];
-	if (typeof token !== 'string' || !SESSION_TOKEN_RE.test(token)) {
+	if (!isSessionToken(token)) {
 		return { ok: false, status: 401, error: 'unauthorized' };
 	}
 	const tokenHash = sha256Hex(token);

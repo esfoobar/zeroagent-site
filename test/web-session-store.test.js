@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fakeCollection } from './_fake-collection.js';
 import {
+	ensureIndexesWithCollection,
 	consumeAuthStateWithCollection,
 	createAuthStateWithCollection,
 	createSessionWithCollection,
@@ -47,4 +48,27 @@ test('sessions: active until expiry or revocation, authTime recorded', async () 
 	await revokeSessionWithCollection(sessions, { tokenHash: 's1', now: later(20) });
 	assert.equal(await getActiveSessionWithCollection(sessions, { tokenHash: 's1', now: later(21) }), null);
 	assert.equal(sessions.docs.get('s1').revokedAt, later(20).toISOString());
+});
+
+test('ensureIndexes creates the purgeAt TTL index and reports success', async () => {
+	const c = fakeCollection();
+	assert.equal(await ensureIndexesWithCollection(c), true);
+	assert.deepEqual(c.indexes, [{ spec: { purgeAt: 1 }, options: { expireAfterSeconds: 0 } }]);
+});
+
+test('ensureIndexes failure is logged, not thrown', async () => {
+	const c = fakeCollection();
+	c.createIndex = async () => {
+		throw new Error('not authorized on db');
+	};
+	const logged = [];
+	const real = console.error;
+	console.error = (...a) => logged.push(a.join(' '));
+	try {
+		assert.equal(await ensureIndexesWithCollection(c), false);
+	} finally {
+		console.error = real;
+	}
+	assert.equal(logged.length, 1);
+	assert.ok(!logged[0].includes('not authorized'));
 });

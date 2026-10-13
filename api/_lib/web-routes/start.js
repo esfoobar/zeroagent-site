@@ -19,8 +19,8 @@ import {
 	safeReturnPath,
 	sendJson,
 	webOAuthConfig,
-} from '../../_lib/web-auth.js';
-import { createAuthState as defaultCreateAuthState } from '../../_lib/web-session-store.js';
+} from '../web-auth.js';
+import { createAuthState as defaultCreateAuthState } from '../web-session-store.js';
 
 const AUTHORIZE_URL = 'https://github.com/login/oauth/authorize';
 

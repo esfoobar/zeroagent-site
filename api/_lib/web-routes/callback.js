@@ -15,7 +15,7 @@
  * `signin_error` code; details go to the server log only.
  */
 
-import { sha256Hex } from '../../_lib/hash.js';
+import { sha256Hex } from '../hash.js';
 import {
 	DEFAULT_RETURN_PATH,
 	OAUTH_COOKIE,
@@ -24,18 +24,19 @@ import {
 	buildCookie,
 	callbackUrl,
 	clearCookie,
+	isSessionToken,
 	newSessionToken,
 	parseCookies,
 	safeReturnPath,
 	sendJson,
 	webOAuthConfig,
-} from '../../_lib/web-auth.js';
-import { upsertOnSignIn as defaultUpsertOnSignIn } from '../../_lib/users-store.js';
+} from '../web-auth.js';
+import { upsertOnSignIn as defaultUpsertOnSignIn } from '../users-store.js';
 import {
 	consumeAuthState as defaultConsumeAuthState,
 	createSession as defaultCreateSession,
 	revokeSession as defaultRevokeSession,
-} from '../../_lib/web-session-store.js';
+} from '../web-session-store.js';
 
 const TOKEN_URL = 'https://github.com/login/oauth/access_token';
 const USER_URL = 'https://api.github.com/user';
@@ -195,7 +196,7 @@ export default async function handler(req, res, deps = {}) {
 	const { token, tokenHash } = newSessionToken();
 	try {
 		const previous = cookies[SESSION_COOKIE];
-		if (typeof previous === 'string' && previous) {
+		if (isSessionToken(previous)) {
 			await revokeSession({ tokenHash: sha256Hex(previous), now });
 		}
 		await createSession({

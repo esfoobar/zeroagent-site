@@ -6,10 +6,10 @@ import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { fakeCollection } from './_fake-collection.js';
-import startHandler from '../api/auth/github/start.js';
-import callbackHandler from '../api/auth/github/callback.js';
-import sessionHandler from '../api/account/session.js';
-import logoutHandler from '../api/auth/logout.js';
+import startHandler from '../api/_lib/web-routes/start.js';
+import callbackHandler from '../api/_lib/web-routes/callback.js';
+import sessionHandler from '../api/_lib/web-routes/session.js';
+import logoutHandler from '../api/_lib/web-routes/logout.js';
 import {
 	consumeAuthStateWithCollection,
 	createAuthStateWithCollection,
@@ -247,28 +247,36 @@ test('callback: exchanges the code with the stored PKCE verifier and the fixed r
 	assert.equal(body.client_secret, 'web-client-secret');
 });
 
-test('callback: reuses the existing user upsert and never resets plan or trial', async () => {
+test('callback: an existing user keeps plan and trial; login is refreshed', async () => {
 	users.docs.set(4242, {
 		_id: 4242,
 		login: 'old-name',
 		plan: 'premium',
+		createdAt: '2025-12-01T00:00:00.000Z',
 		trialEnds: '2026-01-01T00:00:00.000Z',
 		planUntil: '2027-01-01T00:00:00.000Z',
-		pairedDevices: [],
+		pairedDevices: [{ deviceId: 'dev_1' }],
 	});
-	const realFindOneAndUpdate = users.findOneAndUpdate.bind(users);
-	users.findOneAndUpdate = async (filter, update, options) => {
-		// Emulate Mongo upsert: $set applies, $setOnInsert only on insert.
-		const existing = users.docs.get(filter._id);
-		if (existing) return realFindOneAndUpdate(filter, { $set: update.$set }, options);
-		users.docs.set(filter._id, { _id: filter._id, ...update.$set, ...update.$setOnInsert });
-		return { ...users.docs.get(filter._id) };
-	};
 	await signIn();
 	const user = users.docs.get(4242);
 	assert.equal(user.login, 'octo');
 	assert.equal(user.plan, 'premium');
+	assert.equal(user.createdAt, '2025-12-01T00:00:00.000Z');
 	assert.equal(user.trialEnds, '2026-01-01T00:00:00.000Z');
+	assert.equal(user.planUntil, '2027-01-01T00:00:00.000Z');
+	assert.deepEqual(user.pairedDevices, [{ deviceId: 'dev_1' }]);
+});
+
+test('callback: a first-ever browser sign-in creates the user on free with the 30 day trial', async () => {
+	assert.equal(users.docs.size, 0);
+	await signIn();
+	const user = users.docs.get(4242);
+	assert.equal(user.login, 'octo');
+	assert.equal(user.plan, 'free');
+	assert.equal(user.createdAt, NOW.toISOString());
+	assert.equal(user.trialEnds, new Date(NOW.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString());
+	assert.equal(user.planUntil, null);
+	assert.deepEqual(user.pairedDevices, []);
 });
 
 test('callback: a replayed callback is refused (state is single use)', async () => {
@@ -505,4 +513,28 @@ test('logout: POST only, and idempotent with no session', async () => {
 	const res = await call(logoutHandler, { method: 'POST', headers: { origin: ORIGIN } });
 	assert.equal(res.statusCode, 200);
 	assert.match(res.headers['Set-Cookie'], /Max-Age=0/);
+});
+
+test('callback: a previous session cookie that is not token shaped is ignored, not revoked', async () => {
+	fakeGithub();
+	let revoked = 0;
+	deps.revokeSession = async () => {
+		revoked += 1;
+	};
+	const junk = ['short', 'a.b.c', 'x'.repeat(44), '%00'];
+	for (const value of junk) {
+		const { state } = await begin();
+		const req = callbackReq(state);
+		req.headers.cookie += `; __Host-za_session=${value}`;
+		const res = await call(callbackHandler, req);
+		assert.equal(res.statusCode, 302);
+		assert.ok(cookieValue(res, '__Host-za_session'));
+	}
+	assert.equal(revoked, 0);
+
+	const { state } = await begin();
+	const req = callbackReq(state);
+	req.headers.cookie += `; __Host-za_session=${'A'.repeat(43)}`;
+	await call(callbackHandler, req);
+	assert.equal(revoked, 1);
 });
