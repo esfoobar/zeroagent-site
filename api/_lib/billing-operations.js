@@ -35,10 +35,11 @@ export async function auditBilling({ collections, stripe, environment, reference
 		if (!purchase.sessionId) continue;
 		const accountId = Number(purchase._id.slice(prefix.length));
 		const account = Number.isSafeInteger(accountId) ? await collections.users.findOne({ _id: accountId }) : null;
+		const projected = account?.billing?.stripeAccountId === environment.stripeAccountId && account.billing.livemode === environment.livemode ? account.billing : null;
 		// A projected subscriber's old Checkout is no longer actionable. Recheck
 		// it for one day to catch delayed completion, then rely on webhook and
 		// projection drift monitoring instead of polling it forever.
-		if (seconds > PURCHASE_SKIP_AFTER_SECONDS && account?.billing?.subscriptionId) { skippedPurchases++; continue; }
+		if (seconds > PURCHASE_SKIP_AFTER_SECONDS && projected?.subscriptionId) { skippedPurchases++; continue; }
 		if (stripeReads >= maxStripeReads) { truncated = true; break; }
 		try {
 			stripeReads++;
@@ -46,7 +47,7 @@ export async function auditBilling({ collections, stripe, environment, reference
 			assertLivemode(environment, session, 'Checkout Session');
 			if (session.customer !== purchase.customerId) throw new Error('ownership');
 			if (session.status === 'complete') {
-				if ((session.subscription ? account?.billing?.subscriptionId !== idOf(session.subscription) : !account?.billing?.subscriptionId) && seconds >= ALERT_AFTER_SECONDS) add('checkout_unprojected', purchase._id, seconds);
+				if ((session.subscription ? projected?.subscriptionId !== idOf(session.subscription) : !projected?.subscriptionId) && seconds >= ALERT_AFTER_SECONDS) add('checkout_unprojected', purchase._id, seconds);
 			}
 		} catch { add('checkout_read_failure', purchase._id, seconds); }
 	}

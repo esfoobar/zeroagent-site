@@ -53,7 +53,7 @@ test('audit scopes purchase query, skips an old projected checkout and caps Stri
 	const collections = {
 		events: rows([]),
 		purchases: { find: (query) => { queried.push(query); return { toArray: async () => purchases }; } },
-		users: { findOne: async ({ _id }) => _id === 42 ? { billing: { subscriptionId: 'sub_old' } } : null, ...rows([]) },
+		users: { findOne: async ({ _id }) => _id === 42 ? { billing: { stripeAccountId: 'acct_test', livemode: false, subscriptionId: 'sub_old' } } : null, ...rows([]) },
 	};
 	const calls = [];
 	const stripe = { checkout: { sessions: { retrieve: async (id) => { calls.push(id); return { livemode: false, customer: 'cus_new', status: 'open' }; } } } };
@@ -70,4 +70,15 @@ test('replay lag starts at preparation time, not original receipt', async () => 
 	const result = await auditBilling({ collections, stripe: {}, environment, referenceKey, now });
 	assert.deepEqual(result.alerts, []);
 	assert.equal(result.truncated, false);
+});
+
+test('subscription invoice retrieval also respects the Stripe read cap', async () => {
+	const account = { _id: 42, billing: { stripeAccountId: 'acct_test', livemode: false, customerId: 'cus_one', subscriptionId: 'sub_one' } };
+	const collections = { events: rows([]), purchases: rows([]), users: rows([account]) };
+	let invoiceReads = 0;
+	const stripe = { subscriptions: { retrieve: async () => ({ id: 'sub_one', customer: 'cus_one', livemode: false, items: { data: [{ price: { product: 'prod_test' } }] }, latest_invoice: 'in_one' }) }, invoices: { retrieve: async () => { invoiceReads++; throw Error('must not read'); } } };
+	const result = await auditBilling({ collections, stripe, environment, referenceKey, now, maxStripeReads: 1 });
+	assert.equal(invoiceReads, 0);
+	assert.equal(result.counts.stripeReads, 1);
+	assert.equal(result.truncated, true);
 });

@@ -94,7 +94,19 @@ test('restricted-key proof uses the real client methods and needs balance to ret
 
 test('staging boundary rejects every production subdomain', async () => {
 	const deps = fixture();
-	for (const stagingUrl of ['https://zeroagenthq.com', 'https://api.zeroagenthq.com', 'https://deep.api.zeroagenthq.com']) {
+	for (const stagingUrl of ['https://zeroagenthq.com', 'https://api.zeroagenthq.com', 'https://deep.api.zeroagenthq.com', 'https://api.zeroagenthq.com.']) {
 		await assert.rejects(() => verifySandboxScenario({ scenario: 'staging-boundary', environment, args: { stagingUrl, database: 'sandbox_db', productionDb: 'production_db' }, ...deps, fetchImpl: async () => { throw Error('network should not be used'); } }), /production_host_refused/);
 	}
+});
+
+test('the real Stripe client exposes invoice retrieve for lifecycle proofs', async () => {
+	const { createStripeClient } = await import('../api/_lib/stripe-client.js');
+	const requests = [];
+	const stripe = createStripeClient({ apiKey: 'rk_test_fake', fetchImpl: async (url) => {
+		requests.push(new URL(url).pathname);
+		return new Response(JSON.stringify({ id: 'in_test', livemode: false, status: 'paid' }), { status: 200 });
+	} });
+	const invoice = await stripe.invoices.retrieve('in_test');
+	assert.equal(invoice.id, 'in_test');
+	assert.deepEqual(requests, ['/v1/invoices/in_test']);
 });
