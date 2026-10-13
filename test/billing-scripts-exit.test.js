@@ -20,3 +20,23 @@ test('sandbox proof rejects malformed arguments without a stack trace', () => {
 	assert.match(result.stderr, /invalid_argument/);
 	assert.ok(!result.stderr.includes('at file:'));
 });
+
+test('scheduled audit entry point ends 0 with one line when its secrets are unset', () => {
+	const result = spawnSync(process.execPath, ['scripts/billing-audit-ci.mjs'], { env, encoding: 'utf8', timeout: 5000 });
+	assert.equal(result.error, undefined);
+	assert.equal(result.status, 0);
+	assert.equal(result.stdout.trim().split('\n').length, 1);
+	assert.match(result.stdout, /not configured/);
+});
+
+test('scheduled audit entry point runs the audit, which exits 1, when only some secrets are set', () => {
+	const result = spawnSync(process.execPath, ['scripts/billing-audit-ci.mjs'], { env: { ...env, MONGODB_DB: 'x' }, encoding: 'utf8', timeout: 5000 });
+	assert.equal(result.status, 1);
+});
+
+test('billing audit workflow runs only on schedule and dispatch', async () => {
+	const text = (await import('node:fs')).readFileSync('.github/workflows/billing-audit.yml', 'utf8');
+	assert.match(text, /^on:\n {2}schedule:\n.*\n {2}workflow_dispatch:\n/m);
+	assert.ok(!/^ {2}(push|pull_request)/m.test(text));
+	assert.match(text, /cancel-in-progress: true/);
+});

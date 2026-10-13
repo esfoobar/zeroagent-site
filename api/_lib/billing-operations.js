@@ -5,26 +5,33 @@ import { deriveBillingPatch, idOf, patchMatches, premiumItems } from './billing-
 const ALERT_AFTER_SECONDS = 5 * 60;
 const PURCHASE_SKIP_AFTER_SECONDS = 24 * 60 * 60;
 export const MAX_AUDIT_STRIPE_READS = 100;
+// A failed event whose recorded reason is transient is redelivered by Stripe
+// on its own, so a recent one is lag, not a failure. Past this age it alerts.
+export const RETRY_PENDING_BOUND_SECONDS = 60 * 60;
+export const TRANSIENT_FAILURE_CODES = Object.freeze(['lease_held', 'lease_lost', 'stripe_unavailable']);
 const ERROR_CODES = new Set(['stripe_unavailable', 'stripe_rejected', 'lease_held', 'lease_lost', 'processing_error', 'operator_attention', 'attempts_exhausted', 'unmapped_customer', 'no_customer', 'legacy_grant_conflict', 'multiple_subscriptions', 'customer_mismatch', 'mode_mismatch', 'stripe_object_missing', 'account_missing']);
 const safeCode = (value) => ERROR_CODES.has(value) ? value : 'other';
 const age = (date, now) => Math.max(0, Math.floor((now.getTime() - new Date(date).getTime()) / 1000));
 
 // Output contains only short hashes, categories, counts and ages. No Stripe
 // object, account id, session URL, customer data or exception text escapes.
-export async function auditBilling({ collections, stripe, environment, referenceKey, now = new Date(), maxStripeReads = MAX_AUDIT_STRIPE_READS }) {
+export async function auditBilling({ collections, stripe, environment, referenceKey, now = new Date(), maxStripeReads = MAX_AUDIT_STRIPE_READS, retryPendingBoundSeconds = RETRY_PENDING_BOUND_SECONDS }) {
 	if (!Number.isInteger(maxStripeReads) || maxStripeReads < 0) throw new Error('invalid_stripe_read_limit');
 	billingReference('', referenceKey);
 	let stripeReads = 0;
 	let truncated = false;
 	let skippedPurchases = 0;
 	const alerts = [];
+	let retryPending = null;
 	const add = (kind, id, seconds, detail = null) => alerts.push({ kind, ref: billingReference(id, referenceKey), ageSeconds: seconds, ...(detail ? { detail } : {}) });
 	const scope = { stripeAccountId: environment.stripeAccountId, livemode: environment.livemode };
 	const events = await collections.events.find({ ...scope, state: { $in: ['received', 'processing', 'failed', 'quarantined'] } }).toArray();
 	for (const event of events) {
 		const seconds = age(event.replayPreparedAt || event.receivedAt, now);
 		if (event.state === 'quarantined') add('webhook_quarantined', event.eventId, seconds, safeCode(event.lastError));
-		else if (event.state === 'failed') add('webhook_failed', event.eventId, seconds, safeCode(event.lastError));
+		else if (event.state === 'failed' && TRANSIENT_FAILURE_CODES.includes(event.lastError) && seconds < retryPendingBoundSeconds) {
+			retryPending = { kind: 'webhook_retry_pending', count: (retryPending?.count || 0) + 1, oldestAgeSeconds: Math.max(retryPending?.oldestAgeSeconds || 0, seconds) };
+		} else if (event.state === 'failed') add('webhook_failed', event.eventId, seconds, safeCode(event.lastError));
 		else if (seconds >= ALERT_AFTER_SECONDS) add('webhook_lag', event.eventId, seconds, event.state);
 	}
 	const prefix = `${environment.stripeAccountId}:${environment.environment}:`;
@@ -79,5 +86,5 @@ export async function auditBilling({ collections, stripe, environment, reference
 			}
 		} catch { add('projection_read_failure', account._id, 0); }
 	}
-	return { checkedAt: now.toISOString(), truncated, counts: { events: events.length, purchases: purchases.length, accounts: accounts.length, skippedPurchases, stripeReads }, alerts };
+	return { checkedAt: now.toISOString(), truncated, counts: { events: events.length, purchases: purchases.length, accounts: accounts.length, skippedPurchases, stripeReads }, alerts, pending: retryPending ? [retryPending] : [] };
 }

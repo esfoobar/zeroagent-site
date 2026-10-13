@@ -82,3 +82,33 @@ test('subscription invoice retrieval also respects the Stripe read cap', async (
 	assert.equal(result.counts.stripeReads, 1);
 	assert.equal(result.truncated, true);
 });
+
+test('audit: a recent transient failure is retry pending and not an alert; an old one alerts', async () => {
+	const fresh = '2026-10-13T11:30:00.000Z';
+	const stale = '2026-10-13T10:30:00.000Z';
+	const run = async (events, extra = {}) => auditBilling({
+		collections: { events: rows(events), purchases: rows([]), users: { ...rows([]), findOne: async () => null } },
+		stripe: {}, environment, referenceKey, now, ...extra,
+	});
+	const failed = (eventId, lastError, receivedAt) => ({ eventId, state: 'failed', lastError, receivedAt });
+
+	const pending = await run([failed('evt_a', 'lease_held', fresh), failed('evt_b', 'stripe_unavailable', '2026-10-13T11:45:00.000Z')]);
+	assert.deepEqual(pending.alerts, []);
+	assert.deepEqual(pending.pending, [{ kind: 'webhook_retry_pending', count: 2, oldestAgeSeconds: 1800 }]);
+
+	const old = await run([failed('evt_a', 'lease_held', stale)]);
+	assert.deepEqual(old.alerts.map((a) => [a.kind, a.detail]), [['webhook_failed', 'lease_held']]);
+	assert.deepEqual(old.pending, []);
+
+	for (const code of ['processing_error', 'stripe_rejected']) {
+		const result = await run([failed('evt_a', code, '2026-10-13T11:59:00.000Z')]);
+		assert.deepEqual(result.alerts.map((a) => a.kind), ['webhook_failed']);
+		assert.deepEqual(result.pending, []);
+	}
+
+	const quarantined = await run([{ eventId: 'evt_q', state: 'quarantined', lastError: 'lease_held', receivedAt: fresh }]);
+	assert.deepEqual(quarantined.alerts.map((a) => a.kind), ['webhook_quarantined']);
+
+	const injected = await run([failed('evt_a', 'lease_lost', fresh)], { retryPendingBoundSeconds: 60 });
+	assert.deepEqual(injected.alerts.map((a) => a.kind), ['webhook_failed']);
+});
