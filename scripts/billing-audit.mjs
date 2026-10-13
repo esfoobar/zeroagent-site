@@ -7,10 +7,10 @@ try {
 	const environment = loadBillingEnvironment();
 	const store = await getBillingStore();
 	const stripe = createStripeClient({ apiKey: process.env[BILLING_ENV_VARS.apiKey], apiVersion: process.env[BILLING_ENV_VARS.apiVersion] || null });
-	const result = await auditBilling({ collections: store.collections, stripe, environment });
-	console.log(JSON.stringify(result));
-	if (result.alerts.length) process.exitCode = 2;
+	const result = await auditBilling({ collections: store.collections, stripe, environment, referenceKey: process.env[BILLING_ENV_VARS.webhookSecret] });
+	await new Promise((resolve) => process.stdout.write(`${JSON.stringify(result)}\n`, resolve));
+	process.exit(result.alerts.length || result.truncated ? 2 : 0);
 } catch {
-	console.error('billing audit unavailable');
-	process.exitCode = 1;
+	await new Promise((resolve) => process.stderr.write('billing audit unavailable\n', resolve));
+	process.exit(1);
 }

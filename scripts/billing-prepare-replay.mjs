@@ -1,8 +1,8 @@
-import { loadBillingEnvironment } from '../api/_lib/billing-config.js';
+import { loadBillingEnvironment, BILLING_ENV_VARS } from '../api/_lib/billing-config.js';
 import { getBillingStore } from '../api/_lib/billing-store.js';
 import { prepareEventReplay } from '../api/_lib/billing-replay.js';
 
-// Read the event id from stdin, so it does not appear in the process list.
+// Read the event id or short reference from stdin, not the process list.
 try {
 	const [actor, reason] = process.argv.slice(2);
 	const chunks = [];
@@ -10,8 +10,10 @@ try {
 	const eventId = Buffer.concat(chunks).toString('utf8').trim();
 	const environment = loadBillingEnvironment();
 	const store = await getBillingStore();
-	console.log(JSON.stringify(await prepareEventReplay(store, { environment, eventId, actor, reason })));
+	const result = await prepareEventReplay(store, { environment, eventId, referenceKey: process.env[BILLING_ENV_VARS.webhookSecret], actor, reason });
+	await new Promise((resolve) => process.stdout.write(`${JSON.stringify(result)}\n`, resolve));
+	process.exit(0);
 } catch {
-	console.error('replay preparation failed');
-	process.exitCode = 1;
+	await new Promise((resolve) => process.stderr.write('replay preparation failed\n', resolve));
+	process.exit(1);
 }

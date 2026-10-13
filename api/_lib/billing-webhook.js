@@ -16,7 +16,8 @@
  * committed projection or an inbox entry that says why nothing was written.
  */
 
-import { randomToken, sha256Hex } from './hash.js';
+import { randomToken } from './hash.js';
+import { billingReference } from './billing-reference.js';
 import { BillingModeMismatchError, assertLivemode } from './billing-config.js';
 import {
 	claimEventWithCollection,
@@ -100,6 +101,7 @@ export async function processWebhookEvent({
 	now = () => new Date(),
 	owner = randomToken(12),
 	log = () => {},
+	referenceKey,
 }) {
 	const { users, events, leases } = store.collections;
 	const key = inboxKey({ stripeAccountId: environment.stripeAccountId, livemode: event.livemode, eventId: event.id });
@@ -113,12 +115,12 @@ export async function processWebhookEvent({
 
 	const fail = async (code) => {
 		await failEventWithCollection(events, { key, owner, errorCode: code, now: now() });
-		log({ eventRef: sha256Hex(event.id).slice(0, 12), type: event.type, code });
+		log({ eventRef: billingReference(event.id, referenceKey), type: event.type, code });
 		return retry(code);
 	};
 	const quarantine = async (reason) => {
 		await quarantineEventWithCollection(events, { key, owner, reason, now: now() });
-		log({ eventRef: sha256Hex(event.id).slice(0, 12), type: event.type, code: `quarantined:${reason}` });
+		log({ eventRef: billingReference(event.id, referenceKey), type: event.type, code: `quarantined:${reason}` });
 		return ok('quarantined');
 	};
 	const complete = async (outcome) => {

@@ -108,7 +108,8 @@ export async function verifySandboxScenario({ scenario, stripe, environment, arg
 		}
 		case 'staging-boundary': {
 			check(args.stagingUrl && new URL(args.stagingUrl).protocol === 'https:', 'staging_url_required');
-			check(new URL(args.stagingUrl).hostname !== 'zeroagenthq.com', 'production_host_refused');
+			const host = new URL(args.stagingUrl).hostname.toLowerCase();
+			check(host !== 'zeroagenthq.com' && !host.endsWith('.zeroagenthq.com'), 'production_host_refused');
 			check(args.productionDb && args.database !== args.productionDb, 'database_not_isolated');
 			const response = await fetchImpl(new URL('/api/billing/catalog', args.stagingUrl));
 			check(response.ok, 'staging_catalog_unavailable');

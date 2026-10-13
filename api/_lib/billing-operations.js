@@ -1,39 +1,50 @@
-import { createHash } from 'node:crypto';
+import { billingReference } from './billing-reference.js';
 import { assertLivemode } from './billing-config.js';
 import { deriveBillingPatch, idOf, patchMatches, premiumItems } from './billing-reconcile.js';
 
 const ALERT_AFTER_SECONDS = 5 * 60;
+const PURCHASE_SKIP_AFTER_SECONDS = 24 * 60 * 60;
+export const MAX_AUDIT_STRIPE_READS = 100;
 const ERROR_CODES = new Set(['stripe_unavailable', 'stripe_rejected', 'lease_held', 'lease_lost', 'processing_error', 'operator_attention', 'attempts_exhausted', 'unmapped_customer', 'no_customer', 'legacy_grant_conflict', 'multiple_subscriptions', 'customer_mismatch', 'mode_mismatch', 'stripe_object_missing', 'account_missing']);
 const safeCode = (value) => ERROR_CODES.has(value) ? value : 'other';
-const ref = (value) => createHash('sha256').update(String(value)).digest('hex').slice(0, 12);
 const age = (date, now) => Math.max(0, Math.floor((now.getTime() - new Date(date).getTime()) / 1000));
 
 // Output contains only short hashes, categories, counts and ages. No Stripe
 // object, account id, session URL, customer data or exception text escapes.
-export async function auditBilling({ collections, stripe, environment, now = new Date() }) {
+export async function auditBilling({ collections, stripe, environment, referenceKey, now = new Date(), maxStripeReads = MAX_AUDIT_STRIPE_READS }) {
+	if (!Number.isInteger(maxStripeReads) || maxStripeReads < 0) throw new Error('invalid_stripe_read_limit');
+	let stripeReads = 0;
+	let truncated = false;
+	let skippedPurchases = 0;
 	const alerts = [];
-	const add = (kind, id, seconds, detail = null) => alerts.push({ kind, ref: ref(id), ageSeconds: seconds, ...(detail ? { detail } : {}) });
+	const add = (kind, id, seconds, detail = null) => alerts.push({ kind, ref: billingReference(id, referenceKey), ageSeconds: seconds, ...(detail ? { detail } : {}) });
 	const scope = { stripeAccountId: environment.stripeAccountId, livemode: environment.livemode };
 	const events = await collections.events.find({ ...scope, state: { $in: ['received', 'processing', 'failed', 'quarantined'] } }).toArray();
 	for (const event of events) {
-		const seconds = age(event.receivedAt, now);
+		const seconds = age(event.replayPreparedAt || event.receivedAt, now);
 		if (event.state === 'quarantined') add('webhook_quarantined', event.eventId, seconds, safeCode(event.lastError));
 		else if (event.state === 'failed') add('webhook_failed', event.eventId, seconds, safeCode(event.lastError));
 		else if (seconds >= ALERT_AFTER_SECONDS) add('webhook_lag', event.eventId, seconds, event.state);
 	}
-	const purchases = await collections.purchases.find({}).toArray();
+	const prefix = `${environment.stripeAccountId}:${environment.environment}:`;
+	const purchases = await collections.purchases.find({ _id: { $gte: prefix, $lt: `${prefix}\uffff` } }).toArray();
 	for (const purchase of purchases) {
-		if (!purchase._id.startsWith(`${environment.stripeAccountId}:${environment.environment}:`)) continue;
 		const seconds = age(purchase.createdAt, now);
 		if (purchase.state === 'creating' && seconds >= ALERT_AFTER_SECONDS) add('checkout_creating', purchase._id, seconds);
 		if (!purchase.sessionId) continue;
+		const accountId = Number(purchase._id.slice(prefix.length));
+		const account = Number.isSafeInteger(accountId) ? await collections.users.findOne({ _id: accountId }) : null;
+		// A projected subscriber's old Checkout is no longer actionable. Recheck
+		// it for one day to catch delayed completion, then rely on webhook and
+		// projection drift monitoring instead of polling it forever.
+		if (seconds > PURCHASE_SKIP_AFTER_SECONDS && account?.billing?.subscriptionId) { skippedPurchases++; continue; }
+		if (stripeReads >= maxStripeReads) { truncated = true; break; }
 		try {
+			stripeReads++;
 			const session = await stripe.checkout.sessions.retrieve(purchase.sessionId);
 			assertLivemode(environment, session, 'Checkout Session');
 			if (session.customer !== purchase.customerId) throw new Error('ownership');
 			if (session.status === 'complete') {
-				const accountId = Number(purchase._id.split(':').at(-1));
-				const account = Number.isSafeInteger(accountId) ? await collections.users.findOne({ _id: accountId }) : null;
 				if ((session.subscription ? account?.billing?.subscriptionId !== idOf(session.subscription) : !account?.billing?.subscriptionId) && seconds >= ALERT_AFTER_SECONDS) add('checkout_unprojected', purchase._id, seconds);
 			}
 		} catch { add('checkout_read_failure', purchase._id, seconds); }
@@ -42,7 +53,9 @@ export async function auditBilling({ collections, stripe, environment, now = new
 	for (const account of accounts) {
 		const stored = account.billing;
 		if (!stored?.subscriptionId || !stored.customerId) continue;
+		if (stripeReads >= maxStripeReads) { truncated = true; break; }
 		try {
+			stripeReads++;
 			const subscription = await stripe.subscriptions.retrieve(stored.subscriptionId, { expand: ['latest_invoice'] });
 			assertLivemode(environment, subscription, 'Subscription');
 			if (idOf(subscription.customer) !== stored.customerId || !premiumItems(subscription, environment.productId).length) {
@@ -51,7 +64,9 @@ export async function auditBilling({ collections, stripe, environment, now = new
 			}
 			const invoices = [];
 			if (subscription.latest_invoice) {
+				if (typeof subscription.latest_invoice === 'string' && stripeReads >= maxStripeReads) { truncated = true; break; }
 				const invoice = typeof subscription.latest_invoice === 'string' ? await stripe.invoices.retrieve(subscription.latest_invoice) : subscription.latest_invoice;
+				if (typeof subscription.latest_invoice === 'string') stripeReads++;
 				assertLivemode(environment, invoice, 'Invoice');
 				invoices.push(invoice);
 			}
@@ -62,5 +77,5 @@ export async function auditBilling({ collections, stripe, environment, now = new
 			}
 		} catch { add('projection_read_failure', account._id, 0); }
 	}
-	return { checkedAt: now.toISOString(), counts: { events: events.length, purchases: purchases.length, accounts: accounts.length }, alerts };
+	return { checkedAt: now.toISOString(), truncated, counts: { events: events.length, purchases: purchases.length, accounts: accounts.length, skippedPurchases, stripeReads }, alerts };
 }
