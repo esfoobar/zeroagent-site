@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { fakeCollection } from './_fake-collection.js';
 import { catalog, status, checkout, portal } from '../api/_lib/web-routes/billing.js';
 import { csrfTokenFor } from '../api/_lib/web-auth.js';
+import { StripeApiError } from '../api/_lib/stripe-client.js';
 
 const now = new Date('2026-10-13T12:00:00.000Z');
 const environment = { livemode: false, environment: 'sandbox', stripeAccountId: 'acct_test', productId: 'prod_test', portalConfigurationId: 'bpc_test' };
@@ -142,15 +143,24 @@ test('security failures log only name and code, while the response stays generic
 test('status preserves projected entitlement when Stripe Session read fails, but rejects an integrity mismatch', async () => {
  const f=fixture(); const key='acct_test:sandbox:42';
  f.purchases.docs.set(key,{ _id:key, operationId:'op', priceId:'price_one', customerId:'cus_42', sessionId:'cs_1', state:'open' });
- const outage=new Error('private Stripe detail'); outage.name='StripeTimeoutError'; outage.code='ETIMEDOUT'; f.setSessionReadError(outage);
+ const outage=new StripeApiError({ status:404, code:'resource_missing' }); f.setSessionReadError(outage);
  const messages=[]; const original=console.error; console.error=(...parts)=>messages.push(parts);
  try {
   const res=await f.call(status); assert.equal(res.statusCode,200); assert.equal(res.body.billingStatus,'none'); assert.equal(res.body.relayAllowed,true); assert.equal(res.body.checkoutState,null);
  } finally { console.error=original; }
- assert.deepEqual(messages,[['billing route failure','StripeTimeoutError','ETIMEDOUT']]);
- assert.equal(JSON.stringify(messages).includes('private Stripe detail'),false);
+ assert.deepEqual(messages,[['billing route failure','StripeApiError','resource_missing']]);
  f.setSessionReadError(null); f.setSessionCustomer('another-customer');
  const mismatchMessages=[]; console.error=(...parts)=>mismatchMessages.push(parts);
  try { const res=await f.call(status); assert.equal(res.statusCode,503); assert.deepEqual(res.body,{error:'billing_unavailable'}); } finally { console.error=original; }
  assert.deepEqual(mismatchMessages,[['billing route failure','BillingIntegrityError','checkout_customer_mismatch']]);
+});
+
+test('mapping-only billing object is not a paid subscription in status or checkout', async () => {
+ const f=fixture();
+ f.account.billing={ customerId:'cus_42', stripeAccountId:'acct_test', livemode:false };
+ const view=await f.call(status);
+ assert.equal(view.statusCode,200); assert.equal(view.body.billingStatus,'none');
+ const purchase=await f.call(checkout,'POST',{priceId:'price_one'});
+ assert.equal(purchase.statusCode,200); assert.equal(f.calls.customerData,null);
+ assert.equal(f.calls.create,1);
 });

@@ -139,3 +139,25 @@ test('client: the general request helper form-encodes a POST and carries an idem
 	assert.equal(init.headers['Content-Type'], 'application/x-www-form-urlencoded');
 	assert.equal(init.body, 'mode=subscription&line_items%5B0%5D%5Bquantity%5D=1&metadata%5Ba%5D=b%20c');
 });
+
+test('client: billing session methods retain the pinned version and request helper', async () => {
+ const f = fakeFetch(Array.from({ length: 7 }, () => ({ status: 200, body: { id: 'object_1' } })));
+ const client = createStripeClient({ apiKey: 'rk_test_synthetic', apiVersion: '2000-01-01.synthetic', fetchImpl: f.impl });
+ await client.customers.create({ metadata: { zeroagent_github_id: '42' } }, { idempotencyKey: 'customer-operation' });
+ await client.customers.retrieve('cus_1');
+ await client.subscriptions.list({ customer: 'cus_1', status: 'all' });
+ await client.checkout.sessions.create({ customer: 'cus_1', line_items: [{ price: 'price_1', quantity: 1 }] }, { idempotencyKey: 'checkout-operation' });
+ await client.checkout.sessions.retrieve('cs_1');
+ await client.checkout.sessions.expire('cs_1');
+ await client.billingPortal.sessions.create({ customer: 'cus_1' });
+ assert.deepEqual(f.calls.map((c) => [c.init.method, new URL(c.url).pathname]), [
+  ['POST','/v1/customers'], ['GET','/v1/customers/cus_1'], ['GET','/v1/subscriptions'],
+  ['POST','/v1/checkout/sessions'], ['GET','/v1/checkout/sessions/cs_1'],
+  ['POST','/v1/checkout/sessions/cs_1/expire'], ['POST','/v1/billing_portal/sessions'],
+ ]);
+ assert.ok(f.calls.every((c) => c.init.headers['Stripe-Version'] === '2000-01-01.synthetic'));
+ assert.equal(f.calls[0].init.headers['Idempotency-Key'], 'customer-operation');
+ assert.equal(f.calls[3].init.headers['Idempotency-Key'], 'checkout-operation');
+ assert.match(f.calls[3].init.body, /line_items%5B0%5D%5Bquantity%5D=1/);
+ assert.equal(new URL(f.calls[2].url).searchParams.get('customer'),'cus_1');
+});

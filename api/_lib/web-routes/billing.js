@@ -1,5 +1,5 @@
 import { requireBrowserSession, requireCsrf, requireRecentAuth, sendJson, baseUrl } from '../web-auth.js';
-import { loadBillingEnvironment, assertLivemode } from '../billing-config.js';
+import { BILLING_ENV_VARS, loadBillingEnvironment, assertLivemode } from '../billing-config.js';
 import { getCurrentOffer, resolveCurrentSalePrice, getCatalogStateWithCollection } from '../billing-catalog.js';
 import { projectEntitlement } from '../billing-projection.js';
 import { getBillingStore } from '../billing-store.js';
@@ -9,7 +9,10 @@ import { BillingIntegrityError, createCheckout, ownedCustomer, customerIdFor } f
 async function context(deps) {
 	const environment = deps.environment || loadBillingEnvironment();
 	const store = deps.store || await getBillingStore();
-	const stripe = deps.stripe || createStripeClient({ apiKey: process.env.STRIPE_API_KEY });
+	const stripe = deps.stripe || createStripeClient({
+		apiKey: process.env[BILLING_ENV_VARS.apiKey],
+		apiVersion: process.env[BILLING_ENV_VARS.apiVersion] || null,
+	});
 	return { environment, store, stripe };
 }
 
