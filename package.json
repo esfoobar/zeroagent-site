@@ -2,7 +2,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "billing:migrate": "node scripts/billing-migrate.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.0",

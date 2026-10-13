@@ -67,8 +67,11 @@ function paidGrounds(billing, now, parameters) {
 			else if (paidThrough !== null && !billing.cancelAtPeriodEnd) hold(paidThrough + settlement);
 			break;
 		case 'past_due':
-			hold(paidThrough);
-			hold(ms(billing.paymentGraceUntil));
+			// Grace needs an earlier paid period to be anchored to (T14).
+			if (paidThrough !== null) {
+				hold(paidThrough);
+				hold(ms(billing.paymentGraceUntil));
+			}
 			break;
 		default:
 			// incomplete, unknown and anything else: nothing was paid.

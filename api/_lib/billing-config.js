@@ -97,6 +97,7 @@ export function assertLivemode(environment, object, what = 'object') {
 // The grace deadline is anchored to the end of the earlier paid period and
 // never moved by a retry: the writer sets it once, at the first failure.
 export function paymentGraceUntilFor(paidThrough, parameters = BILLING_PARAMETERS) {
+	if (paidThrough === null || paidThrough === undefined) return null;
 	const base = new Date(paidThrough).getTime();
 	if (!Number.isFinite(base)) return null;
 	return new Date(base + parameters.paymentGraceSeconds * 1000).toISOString();
