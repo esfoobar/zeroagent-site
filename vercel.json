@@ -33,6 +33,22 @@
     {
       "source": "/api/auth/logout",
       "destination": "/api/web?__route=auth/logout"
+    },
+    {
+      "source": "/api/billing/catalog",
+      "destination": "/api/web?__route=billing/catalog"
+    },
+    {
+      "source": "/api/billing/status",
+      "destination": "/api/web?__route=billing/status"
+    },
+    {
+      "source": "/api/billing/checkout",
+      "destination": "/api/web?__route=billing/checkout"
+    },
+    {
+      "source": "/api/billing/portal",
+      "destination": "/api/web?__route=billing/portal"
     }
   ],
   "headers": [

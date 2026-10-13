@@ -16,6 +16,7 @@ import start from './_lib/web-routes/start.js';
 import callback from './_lib/web-routes/callback.js';
 import session from './_lib/web-routes/session.js';
 import logout from './_lib/web-routes/logout.js';
+import { catalog, status, checkout, portal } from './_lib/web-routes/billing.js';
 import { sendJson } from './_lib/web-auth.js';
 
 export const ROUTES = {
@@ -23,6 +24,10 @@ export const ROUTES = {
 	'auth/github/callback': callback,
 	'account/session': session,
 	'auth/logout': logout,
+	'billing/catalog': catalog,
+	'billing/status': status,
+	'billing/checkout': checkout,
+	'billing/portal': portal,
 };
 
 export default async function handler(req, res) {

@@ -15,6 +15,7 @@ export const BILLING_COLLECTIONS = Object.freeze({
 	leases: 'billingLeases',
 	catalog: 'billingCatalog',
 	audit: 'billingAudit',
+	purchases: 'billingPurchases',
 });
 
 let clientPromise;
