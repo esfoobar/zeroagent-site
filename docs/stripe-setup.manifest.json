@@ -2,9 +2,10 @@
   "format": 1,
   "ticket": "ZA-901, ZA-902",
   "description": "Stripe objects, event destination and variable names ZeroAgent billing expects in each environment. Names and shapes only: no amount, no Price id, no key, no secret and no object id of any kind is recorded here.",
+  "retired": { "stripeAccountNamedZeroAgent": "closed 2026-10-15; hosted the 2026-10-13 and 2026-10-14 sandbox proofs", "stagingEventDestination": "deleted 2026-10-15" },
   "separation": {
     "rule": "Sandbox and live are separate Stripe environments with separate keys, signing secrets, Product ids, portal configurations, databases and event destinations. A deployment is configured for exactly one. An event or object whose livemode differs from STRIPE_EXPECT_LIVE_MODE is refused.",
-    "sandboxDeployments": "Vercel Preview and staging, with a dedicated staging database",
+    "sandboxDeployments": "None standing. A sandbox proof provisions MVPLean test mode and a dedicated database when authorized, then retires them",
     "liveDeployments": "Vercel Production only"
   },
   "objects": {
@@ -33,7 +34,7 @@
       "function": "api/stripe-webhook.js (vercel.json rewrites the path to it)",
       "origins": {
         "live": "https://zeroagenthq.com",
-        "sandbox": "a stable staging origin, chosen when the sandbox is provisioned"
+        "sandbox": "none standing; a stable staging origin chosen when the next sandbox proof is provisioned"
       },
       "mustNot": ["redirect", "sit behind preview protection"],
       "events": [
@@ -60,7 +61,7 @@
     "STRIPE_WEBHOOK_SECRET": { "secret": true, "meaning": "Signing secret of this environment's event destination" },
     "STRIPE_PREMIUM_PRODUCT_ID": { "secret": false, "meaning": "Id of this environment's Premium Product" },
     "STRIPE_PORTAL_CONFIGURATION_ID": { "secret": false, "meaning": "Id of this environment's portal configuration" },
-    "STRIPE_ACCOUNT_ID": { "secret": false, "meaning": "Id of the ZeroAgent Stripe account; scopes the event inbox and unique indexes" },
+    "STRIPE_ACCOUNT_ID": { "secret": false, "meaning": "Id of the Stripe account in use for this environment (MVPLean, Inc. in live); scopes the event inbox and unique indexes" },
     "STRIPE_EXPECT_LIVE_MODE": { "secret": false, "meaning": "\"true\" in live, \"false\" in sandbox; never defaulted" },
     "STRIPE_API_VERSION": { "secret": false, "optional": true, "meaning": "Stripe API version every runtime request pins (Stripe-Version header). Unset uses the account's default; set it once the sandbox has proved the shapes" },
     "BILLING_BASE_URL": { "secret": false, "meaning": "Origin only; exact Origin match for mutating routes. Optional, defaults to https://zeroagenthq.com" }

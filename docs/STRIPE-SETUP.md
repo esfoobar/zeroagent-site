@@ -2,7 +2,7 @@
 
 ZA-901 (esfoobar/zeroagent#1264), part of ZA-154. This page is the manifest in prose and the runbook for the Stripe side of ZeroAgent billing. The machine-readable form is `docs/stripe-setup.manifest.json`; a test keeps its variable names equal to the ones the code reads (`api/_lib/billing-config.js`).
 
-Nothing here is a value. No amount, no Price id, no key, no signing secret and no object id is written in this repo. The Stripe account is provisioned outside this repo and only when the owner authorizes it.
+Nothing here is a value. No amount, no Price id, no key, no signing secret and no object id is written in this repo. Live billing runs on the MVPLean, Inc. Stripe account. There is no standing staging billing: the sandbox proofs ran on 2026-10-13 and 2026-10-14 on a separate Stripe account that has since been closed, and its staging event destination was deleted.
 
 ## Environments
 
@@ -10,9 +10,11 @@ There are two, and they never mix.
 
 | | Sandbox | Live |
 | --- | --- | --- |
-| Where it runs | Vercel Preview and staging, dedicated staging database | Vercel Production |
+| Where it runs | Nothing standing. A proof run provisions its own sandbox (MVPLean test mode, dedicated database) and tears it down. | Vercel Production |
 | `STRIPE_EXPECT_LIVE_MODE` | `false` | `true` |
 | Keys, signing secret, Product, portal configuration | its own | its own |
+
+No Preview or staging deployment carries Stripe or database variables between proofs. Production variables are the only Stripe variables on the project.
 
 A deployment is configured for one mode. `loadBillingEnvironment` refuses a key whose own marker (`rk_test_`, `sk_live_`, ...) disagrees with `STRIPE_EXPECT_LIVE_MODE`, and `assertLivemode` refuses any event or API object whose `livemode` is not exactly the configured one, a missing flag included. The mode is never defaulted: an unset or malformed `STRIPE_EXPECT_LIVE_MODE` fails closed.
 
@@ -73,7 +75,7 @@ Rollback changes only the current-sale pointer: reactivate the prior Price if ne
 
 ## Provisioning the sandbox (authorized work only)
 
-Not done by this ticket. When the owner authorizes it: create the sandbox under the ZeroAgent Stripe account, create the Product, Price, portal configuration and event destination with the CLI or API, record object ids (never key values) in deployment notes, put the secrets in Vercel's protected settings for Preview only, then run the migration against the staging database. Live is reproduced the same way after sandbox acceptance and merchant activation, and the first live payment is a coordinated, authorized proof.
+Not standing. When the owner authorizes the next proof, set up in MVPLean, Inc. test mode: the Product and monthly Price (tax code txcd_10000000), the portal configuration, one event destination with exactly the manifest's events at a stable staging origin, a restricted test key (the permission set above), and Stripe Tax head office 390 NE 191st St STE 17088, Miami, FL 33179. Create a dedicated staging database that is never the production one, run the migration against it, and put every secret in Vercel's protected settings scoped to one named branch, never to all Preview deployments. Record object ids (never key values) in deployment notes. Retire the setup when the proof is done: delete the destination, remove the variables and rotate the Deployment Protection bypass secret if a destination URL embedded it. Never put a bypass secret in a destination URL that Stripe stores if it can be avoided; prefer an unprotected path or a header the destination supports.
 
 ## ZA-908 operations audit and replay
 
@@ -85,7 +87,7 @@ For repair, pass the reported 12 character reference directly to the replay prep
 
 ## Sandbox lifecycle proof commands
 
-No sandbox or Stripe account exists for this ticket. These checks are ready to run once the owner provisions a dedicated sandbox, staging database, restricted test key and webhook. Set `STRIPE_EXPECT_LIVE_MODE=false` and the other variables listed above in a protected shell. The runner refuses live mode, live objects and non-restricted keys; it prints only scenario names and check names. All commands below use `npm run billing:sandbox-proof --` and replace the angle-bracket placeholders with sandbox object ids. Never put a key in command arguments. Perform the stated action through hosted Checkout, portal or the sandbox Dashboard first, then run the matching proof command. Each command verifies the current Stripe objects and the stored webhook projection, not merely a local fixture.
+The lifecycle proofs were run on 2026-10-13 and 2026-10-14 against a separate Stripe account that is now closed, and no sandbox stands today. These checks run once the owner provisions a new sandbox (see "Provisioning the sandbox"). Set `STRIPE_EXPECT_LIVE_MODE=false` and the other variables listed above in a protected shell. The runner refuses live mode, live objects and non-restricted keys; it prints only scenario names and check names. All commands below use `npm run billing:sandbox-proof --` and replace the angle-bracket placeholders with sandbox object ids. Never put a key in command arguments. Perform the stated action through hosted Checkout, portal or the sandbox Dashboard first, then run the matching proof command. Each command verifies the current Stripe objects and the stored webhook projection, not merely a local fixture.
 
 - Increase: after changing the Product default to the higher Price, `npm run billing:sandbox-proof -- --scenario=price-increase --oldPrice=<old> --newPrice=<new> --subscription=<continuous> --account=<account-id>`.
 - Decrease: after changing the Product default to the lower Price, `npm run billing:sandbox-proof -- --scenario=price-decrease --oldPrice=<old> --newPrice=<new> --subscription=<continuous> --account=<account-id>`.
@@ -97,6 +99,6 @@ No sandbox or Stripe account exists for this ticket. These checks are ready to r
 - Payment failure: use a sandbox failure method on renewal, wait for the webhook, then `npm run billing:sandbox-proof -- --scenario=payment-failure --subscription=<continuous> --invoice=<unpaid-invoice> --account=<account-id>`. After grace exhaustion, verify `/api/app/me` with an injected application clock. The runner checks the stored grace anchor, not a wall-clock expiry claim.
 - Cancel: schedule cancellation through the portal and wait for the webhook, then `npm run billing:sandbox-proof -- --scenario=cancel --subscription=<continuous> --account=<account-id>`. For terminal cancellation, also run the return case above.
 - Restricted key: `npm run billing:sandbox-proof -- --scenario=restricted-key`. It proves subscription read is allowed and balance read is denied with 403. The runner itself requires an `rk_test_` key.
-- Staging boundary: with a separate staging database and reachable staging URL, `npm run billing:sandbox-proof -- --scenario=staging-boundary --stagingUrl=<https-staging-url> --productionDb=<production-db-name>`. This checks sandbox mode, separate database name, nonproduction host and catalog reachability. Also manually inspect Vercel Preview secret scoping and verify production requests cannot access the staging database; this script alone cannot prove deployment secret boundaries.
+- Staging boundary: with a separate staging database and reachable staging URL, `npm run billing:sandbox-proof -- --scenario=staging-boundary --stagingUrl=<https-staging-url> --productionDb=<production-db-name>`. This checks sandbox mode, separate database name, nonproduction host and catalog reachability. Also manually inspect Vercel Preview secret scoping and verify production requests cannot access the staging database; this script alone cannot prove deployment secret boundaries. Applies to the next proof only; there is no standing staging URL.
 
-Record the sandbox object ids, timestamps, event ids, observed `/api/app/me` states and test-clock transitions in the private operational evidence. Keep keys, webhook bodies, customer details and portal URLs out of the record. These commands have not been run against Stripe or staging in ZA-908.
+Record the sandbox object ids, timestamps, event ids, observed `/api/app/me` states and test-clock transitions in the private operational evidence. Keep keys, webhook bodies, customer details and portal URLs out of the record. Evidence from the 2026-10-13 and 2026-10-14 runs is in the private operational record; the account it ran on is closed.
