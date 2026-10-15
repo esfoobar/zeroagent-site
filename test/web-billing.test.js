@@ -115,6 +115,10 @@ test('Checkout and portal use account metadata and fixed return paths', async ()
  assert.deepEqual(f.calls.checkoutData.subscription_data.metadata,metadata);
  assert.equal(f.calls.checkoutData.success_url,'https://zeroagenthq.com/account/plan?checkout=returned');
  assert.equal(f.calls.checkoutData.cancel_url,'https://zeroagenthq.com/account/plan');
+ assert.deepEqual(f.calls.checkoutData.automatic_tax,{ enabled: true });
+ assert.equal(f.calls.checkoutData.billing_address_collection,'required');
+ assert.deepEqual(f.calls.checkoutData.customer_update,{ address: 'auto' });
+ assert.equal(f.calls.checkoutData.tax_id_collection,undefined);
  assert.equal((await f.call(portal,'POST')).statusCode,200);
  assert.equal(f.calls.portalData.return_url,'https://zeroagenthq.com/account/plan');
 });

@@ -131,6 +131,9 @@ export async function createCheckout({ stripe, users, purchases, account, enviro
 		metadata: accountMetadata(account.githubId),
 		subscription_data: { metadata: accountMetadata(account.githubId) },
 		success_url: `${baseUrl}/account/plan?checkout=returned`, cancel_url: `${baseUrl}/account/plan`,
+		automatic_tax: { enabled: true },
+		billing_address_collection: 'required',
+		customer_update: { address: 'auto' },
 	}, { idempotencyKey: `checkout-${operationId}` });
 	assertLivemode(environment, session, 'Checkout Session');
 	if (session.customer !== customer.id || session.status !== 'open') throw new BillingIntegrityError('invalid_checkout_session');
