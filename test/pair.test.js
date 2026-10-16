@@ -62,6 +62,7 @@ test('200: a valid desktop token gets a pairing token good for five minutes', as
 	assert.equal(typeof parsed.token, 'string');
 	assert.ok(parsed.token.length >= 32);
 	assert.equal(stored.githubId, 1234567);
+	assert.equal(stored.kind, undefined);
 	assert.equal(stored.tokenHash, sha256Hex(parsed.token));
 	assert.equal(parsed.expires_at, stored.expiresAt.toISOString());
 

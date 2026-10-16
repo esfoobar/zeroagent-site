@@ -99,6 +99,25 @@ test('200: a valid pairing token mints a device token and records the paired dev
 	assert.equal(recorded.tokenHash, sha256Hex(parsed.token));
 });
 
+test('two successful claims create distinct normal device entries', async () => {
+	const recorded = [];
+	const deps = depsWithClaim({ githubId: 1234567, kind: 'review' }, {
+		addPairedDevice: async (args) => recorded.push(args),
+	});
+	const first = fakeRes();
+	const second = fakeRes();
+	await handler(reqWithBody({ token: 'review-token' }), first, deps);
+	await handler(reqWithBody({ token: 'review-token' }), second, deps);
+	assert.equal(first.statusCode, 200);
+	assert.equal(second.statusCode, 200);
+	assert.equal(recorded.length, 2);
+	assert.notEqual(recorded[0].deviceId, recorded[1].deviceId);
+	for (const res of [first, second]) {
+		const payload = verifyHs256(JSON.parse(res.body).token, SECRET);
+		assert.equal(payload.exp - payload.iat, 365 * 24 * 60 * 60);
+	}
+});
+
 test('200: mints the legacy issuer by default', async () => {
 	const req = reqWithBody({ token: 'the-pairing-token' });
 	const res = fakeRes();

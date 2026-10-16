@@ -46,16 +46,44 @@ export async function createPairingTokenWithCollection(collection, { tokenHash, 
 	});
 }
 
+export async function createReviewPairingTokenWithCollection(collection, { tokenHash, githubId, now, expiresAt }) {
+	await collection.insertOne({
+		_id: tokenHash, kind: 'review', githubId,
+		createdAt: now.toISOString(), expiresAt: expiresAt.toISOString(), revokedAt: null,
+	});
+}
+
+export async function renewReviewPairingTokenWithCollection(collection, { tokenHash, githubId, now, expiresAt }) {
+	return collection.updateOne(
+		{ _id: tokenHash, kind: 'review', githubId, revokedAt: null },
+		{ $set: { expiresAt: expiresAt.toISOString(), renewedAt: now.toISOString() } }
+	);
+}
+
+export async function revokeReviewPairingTokenWithCollection(collection, { tokenHash, githubId, now }) {
+	return collection.updateOne(
+		{ _id: tokenHash, kind: 'review', githubId, revokedAt: null },
+		{ $set: { revokedAt: now.toISOString() } }
+	);
+}
+
 // The one place single use is actually enforced: filter and set run as one
 // atomic operation, so two concurrent claims of the same token cannot both
 // match. The loser gets null back, never a second device token.
 export async function claimPairingTokenWithCollection(collection, { tokenHash, now }) {
 	const result = await collection.findOneAndUpdate(
-		{ _id: tokenHash, usedAt: null, expiresAt: { $gt: now.toISOString() } },
+		{ _id: tokenHash, kind: { $ne: 'review' }, usedAt: null, expiresAt: { $gt: now.toISOString() } },
 		{ $set: { usedAt: now.toISOString() } },
 		{ returnDocument: 'after' }
 	);
-	return result && 'value' in result ? result.value : result;
+	const claimed = result && 'value' in result ? result.value : result;
+	if (claimed) return claimed;
+	const demoGithubId = Number(process.env.ZEROAGENT_REVIEW_DEMO_GITHUB_ID);
+	if (!Number.isSafeInteger(demoGithubId) || demoGithubId <= 0) return null;
+	return collection.findOne({
+		_id: tokenHash, kind: 'review', githubId: demoGithubId,
+		revokedAt: null, expiresAt: { $gt: now.toISOString() },
+	});
 }
 
 // Read-only, used only to pick an error code (invalid vs. expired vs.
@@ -77,4 +105,16 @@ export async function claimPairingToken(args) {
 export async function getPairingToken(tokenHash) {
 	const collection = await getCollection();
 	return getPairingTokenWithCollection(collection, tokenHash);
+}
+
+export async function createReviewPairingToken(args) {
+	return createReviewPairingTokenWithCollection(await getCollection(), args);
+}
+
+export async function renewReviewPairingToken(args) {
+	return renewReviewPairingTokenWithCollection(await getCollection(), args);
+}
+
+export async function revokeReviewPairingToken(args) {
+	return revokeReviewPairingTokenWithCollection(await getCollection(), args);
 }
