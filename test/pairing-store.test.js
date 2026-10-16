@@ -10,6 +10,9 @@ import {
 	createPairingTokenWithCollection,
 	claimPairingTokenWithCollection,
 	getPairingTokenWithCollection,
+	createReviewPairingTokenWithCollection,
+	renewReviewPairingTokenWithCollection,
+	revokeReviewPairingTokenWithCollection,
 } from '../api/_lib/pairing-store.js';
 
 function fakeCollection(seed = []) {
@@ -23,6 +26,7 @@ function fakeCollection(seed = []) {
 			const doc = docs.get(filter._id);
 			if (!doc) return null;
 			if ('usedAt' in filter && doc.usedAt !== filter.usedAt) return null;
+			if (filter.kind?.$ne && doc.kind === filter.kind.$ne) return null;
 			if (filter.expiresAt && '$gt' in filter.expiresAt && !(doc.expiresAt > filter.expiresAt.$gt)) return null;
 			Object.assign(doc, update.$set || {});
 			docs.set(filter._id, doc);
@@ -30,7 +34,17 @@ function fakeCollection(seed = []) {
 		},
 		async findOne(filter) {
 			const doc = docs.get(filter._id);
+			if (filter.kind && doc?.kind !== filter.kind) return null;
+			if (filter.githubId && doc?.githubId !== filter.githubId) return null;
+			if ('revokedAt' in filter && doc?.revokedAt !== filter.revokedAt) return null;
+			if (filter.expiresAt?.$gt && !(doc?.expiresAt > filter.expiresAt.$gt)) return null;
 			return doc ? { ...doc } : null;
+		},
+		async updateOne(filter, update) {
+			const doc = docs.get(filter._id);
+			if (!doc || doc.kind !== filter.kind || doc.githubId !== filter.githubId || doc.revokedAt !== filter.revokedAt) return { modifiedCount: 0 };
+			Object.assign(doc, update.$set);
+			return { modifiedCount: 1 };
 		},
 	};
 }
@@ -49,6 +63,43 @@ test('createPairingTokenWithCollection stores the hash, not any token', async ()
 		expiresAt: expiresAt.toISOString(),
 		usedAt: null,
 	});
+});
+
+test('review token can be claimed repeatedly, renewed, then revoked', async () => {
+	const oldId = process.env.ZEROAGENT_REVIEW_DEMO_GITHUB_ID;
+	process.env.ZEROAGENT_REVIEW_DEMO_GITHUB_ID = '42';
+	try {
+		const collection = fakeCollection();
+		const now = new Date('2026-09-08T21:00:00.000Z');
+		const expiry = new Date('2026-12-07T21:00:00.000Z');
+		await createReviewPairingTokenWithCollection(collection, { tokenHash: 'reviewhash', githubId: 42, now, expiresAt: expiry });
+		const claim = { tokenHash: 'reviewhash', now: new Date('2026-10-01T00:00:00.000Z') };
+		assert.ok(await claimPairingTokenWithCollection(collection, claim));
+		assert.ok(await claimPairingTokenWithCollection(collection, claim));
+		assert.equal((await getPairingTokenWithCollection(collection, 'reviewhash')).usedAt, undefined);
+		assert.equal(await claimPairingTokenWithCollection(collection, { ...claim, now: expiry }), null);
+		const renewed = new Date('2027-01-01T00:00:00.000Z');
+		assert.equal((await renewReviewPairingTokenWithCollection(collection, { tokenHash: 'reviewhash', githubId: 42, now: claim.now, expiresAt: renewed })).modifiedCount, 1);
+		assert.ok(await claimPairingTokenWithCollection(collection, { ...claim, now: expiry }));
+		assert.equal((await revokeReviewPairingTokenWithCollection(collection, { tokenHash: 'reviewhash', githubId: 42, now: claim.now })).modifiedCount, 1);
+		assert.equal(await claimPairingTokenWithCollection(collection, claim), null);
+	} finally {
+		if (oldId === undefined) delete process.env.ZEROAGENT_REVIEW_DEMO_GITHUB_ID;
+		else process.env.ZEROAGENT_REVIEW_DEMO_GITHUB_ID = oldId;
+	}
+});
+
+test('review token refuses any configured account other than its owner', async () => {
+	const oldId = process.env.ZEROAGENT_REVIEW_DEMO_GITHUB_ID;
+	process.env.ZEROAGENT_REVIEW_DEMO_GITHUB_ID = '99';
+	try {
+		const collection = fakeCollection();
+		await createReviewPairingTokenWithCollection(collection, { tokenHash: 'reviewhash', githubId: 42, now: new Date('2026-09-08'), expiresAt: new Date('2027-01-01') });
+		assert.equal(await claimPairingTokenWithCollection(collection, { tokenHash: 'reviewhash', now: new Date('2026-10-01') }), null);
+	} finally {
+		if (oldId === undefined) delete process.env.ZEROAGENT_REVIEW_DEMO_GITHUB_ID;
+		else process.env.ZEROAGENT_REVIEW_DEMO_GITHUB_ID = oldId;
+	}
 });
 
 test('claimPairingTokenWithCollection marks an unused, unexpired token used and returns it', async () => {

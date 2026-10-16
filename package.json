@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
+    "review:pairing": "node scripts/review-pairing.mjs",
     "billing:migrate": "node scripts/billing-migrate.mjs",
     "billing:audit": "node scripts/billing-audit.mjs",
     "billing:sandbox-proof": "node scripts/billing-sandbox-proof.mjs",
