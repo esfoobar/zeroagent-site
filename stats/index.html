@@ -414,6 +414,7 @@
 	<section>
 		<h2>Breakdown</h2>
 		<div class="grid2">
+			<div class="card"><h2 style="margin-bottom:12px;">Who downloaded</h2><div class="barlist" id="by-class"></div></div>
 			<div class="card"><h2 style="margin-bottom:12px;">Download platform</h2><div class="barlist" id="by-platform"></div></div>
 			<div class="card"><h2 style="margin-bottom:12px;">Format</h2><div class="barlist" id="by-format"></div></div>
 			<div class="card">
@@ -455,6 +456,7 @@
 						<th>Browser</th>
 						<th>OS</th>
 						<th>Referrer</th>
+						<th>Class</th>
 					</tr>
 				</thead>
 				<tbody id="last-body"></tbody>
@@ -464,11 +466,12 @@
 	</section>
 
 	<footer>
-		ZA-165 &middot; counted at <code>/download/arm64</code> and
-		<code>/download/x64</code>. "Humans" carries recognized
-		browsers; "bots" is everything else (curl, wget, crawlers, and
-		anything the parser didn't recognize). See
-		<a href="https://github.com/esfoobar/zeroagent/issues/287">esfoobar/zeroagent#287</a>.
+		ZA-165, ZA-223 &middot; counted at <code>/download/arm64</code> and
+		<code>/download/x64</code>. "Humans" is strict: a known browser that
+		arrived from this site's own download page and was not part of a burst.
+		"Browser user agent" is the old loose count. Every download is still
+		recorded; the rest are labelled, not dropped. See
+		<a href="https://github.com/esfoobar/zeroagent/issues/364">esfoobar/zeroagent#364</a>.
 	</footer>
 
 </div>

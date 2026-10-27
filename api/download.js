@@ -17,10 +17,11 @@
  * redirect has already gone out.
  */
 
-import { put } from '@vercel/blob';
+import { put, list } from '@vercel/blob';
 import { waitUntil } from '@vercel/functions';
 import { parseUserAgent } from './_lib/ua.js';
 import { resolveDownloadRoute, releaseVersion } from './_lib/download-routes.js';
+import { baseClass, classifyRows, buildPathname, parsePathname, sanitizeSegment } from './_lib/download-class.js';
 import {
 	extractClientId,
 	randomClientId,
@@ -34,6 +35,7 @@ import {
 const RELEASES_BASE = 'https://releases.zeroagenthq.com';
 const VERSION_CACHE_MS = 5 * 60 * 1000;
 const PUT_TIMEOUT_MS = 1500;
+const NEIGHBOUR_TIMEOUT_MS = 4000;
 
 // Module-scope cache: this survives across invocations on a warm instance
 // and costs nothing on a cold one beyond the first fetch.
@@ -79,11 +81,6 @@ async function macVersion() {
 	return macVersionCache.value;
 }
 
-function sanitizeSegment(value) {
-	const cleaned = String(value == null ? '' : value).replace(/[^A-Za-z0-9._]/g, '');
-	return cleaned || 'unknown';
-}
-
 function withTimeout(promise, ms) {
 	return new Promise((resolve) => {
 		let settled = false;
@@ -120,7 +117,7 @@ function firstHeader(value) {
 // Fire-and-forget: builds and sends the GA4 event, catching everything
 // internally so a caller never needs to await or catch this. Returns the
 // in-flight promise only so it can be handed to waitUntil.
-function reportToGa4(req, { arch, platform, format, version, ts }) {
+function reportToGa4(req, { arch, platform, format, version, ts, trafficClass }) {
 	const apiSecret = process.env.GA4_API_SECRET;
 	if (!apiSecret) {
 		console.log('[ga4] GA4_API_SECRET is not set; skipping the Measurement Protocol event');
@@ -144,12 +141,63 @@ function reportToGa4(req, { arch, platform, format, version, ts }) {
 		ua,
 		ip,
 		referer,
+		trafficClass,
 		timestampMs: ts.getTime(),
 	});
 
 	return sendGa4Event({ payload, apiSecret }).catch((err) => {
 		console.log(`[ga4] Measurement Protocol request failed: ${err && err.message}`);
 	});
+}
+
+// Events already recorded today, read from their pathnames alone, so the
+// burst rule can see the sweep this event may be part of. Pages to the end
+// (list() returns oldest first, so a single page would see only the earliest
+// events of a busy day). Runs inside waitUntil, never on the redirect path.
+// Best effort: a slow or failed list just means the burst check sees nothing,
+// and the stats endpoint (which sees every event) still catches the burst.
+async function recentNeighbours(date) {
+	const blobs = await withTimeout(
+		(async () => {
+			const all = [];
+			let cursor;
+			do {
+				const result = await list({ prefix: `downloads/${date}/`, cursor, limit: 1000 });
+				all.push(...result.blobs);
+				cursor = result.hasMore ? result.cursor : undefined;
+			} while (cursor);
+			return all;
+		})(),
+		NEIGHBOUR_TIMEOUT_MS
+	);
+	if (!Array.isArray(blobs)) return [];
+	const rows = [];
+	for (const blob of blobs) {
+		const fields = parsePathname(blob.pathname);
+		if (!fields || fields.tsMs == null) continue;
+		rows.push({ ...fields, city: fields.city || null, base: fields.base || 'unverified' });
+	}
+	return rows;
+}
+
+// Judges the event (burst needs its neighbours) and then reports it to GA4.
+// The whole thing runs under waitUntil after the 302 has gone out.
+async function classifyAndReport(req, { self, date, event }) {
+	let trafficClass = self.base;
+	try {
+		if (['human', 'noreferrer', 'unverified'].includes(self.base)) {
+			// The event's own blob may already be listed; drop it so it is not
+			// counted as its own neighbour.
+			const neighbours = (await recentNeighbours(date)).filter(
+				(n) => !(n.tsMs === self.tsMs && n.arch === self.arch && n.platform === self.platform && n.format === self.format && n.country === self.country)
+			);
+			const verdicts = classifyRows([...neighbours, self]);
+			trafficClass = verdicts[verdicts.length - 1];
+		}
+	} catch (err) {
+		console.log(`[class] burst check failed: ${err && err.message}`);
+	}
+	return reportToGa4(req, { ...event, trafficClass });
 }
 
 export default async function handler(req, res) {
@@ -213,20 +261,31 @@ export default async function handler(req, res) {
 			lang: firstHeader(req.headers['accept-language']) || null,
 		};
 
-		const pathname = [
-			'downloads',
+		const base = baseClass({ browser: parsed.browser, referrer: event.referrer });
+		const self = {
+			tsMs: ts.getTime(),
+			country: sanitizeSegment(event.country),
+			city: event.city ? sanitizeSegment(event.city) : null,
+			arch,
+			platform,
+			format,
+			base,
+		};
+		event.baseClass = base;
+
+		const pathname = buildPathname({
 			date,
-			[
-				ts.getTime(),
-				sanitizeSegment(arch),
-				sanitizeSegment(platform),
-				sanitizeSegment(format),
-				sanitizeSegment(version),
-				sanitizeSegment(event.country),
-				sanitizeSegment(event.browser),
-				sanitizeSegment(event.os),
-			].join('-') + '.json',
-		].join('/');
+			tsMs: ts.getTime(),
+			arch,
+			platform,
+			format,
+			version,
+			country: event.country,
+			browser: event.browser,
+			os: event.os,
+			base,
+			city: event.city,
+		});
 
 		const blobWrite = withTimeout(
 			put(pathname, JSON.stringify(event), {
@@ -242,7 +301,7 @@ export default async function handler(req, res) {
 		// Dispatched in parallel with the Blob write above, never awaited on
 		// the response path; waitUntil keeps it alive past the 302 that
 		// follows below.
-		waitUntil(reportToGa4(req, { arch, platform, format, version, ts }));
+		waitUntil(classifyAndReport(req, { self, date, event: { arch, platform, format, version, ts } }));
 
 		await blobWrite;
 	}

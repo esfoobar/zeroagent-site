@@ -140,6 +140,8 @@ test('buildDownloadServedPayload builds a well-formed Measurement Protocol body'
 		version: '1.2.3',
 		source: 'redirect',
 		referrer_host: 'mvplean.com',
+		traffic_class: 'unknown',
+		strict_human: 'false',
 	});
 });
 
@@ -187,4 +189,14 @@ test('ga4CollectUrl points at the real collect endpoint with measurement_id and 
 test('ga4CollectUrl points at the debug collect endpoint when debug is true', () => {
 	const url = ga4CollectUrl({ apiSecret: 'shh', debug: true });
 	assert.equal(url, `https://www.google-analytics.com/debug/mp/collect?measurement_id=${GA4_MEASUREMENT_ID}&api_secret=shh`);
+});
+
+test('buildDownloadServedPayload marks the traffic class and strict human flag', () => {
+	const base = { clientId: 'c', sessionId: 's', arch: 'x64', referer: 'https://zeroagenthq.com/download' };
+	const human = buildDownloadServedPayload({ ...base, trafficClass: 'human' }).events[0].params;
+	assert.equal(human.traffic_class, 'human');
+	assert.equal(human.strict_human, 'true');
+	const burst = buildDownloadServedPayload({ ...base, trafficClass: 'burst' }).events[0].params;
+	assert.equal(burst.traffic_class, 'burst');
+	assert.equal(burst.strict_human, 'false');
 });
