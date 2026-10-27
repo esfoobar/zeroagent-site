@@ -155,3 +155,13 @@ test('Windows requires the stable object even when the manifest has a version', 
 		assert.equal(published.headers.Location, 'https://releases.zeroagenthq.com/latest/ZeroAgent-win-x64.exe');
 	} finally { globalThis.fetch = originalFetch; }
 });
+
+test('every page has one canonical path: index.html twins redirect, counted routes are untouched (ZA-223)', () => {
+	const redirects = config.redirects.map(({ source, destination, permanent }) => [source, destination, permanent]);
+	assert.deepEqual(redirects, [
+		['/index.html', '/', true],
+		['/:path*/index.html', '/:path*', true],
+	]);
+	assert.equal(config.trailingSlash, false);
+	assert.ok(config.rewrites.some((r) => r.source === '/download/:arch(arm64|x64)'));
+});

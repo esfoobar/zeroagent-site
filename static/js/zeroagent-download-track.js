@@ -1,7 +1,8 @@
 /*
  * ZA-165: a GA4 event on each download click. The count of record is
  * the server-side redirect at /download/<arch>; this is a
- * proxy for page-level intent, and undercounts by design (ad blockers,
+ * proxy for page-level intent (event name download_click, never download:
+ * it is not a download), and undercounts by design (ad blockers,
  * auto-update and Homebrew installs never fire it).
  */
 (function () {
@@ -10,7 +11,7 @@
 	function trackDownload(arch, platform, format) {
 		if (typeof gtag !== 'function') return;
 		var version = window.ZA_RELEASE_VERSION || 'unknown';
-		gtag('event', 'download', { arch: arch, platform: platform, format: format, version: version, transport_type: 'beacon' });
+		gtag('event', 'download_click', { arch: arch, platform: platform, format: format, version: version, transport_type: 'beacon' });
 	}
 
 	document.addEventListener('DOMContentLoaded', function () {

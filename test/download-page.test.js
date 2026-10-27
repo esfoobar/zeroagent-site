@@ -39,3 +39,10 @@ test('no page says or implies a Claude account is required', async () => {
 	}
 	assert.match(home, /runs on Claude, Codex or\s+Gemini/);
 });
+
+test('the click event is download_click, never download (ZA-223)', async () => {
+	const { readFile } = await import('node:fs/promises');
+	const source = await readFile(new URL('../static/js/zeroagent-download-track.js', import.meta.url), 'utf8');
+	assert.match(source, /gtag\('event', 'download_click'/);
+	assert.doesNotMatch(source, /gtag\('event', 'download'[,)]/);
+});
