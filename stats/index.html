@@ -276,6 +276,45 @@
 		white-space: nowrap;
 	}
 
+	.section-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 12px;
+		margin-bottom: 18px;
+	}
+
+	.section-head h2 { margin: 0; }
+
+	.toggle {
+		display: inline-flex;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		background: var(--surface);
+		padding: 2px;
+	}
+
+	.toggle button {
+		font-family: var(--sans);
+		font-size: 12px;
+		background: transparent;
+		color: var(--ink-3);
+		border: none;
+		border-radius: 999px;
+		padding: 5px 12px;
+		cursor: pointer;
+	}
+
+	.toggle button:hover { color: var(--ink); }
+
+	.toggle button[aria-pressed="true"] {
+		background: var(--accent-soft);
+		color: var(--ink);
+	}
+
+	.toggle button:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 	/* Breakdown grid */
 	.grid2 {
 		display: grid;
@@ -403,7 +442,13 @@
 	<div class="tiles" id="tiles"></div>
 
 	<section>
-		<h2>Downloads per day</h2>
+		<div class="section-head">
+			<h2 id="daychart-title">Humans per day</h2>
+			<div class="toggle" role="group" aria-label="Chart series">
+				<button type="button" id="series-humans" data-series="humans" aria-pressed="true">Humans</button>
+				<button type="button" id="series-total" data-series="total" aria-pressed="false">Total downloads</button>
+			</div>
+		</div>
 		<div id="daychart-wrap">
 			<div id="daychart"></div>
 			<div class="day-axis" id="day-axis"></div>

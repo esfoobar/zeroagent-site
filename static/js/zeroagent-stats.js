@@ -10,6 +10,8 @@
 	var statusLine = document.getElementById('status-line');
 	var daysSelect = document.getElementById('days');
 	var tooltip = document.getElementById('tooltip');
+	var series = 'humans';
+	var lastData = null;
 
 	function esc(s) {
 		var d = document.createElement('div');
@@ -101,7 +103,17 @@
 		return out;
 	}
 
-	function renderDayChart(byDay) {
+	// Both series are drawn from the same filled window, so a day with no
+	// humans is a zero and the two charts share an x axis.
+	function renderDayChart(data) {
+		var byDay = series === 'humans' ? data.humansByDay : data.byDay;
+		var noun = series === 'humans' ? 'human' : 'download';
+		document.getElementById('daychart-title').textContent =
+			series === 'humans' ? 'Humans per day' : 'Downloads per day';
+		Array.prototype.forEach.call(document.querySelectorAll('.toggle button'), function (b) {
+			b.setAttribute('aria-pressed', b.getAttribute('data-series') === series ? 'true' : 'false');
+		});
+
 		var chart = document.getElementById('daychart');
 		var axis = document.getElementById('day-axis');
 		var empty = document.getElementById('daychart-empty');
@@ -111,6 +123,7 @@
 
 		if (!byDay || !byDay.length) {
 			wrap.hidden = true;
+			empty.textContent = 'No ' + noun + 's recorded yet in this window.';
 			empty.hidden = false;
 			return;
 		}
@@ -127,7 +140,7 @@
 			bar.className = 'bar';
 			bar.tabIndex = 0;
 			bar.style.height = d.count ? (Math.max(2, Math.round((d.count / max) * 100)) + '%') : '0%';
-			var label = d.date + ': ' + fmtInt(d.count) + (d.count === 1 ? ' download' : ' downloads');
+			var label = d.date + ': ' + fmtInt(d.count) + (d.count === 1 ? ' ' + noun : ' ' + noun + 's');
 			bar.setAttribute('aria-label', label);
 			bar.addEventListener('mousemove', function (e) { positionTooltip(e, label); });
 			bar.addEventListener('mouseleave', hideTooltip);
@@ -216,7 +229,8 @@
 	function render(data) {
 		renderTiles(data);
 		renderClasses(data.byClass);
-		renderDayChart(data.byDay);
+		lastData = data;
+		renderDayChart(data);
 		renderBarlist('by-arch', data.byArch);
 		renderBarlist('by-platform', data.byPlatform);
 		renderBarlist('by-format', data.byFormat);
@@ -267,6 +281,12 @@
 		showGate();
 	});
 	daysSelect.addEventListener('change', load);
+	Array.prototype.forEach.call(document.querySelectorAll('.toggle button'), function (b) {
+		b.addEventListener('click', function () {
+			series = b.getAttribute('data-series');
+			if (lastData) renderDayChart(lastData);
+		});
+	});
 
 	load();
 })();
