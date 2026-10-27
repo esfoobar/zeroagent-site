@@ -57,9 +57,10 @@
 		var tiles = document.getElementById('tiles');
 		var pct = data.total ? Math.round((data.humans / data.total) * 100) : 0;
 		tiles.innerHTML = [
-			['Total downloads', fmtInt(data.total)],
 			['Humans', fmtInt(data.humans) + (data.total ? ' (' + pct + '%)' : '')],
-			['Bots & tools', fmtInt(data.bots)],
+			['Total downloads', fmtInt(data.total)],
+			['Not human', fmtInt(data.bots)],
+			['Browser user agent (loose)', fmtInt(data.browserUa)],
 		].map(function (pair) {
 			return '<div class="tile"><div class="n">' + esc(pair[1]) + '</div><div class="l">' + esc(pair[0]) + '</div></div>';
 		}).join('');
@@ -166,6 +167,22 @@
 		}).join('');
 	}
 
+	var CLASS_LABELS = {
+		human: 'Human',
+		bot: 'Named bot',
+		cli: 'curl / wget',
+		unrecognized: 'Unrecognized agent',
+		burst: 'Burst (sweep)',
+		noreferrer: 'Spoofed or direct (no referrer)',
+		unverified: 'Unverified (body unreadable)'
+	};
+
+	function renderClasses(byClass) {
+		var labelled = {};
+		Object.keys(byClass || {}).forEach(function (k) { labelled[CLASS_LABELS[k] || k] = byClass[k]; });
+		renderBarlist('by-class', labelled);
+	}
+
 	function renderLast(rows) {
 		var body = document.getElementById('last-body');
 		var empty = document.getElementById('last-empty');
@@ -191,12 +208,14 @@
 				'<td>' + esc(r.browser || 'unknown') + '</td>' +
 				'<td>' + esc(r.os || 'unknown') + '</td>' +
 				'<td>' + esc(r.referrer || 'direct') + '</td>' +
+				'<td>' + esc(CLASS_LABELS[r.class] || r.class || '—') + '</td>' +
 				'</tr>';
 		}).join('');
 	}
 
 	function render(data) {
 		renderTiles(data);
+		renderClasses(data.byClass);
 		renderDayChart(data.byDay);
 		renderBarlist('by-arch', data.byArch);
 		renderBarlist('by-platform', data.byPlatform);
