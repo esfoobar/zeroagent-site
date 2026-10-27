@@ -208,7 +208,7 @@
 				'<td>' + esc(r.browser || 'unknown') + '</td>' +
 				'<td>' + esc(r.os || 'unknown') + '</td>' +
 				'<td>' + esc(r.referrer || 'direct') + '</td>' +
-				'<td>' + esc(CLASS_LABELS[r.class] || r.class || '—') + '</td>' +
+				'<td>' + esc(CLASS_LABELS[r.class] || r.class || 'unknown') + '</td>' +
 				'</tr>';
 		}).join('');
 	}

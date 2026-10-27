@@ -35,7 +35,7 @@ import {
 const RELEASES_BASE = 'https://releases.zeroagenthq.com';
 const VERSION_CACHE_MS = 5 * 60 * 1000;
 const PUT_TIMEOUT_MS = 1500;
-const NEIGHBOUR_TIMEOUT_MS = 800;
+const NEIGHBOUR_TIMEOUT_MS = 4000;
 
 // Module-scope cache: this survives across invocations on a warm instance
 // and costs nothing on a cold one beyond the first fetch.
@@ -151,19 +151,53 @@ function reportToGa4(req, { arch, platform, format, version, ts, trafficClass })
 }
 
 // Events already recorded today, read from their pathnames alone, so the
-// burst rule can see the sweep this request may be part of. Best effort: a
-// slow or failed list just means the burst check sees nothing, and the stats
-// endpoint (which sees every event) still catches the burst when it reads.
+// burst rule can see the sweep this event may be part of. Pages to the end
+// (list() returns oldest first, so a single page would see only the earliest
+// events of a busy day). Runs inside waitUntil, never on the redirect path.
+// Best effort: a slow or failed list just means the burst check sees nothing,
+// and the stats endpoint (which sees every event) still catches the burst.
 async function recentNeighbours(date) {
-	const result = await withTimeout(list({ prefix: `downloads/${date}/`, limit: 200 }), NEIGHBOUR_TIMEOUT_MS);
-	if (!result || !Array.isArray(result.blobs)) return [];
+	const blobs = await withTimeout(
+		(async () => {
+			const all = [];
+			let cursor;
+			do {
+				const result = await list({ prefix: `downloads/${date}/`, cursor, limit: 1000 });
+				all.push(...result.blobs);
+				cursor = result.hasMore ? result.cursor : undefined;
+			} while (cursor);
+			return all;
+		})(),
+		NEIGHBOUR_TIMEOUT_MS
+	);
+	if (!Array.isArray(blobs)) return [];
 	const rows = [];
-	for (const blob of result.blobs) {
+	for (const blob of blobs) {
 		const fields = parsePathname(blob.pathname);
 		if (!fields || fields.tsMs == null) continue;
 		rows.push({ ...fields, city: fields.city || null, base: fields.base || 'unverified' });
 	}
 	return rows;
+}
+
+// Judges the event (burst needs its neighbours) and then reports it to GA4.
+// The whole thing runs under waitUntil after the 302 has gone out.
+async function classifyAndReport(req, { self, date, event }) {
+	let trafficClass = self.base;
+	try {
+		if (['human', 'noreferrer', 'unverified'].includes(self.base)) {
+			// The event's own blob may already be listed; drop it so it is not
+			// counted as its own neighbour.
+			const neighbours = (await recentNeighbours(date)).filter(
+				(n) => !(n.tsMs === self.tsMs && n.arch === self.arch && n.platform === self.platform && n.format === self.format && n.country === self.country)
+			);
+			const verdicts = classifyRows([...neighbours, self]);
+			trafficClass = verdicts[verdicts.length - 1];
+		}
+	} catch (err) {
+		console.log(`[class] burst check failed: ${err && err.message}`);
+	}
+	return reportToGa4(req, { ...event, trafficClass });
 }
 
 export default async function handler(req, res) {
@@ -228,7 +262,6 @@ export default async function handler(req, res) {
 		};
 
 		const base = baseClass({ browser: parsed.browser, referrer: event.referrer });
-		const neighbours = ['human', 'noreferrer', 'unverified'].includes(base) ? await recentNeighbours(date) : [];
 		const self = {
 			tsMs: ts.getTime(),
 			country: sanitizeSegment(event.country),
@@ -238,10 +271,7 @@ export default async function handler(req, res) {
 			format,
 			base,
 		};
-		const verdicts = classifyRows([...neighbours, self]);
-		const trafficClass = verdicts[verdicts.length - 1];
 		event.baseClass = base;
-		event.trafficClass = trafficClass;
 
 		const pathname = buildPathname({
 			date,
@@ -271,7 +301,7 @@ export default async function handler(req, res) {
 		// Dispatched in parallel with the Blob write above, never awaited on
 		// the response path; waitUntil keeps it alive past the 302 that
 		// follows below.
-		waitUntil(reportToGa4(req, { arch, platform, format, version, ts, trafficClass }));
+		waitUntil(classifyAndReport(req, { self, date, event: { arch, platform, format, version, ts } }));
 
 		await blobWrite;
 	}
