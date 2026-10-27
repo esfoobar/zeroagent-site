@@ -131,6 +131,7 @@ export function buildDownloadServedPayload({
 	ua,
 	ip,
 	referer,
+	trafficClass,
 	timestampMs,
 }) {
 	if (!clientId) throw new Error('buildDownloadServedPayload requires clientId');
@@ -155,6 +156,10 @@ export function buildDownloadServedPayload({
 					version: version || 'unknown',
 					source: 'redirect',
 					referrer_host: refererHost(referer),
+					// ZA-223: every download is still sent (1:1 with the Blob log);
+					// these two let a GA4 report keep only strict humans.
+					traffic_class: trafficClass || 'unknown',
+					strict_human: trafficClass === 'human' ? 'true' : 'false',
 				},
 			},
 		],

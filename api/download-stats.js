@@ -2,9 +2,15 @@
  * ZA-165 / esfoobar/zeroagent#287. Reads the download events api/download.js
  * writes to Vercel Blob and answers one JSON summary: totals, a humans
  * versus bots split, and breakdowns by day, arch, version, country, browser
- * and OS. Every one of those comes from list()'s pathnames alone (the
- * pathname layout was chosen for exactly this), except the 25 newest events
- * in "last", which need their bodies for city and referrer. Each pathname's
+ * and OS. Those come from list()'s pathnames alone (the pathname layout was
+ * chosen for exactly this), except the 25 newest events in "last", which
+ * need their bodies for city and referrer.
+ *
+ * ZA-223: "humans" is the strict count from api/_lib/download-class.js (a
+ * known browser, arriving from our own download page, not part of a burst);
+ * "browserUa" keeps the old loose number. Events written before ZA-223 have no
+ * referrer in their pathname, so the bodies of the browser-looking ones are
+ * read once to judge them the same way. Each pathname's
  * own leading epoch-ms segment gives every event a timestamp too, so "last"
  * carries an ISO "ts" (the body's own when the body fetch succeeds, else
  * derived from that epoch ms) and is sorted newest first by it.
@@ -15,11 +21,17 @@
 import { timingSafeEqual } from 'node:crypto';
 import { list, get } from '@vercel/blob';
 import { HUMAN_BROWSERS } from './_lib/ua.js';
+import { CLASSES, baseClass, classifyRows, parsePathname as parseEventPathname, sanitizeSegment } from './_lib/download-class.js';
 
 const DEFAULT_DAYS = 90;
 const MIN_DAYS = 1;
 const MAX_DAYS = 3650;
 const LAST_N = 25;
+const BODY_CONCURRENCY = 8;
+
+// Old events (before ZA-223) carry no referrer or city in their pathname. Their
+// bodies never change, so a warm instance keeps what it read.
+const legacyBodies = new Map();
 
 function safeEqual(a, b) {
 	const bufA = Buffer.from(String(a == null ? '' : a));
@@ -45,22 +57,7 @@ function extractToken(req) {
 	return null;
 }
 
-export function parsePathname(pathname) {
-	// Current pathnames include platform and format after arch; older Mac events omit them.
-	const parts = pathname.split('/');
-	if (parts.length !== 3 || parts[0] !== 'downloads') return null;
-	const date = parts[1];
-	const basename = parts[2].replace(/\.json$/, '');
-	const fields = basename.split('-');
-	if (fields.length < 6) return null;
-	const modern = fields.length >= 9;
-	const [epochMs, arch] = fields;
-	const platform = modern ? fields[2] : 'mac';
-	const format = modern ? fields[3] : 'dmg';
-	const [version, country, browser, os] = fields.slice(modern ? 4 : 2);
-	const tsMs = Number(epochMs);
-	return { date, arch, platform, format, version, country, browser, os, tsMs: Number.isFinite(tsMs) ? tsMs : null };
-}
+export const parsePathname = parseEventPathname;
 
 function isHuman(browser) {
 	return HUMAN_BROWSERS.includes(browser);
@@ -83,11 +80,14 @@ async function listAll(prefix) {
 }
 
 async function readEventBody(pathname) {
+	if (legacyBodies.has(pathname)) return legacyBodies.get(pathname);
 	try {
 		const result = await get(pathname, { access: 'private' });
 		if (!result || result.statusCode !== 200) return null;
 		const text = await new Response(result.stream).text();
-		return JSON.parse(text);
+		const body = JSON.parse(text);
+		legacyBodies.set(pathname, body);
+		return body;
 	} catch (err) {
 		return null;
 	}
@@ -136,10 +136,37 @@ export default async function handler(req, res) {
 		parsed.push({ ...fields, blob });
 	}
 
+	// Judge every event once, with the same rule the redirect uses. A new-layout
+	// pathname already carries its single-event verdict and city. An old one
+	// needs its body for the referrer and city, but only when its browser looks
+	// human: a named bot, curl or an unrecognized agent is settled by name.
+	const needsBody = parsed.filter((r) => r.layout !== 'classed' && HUMAN_BROWSERS.includes(r.browser));
+	const bodies = new Map();
+	for (let i = 0; i < needsBody.length; i += BODY_CONCURRENCY) {
+		await Promise.all(
+			needsBody.slice(i, i + BODY_CONCURRENCY).map(async (r) => {
+				bodies.set(r.blob.pathname, await readEventBody(r.blob.pathname));
+			})
+		);
+	}
+	for (const row of parsed) {
+		if (row.layout === 'classed') {
+			row.base = row.base || 'unverified';
+			continue;
+		}
+		const body = bodies.get(row.blob.pathname);
+		row.city = body && body.city ? sanitizeSegment(body.city) : null;
+		row.base = baseClass({ browser: row.browser, referrer: HUMAN_BROWSERS.includes(row.browser) ? (body ? body.referrer || null : undefined) : null });
+	}
+	const verdicts = classifyRows(parsed);
+	parsed.forEach((row, i) => { row.cls = verdicts[i]; });
+
 	let total = 0;
 	let humans = 0;
-	let bots = 0;
+	let browserUa = 0;
+	const byClass = Object.fromEntries(CLASSES.map((c) => [c, 0]));
 	const byDayMap = {};
+	const humansByDayMap = {};
 	const byArch = {};
 	const byPlatform = {};
 	const byFormat = {};
@@ -150,10 +177,11 @@ export default async function handler(req, res) {
 
 	for (const row of parsed) {
 		total += 1;
-		if (isHuman(row.browser)) {
+		byClass[row.cls] += 1;
+		if (isHuman(row.browser)) browserUa += 1;
+		if (row.cls === 'human') {
 			humans += 1;
-		} else {
-			bots += 1;
+			bump(humansByDayMap, row.date);
 		}
 		bump(byDayMap, row.date);
 		bump(byArch, row.arch);
@@ -164,10 +192,15 @@ export default async function handler(req, res) {
 		bump(byBrowser, row.browser);
 		bump(byOs, row.os);
 	}
+	const bots = total - humans;
 
 	const byDay = Object.keys(byDayMap)
 		.sort()
 		.map((date) => ({ date, count: byDayMap[date] }));
+
+	const humansByDay = Object.keys(humansByDayMap)
+		.sort()
+		.map((date) => ({ date, count: humansByDayMap[date] }));
 
 	const newest = [...parsed]
 		.sort((a, b) => b.blob.uploadedAt - a.blob.uploadedAt)
@@ -189,6 +222,7 @@ export default async function handler(req, res) {
 			browser: row.browser,
 			os: row.os,
 			referrer: body ? body.referrer : null,
+			class: row.cls,
 		});
 	}
 	last.sort((a, b) => {
@@ -205,7 +239,10 @@ export default async function handler(req, res) {
 			total,
 			humans,
 			bots,
+			browserUa,
+			byClass,
 			byDay,
+			humansByDay,
 			byArch,
 			byPlatform,
 			byFormat,
